@@ -40,7 +40,24 @@ const SEC_HEADERS = {
   'content-security-policy': "default-src 'self'; script-src 'self' https://kefu.yutiankejiai.com; style-src 'self' https://kefu.yutiankejiai.com; frame-src https://kefu.yutiankejiai.com; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests",
 };
 
-const NGNIX_404 = `<html>\r\n<head><title>404 Not Found</title></head>\r\n<body>\r\n<center><h1>404 Not Found</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n<!-- a padding to disable MSIE and Chrome friendly error page -->\r\n<!-- a padding to disable MSIE and Chrome friendly error page -->\r\n<!-- a padding to disable MSIE and Chrome friendly error page -->\r\n<!-- a padding to disable MSIE and Chrome friendly error page -->\r\n<!-- a padding to disable MSIE and Chrome friendly error page -->\r\n<!-- a padding to disable MSIE and Chrome friendly error page -->\r\n`;
+const NOT_FOUND_HTML = `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>页面不存在 · 小小科技</title>
+<link rel="icon" href="/assets/img/logo-256.png">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;
+background:radial-gradient(800px 460px at 70% -10%,rgba(34,211,238,.14),transparent 60%),#060b14;
+color:#e6f1ff;font:14px/1.7 system-ui,-apple-system,"PingFang SC",sans-serif;text-align:center;padding:24px}
+.card{max-width:520px}
+.code{font-size:78px;font-weight:800;letter-spacing:.04em;background:linear-gradient(135deg,#22d3ee,#ff4df6);-webkit-background-clip:text;background-clip:text;color:transparent}
+h1{margin:6px 0 10px;font-size:22px}p{color:#9fb3cd;margin:0 0 22px}
+a{display:inline-block;margin:0 6px;padding:9px 18px;border-radius:10px;border:1px solid rgba(90,160,230,.4);color:#dff6ff;text-decoration:none}
+a.primary{background:linear-gradient(135deg,#22d3ee,#0ea5c4);border-color:transparent;color:#03131a;font-weight:700}
+</style></head><body><div class="card">
+<div class="code">404</div><h1>这个页面不存在</h1>
+<p>链接可能已失效，或者地址输错了。</p>
+<a class="primary" href="/">返回首页</a><a href="/?page=models">模型广场</a><a href="/pricing">价格</a>
+</div></body></html>`;
 
 /* ------------------------------ 工具 ------------------------------ */
 const sessions = new Map();
@@ -166,6 +183,21 @@ function flushVisits() {
   store.save();
 }
 
+/* ------------------------------ 登录限流 ------------------------------ */
+const LOGIN_HITS = new Map();
+function loginRateLimit(key, max, windowMs) {
+  const nowTs = Date.now();
+  let st = LOGIN_HITS.get(key);
+  if (!st || nowTs - st.start > (windowMs || 60000)) { st = { start: nowTs, n: 0 }; LOGIN_HITS.set(key, st); }
+  st.n += 1;
+  if (st.n > (max || 5)) return { ok: false, retry: Math.ceil((st.start + (windowMs || 60000) - nowTs) / 1000) };
+  return { ok: true };
+}
+function clientIp(req) {
+  return String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
+    (req.socket && req.socket.remoteAddress) || 'unknown';
+}
+
 /* ------------------------------ 用户 API / OpenAI 兼容端点 ------------------------------ */
 function setUserCookie(res, token) {
   res.setHeader('set-cookie', 'ytk_uid=' + token + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + 7 * 86400);
@@ -188,8 +220,15 @@ async function handleUserApi(req, res, url) {
   }
 
   if (p === '/api/user/login' && method === 'POST') {
+    const rlKey = 'u:' + clientIp(req) + ':' + String(body.username || '').toLowerCase();
+    const rl = loginRateLimit(rlKey, 10, 60000);
+    if (!rl.ok) {
+      res.setHeader('retry-after', String(rl.retry));
+      return sendJson(res, 429, { ok: false, error: '尝试过于频繁，请 ' + rl.retry + ' 秒后再试' });
+    }
     const r = platform.login(body.username, body.password);
     if (r.error) return sendJson(res, 401, { ok: false, error: r.error });
+    LOGIN_HITS.delete(rlKey);
     const token = platform.issueSession(r.user.id);
     setUserCookie(res, token);
     return sendJson(res, 200, { ok: true, user: platform.publicUser(r.user) });
@@ -401,23 +440,36 @@ async function handleSupport(req, res, url) {
       };
       sp.threads.unshift(thread);
     }
+    if (!thread.token) thread.token = crypto.randomBytes(16).toString('hex');
     thread.messages.push({ role: 'user', text, at: nowIso(), name });
     thread.unread = (thread.unread || 0) + 1;
     thread.updated_at = nowIso();
     store.save();
-    return sendJson(res, 200, { ok: true, thread_id: thread.id, thread });
+    return sendJson(res, 200, { ok: true, thread_id: thread.id, token: thread.token, thread: { id: thread.id, name: thread.name, messages: thread.messages } });
   }
   if (p === '/api/support/poll') {
     const id = url.searchParams.get('thread_id');
+    const token = url.searchParams.get('token') || String(req.headers['x-thread-token'] || '');
     const thread = sp.threads.find(t => t.id === id);
     if (!thread) return sendJson(res, 404, { ok: false, error: '会话不存在' });
-    return sendJson(res, 200, { ok: true, thread });
+    if (thread.token && token !== thread.token) return sendJson(res, 403, { ok: false, error: '无权访问该会话' });
+    return sendJson(res, 200, { ok: true, thread: { id: thread.id, name: thread.name, messages: thread.messages } });
   }
   return sendJson(res, 404, { ok: false, error: '接口不存在' });
 }
 
 /* ------------------------------ 前台页面 ------------------------------ */
 const PAGE_ALIAS = { models: 'models', terms: 'terms', privacy: 'privacy', refund: 'refund', ip: 'ip' };
+
+const PAGE_CACHE = new Map();
+function renderA1Cached(page, db, opts) {
+  const key = page + '|' + ((db.meta && db.meta.updated_at) || '') + '|' + ((opts && opts.userBase) || '');
+  if (PAGE_CACHE.has(key)) return PAGE_CACHE.get(key);
+  const html = render.pageHtml(page, db, opts);
+  if (PAGE_CACHE.size > 60) PAGE_CACHE.clear();
+  PAGE_CACHE.set(key, html);
+  return html;
+}
 
 function userBaseFor(req) {
   const host = String(req.headers.host || '').split(':')[0] || '127.0.0.1';
@@ -434,7 +486,7 @@ function servePage(req, res, url) {
   }
   const page = PAGE_ALIAS[reqPage] || 'home';
   const db = store.load();
-  const html = render.pageHtml(page, db, { userBase: userBaseFor(req) });
+  const html = renderA1Cached(page, db, { userBase: userBaseFor(req) });
   hitPage(url.searchParams.get('page') || '/');
   if (db.settings && db.settings.maintenance && page !== 'home') {
     return sendHtml(res, 503, '<!doctype html><meta charset="utf-8"><title>维护中</title><body style="font-family:system-ui;background:#060b14;color:#e6f1ff;display:grid;place-items:center;height:100vh;margin:0"><div><h1>站点维护中</h1><p>请稍后访问。</p></div>');
@@ -457,6 +509,9 @@ function serveStatic(req, res, baseDir, relPath, noCache) {
   }
   return serveFile(req, res, abs, !!noCache);
 }
+
+const GZIP_CACHE = new Map();
+const TEXT_EXT = ['.css', '.js', '.json', '.svg', '.html', '.txt', '.map'];
 
 function serveFile(req, res, abs, noCache) {
   const ext = path.extname(abs).toLowerCase();
@@ -492,17 +547,66 @@ function serveFile(req, res, abs, noCache) {
     res.writeHead(206, headers);
     return res.end(req.method === 'HEAD' ? undefined : part);
   }
+  const ae = String(req.headers['accept-encoding'] || '');
+  if (TEXT_EXT.indexOf(ext) !== -1 && buf.length > 1024 && /\bgzip\b/.test(ae) && req.method !== 'HEAD') {
+    let gz = GZIP_CACHE.get(etag);
+    if (!gz) {
+      gz = zlib.gzipSync(buf, { level: 6 });
+      if (GZIP_CACHE.size > 200) GZIP_CACHE.clear();
+      GZIP_CACHE.set(etag, gz);
+    }
+    headers['content-encoding'] = 'gzip';
+    headers['vary'] = 'Accept-Encoding';
+    headers['content-length'] = gz.length;
+    res.writeHead(200, headers);
+    return res.end(gz);
+  }
   headers['content-length'] = buf.length;
   res.writeHead(200, headers);
   res.end(req.method === 'HEAD' ? undefined : buf);
 }
 
+const ERROR_HTML = `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>服务异常 · 小小科技</title><link rel="icon" href="/assets/img/logo-256.png">
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#060b14;color:#e6f1ff;
+font:14px/1.7 system-ui,-apple-system,"PingFang SC",sans-serif;text-align:center;padding:24px}
+.code{font-size:72px;font-weight:800;color:#ff4df6}h1{margin:8px 0;font-size:20px}p{color:#9fb3cd}
+a{display:inline-block;margin-top:18px;padding:9px 18px;border-radius:10px;background:#22d3ee;color:#03131a;text-decoration:none;font-weight:700}</style>
+</head><body><div><div class="code">500</div><h1>服务开小差了</h1>
+<p>请求已记录，请稍后重试。如果持续出现，请联系客服。</p><a href="/">返回首页</a></div></body></html>`;
+
+function sendError500(res, err) {
+  try {
+    const body = Buffer.from(ERROR_HTML, 'utf8');
+    res.writeHead(500, { 'content-type': 'text/html; charset=utf-8', 'content-length': body.length, 'cache-control': 'no-store' });
+    res.end(body);
+  } catch (e) { try { res.end(); } catch (e2) { /* ignore */ } }
+}
+
+// 访问日志：按天写 logs/access-YYYY-MM-DD.log（异步，失败不影响请求）
+const fsLog = require('fs');
+let accessStream = null, accessDay = '';
+function accessLog(line) {
+  try {
+    const day = new Date().toISOString().slice(0, 10);
+    if (day !== accessDay) {
+      accessDay = day;
+      if (accessStream) { accessStream.end(); accessStream = null; }
+      const f = path.join(ROOT, 'logs', 'access-' + day + '.log');
+      accessStream = fsLog.createWriteStream(f, { flags: 'a' });
+      accessStream.on('error', () => { accessStream = null; });
+    }
+    if (accessStream) accessStream.write(line + '\n');
+  } catch (e) { /* ignore */ }
+}
+
 function nginx404(res) {
-  const body = Buffer.from(NGNIX_404, 'utf8');
+  const body = Buffer.from(NOT_FOUND_HTML, 'utf8');
   res.writeHead(404, {
-    'server': 'nginx',
-    'content-type': 'text/html',
+    'content-type': 'text/html; charset=utf-8',
     'content-length': body.length,
+    'cache-control': 'no-store',
   });
   res.end(body);
 }
@@ -544,11 +648,17 @@ const api = async (req, res, url) => {
   if (p === '/api/admin/login' && method === 'POST') {
     const u = String(body.username || '').trim();
     const pw = String(body.password || '');
+    const rl = loginRateLimit('a:' + clientIp(req) + ':' + u.toLowerCase(), 5, 60000);
+    if (!rl.ok) {
+      res.setHeader('retry-after', String(rl.retry));
+      return sendJson(res, 429, { error: '尝试过于频繁，请 ' + rl.retry + ' 秒后再试' });
+    }
     const admin = (db.admins || []).find(a => a.username === u);
     if (!admin || admin.enabled === false || !store.verifyPwd(pw, admin)) {
       store.audit('匿名', 'login-failed', u, '用户名或密码错误');
       return sendJson(res, 401, { error: '用户名或密码错误' });
     }
+    LOGIN_HITS.delete('a:' + clientIp(req) + ':' + u.toLowerCase());
     const sid = crypto.randomBytes(24).toString('hex');
     sessions.set(sid, { adminId: admin.id, exp: Date.now() + SESSION_TTL });
     admin.last_login = nowIso();
@@ -1116,6 +1226,35 @@ const api = async (req, res, url) => {
     }
   }
 
+  /* ---- 系统状态 ---- */
+  if (p === '/api/admin/system' && method === 'GET') {
+    const mem = process.memoryUsage();
+    let dbSize = 0;
+    try { dbSize = fs.statSync(store.DB_FILE).size; } catch (e) { /* ignore */ }
+    const day = new Date().toISOString().slice(0, 10);
+    let todayReqs = 0;
+    try {
+      const logFile = path.join(ROOT, 'logs', 'access-' + day + '.log');
+      if (fs.existsSync(logFile)) todayReqs = fs.readFileSync(logFile, 'utf8').split('\n').filter(Boolean).length;
+    } catch (e) { /* ignore */ }
+    const d = store.load();
+    return sendJson(res, 200, {
+      uptime: Math.floor(process.uptime()),
+      node: process.version,
+      rss: Math.round(mem.rss / 1048576),
+      heap: Math.round(mem.heapUsed / 1048576),
+      db_size: dbSize,
+      today_requests: todayReqs,
+      models: (d.models || []).length,
+      channels: ((d.platform && d.platform.channels) || []).length,
+      keys: ((d.platform && d.platform.keys) || []).length,
+      logs: ((d.platform && d.platform.logs) || []).length,
+      cache_pages: PAGE_CACHE.size,
+      gzip_cache: GZIP_CACHE.size,
+      health_last: (platform.HEALTH && platform.HEALTH.lastRun) || null,
+    });
+  }
+
   /* ---- 审计日志 ---- */
   if (p === '/api/admin/audit' && method === 'GET') {
     return sendJson(res, 200, paginate((db.audit || []).slice(), url, 30));
@@ -1266,6 +1405,14 @@ async function handleUserSite(req, res, url) {
 /* ------------------------------ 入口 ------------------------------ */
 async function handler(req, res) {
   const url = new URL(req.url, 'http://' + (req.headers.host || 'localhost'));
+  const t0 = Date.now();
+  if (!/^\/(assets|admin)\//.test(url.pathname)) {
+    res.on('finish', () => {
+      accessLog(new Date().toISOString() + ' ' + (req.method || 'GET') + ' ' + url.pathname + (url.search || '') +
+        ' ' + res.statusCode + ' ' + (Date.now() - t0) + 'ms ' + clientIp(req) +
+        ' ' + String(req.headers['user-agent'] || '').slice(0, 60));
+    });
+  }
   const p = url.pathname;
   const host = String(req.headers.host || '').toLowerCase();
   const localPort = req.socket && req.socket.localPort;
@@ -1305,6 +1452,10 @@ async function handler(req, res) {
   }
   if (p.startsWith('/api/pay/mock/') && req.method === 'POST') {
     const id = p.slice('/api/pay/mock/'.length);
+    const u = platform.sessionUser(req);
+    if (!u) return sendJson(res, 401, { ok: false, error: '请先登录' });
+    const o = platform.findOrder(id);
+    if (!o || o.user_id !== u.id) return sendJson(res, 404, { ok: false, error: '订单不存在' });
     const r = platform.markPaid(id, 'MOCK' + Date.now());
     if (r.error) return sendJson(res, 404, { ok: false, error: r.error });
     return sendJson(res, 200, { ok: true, order: r.order });
@@ -1365,8 +1516,12 @@ async function handler(req, res) {
     return nginx404(res);
   } catch (e) {
     console.error('[error]', p, e && e.stack || e);
-    if (!res.headersSent) sendJson(res, 500, { error: '服务器内部错误' });
-    else res.end();
+    accessLog(new Date().toISOString() + ' ERROR ' + p + ' ' + (e && e.message));
+    if (!res.headersSent) {
+      const wantsJson = /^\/(api|v1)\//.test(p);
+      if (wantsJson) sendJson(res, 500, { error: '服务器内部错误', code: 'internal_error' });
+      else sendError500(res, e);
+    } else res.end();
   }
 }
 

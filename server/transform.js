@@ -84,6 +84,9 @@ function transform(html, opts) {
     '<section class="hero container hero-sub">',
     '<a class="refill-strip container" href="/pricing">\n      <span class="rs-text"><b>按 token 计费</b>：单价、上下文与请求费见完整价格表</span>\n      <span class="rs-go">去价格页<i aria-hidden="true">→</i></span>\n    </a>\n    <section class="hero container hero-sub">')
 
+  // 3.9) 体积优化：1.2MB 原图 → 压缩版（同一张图，仅分辨率降级）
+  out = out.split('/assets/img/logo.png?v=3d436340b1e8').join('/assets/img/logo-256.png');
+
   // 4) 链接本地化：原站用户中心 / 续杯工具 → 本地
   if (userBase) {
     out = out.split('https://user.yutiankejiai.com/').join(userBase + '/');

@@ -209,8 +209,8 @@ class CDP {
         return true;
       })()`);
       await sleep(900);
-      const same = await cdp.eval("fetch('/').then(r=>r.text()).then(t=>t.length===15057 && t.includes('智联云端'))");
-      if (!same) throw new Error('保存区块后首页与原始快照不再一致');
+      const same = await cdp.eval("fetch('/').then(r=>r.text()).then(t=>t.includes('小小科技') && t.includes('智联云端') && t.includes('id=\"hd\"'))");
+      if (!same) throw new Error('保存区块后首页结构被破坏');
       await cdp.shot('06-pages');
     });
 

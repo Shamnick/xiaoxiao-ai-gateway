@@ -6,7 +6,8 @@
 
   var API = '/api/support';
   var LS = 'ytk_support_thread';
-  var thread = null, name = '', polling = null, unread = 0, opened = false;
+  var LS_TOKEN = 'ytk_support_token';
+  var thread = null, threadToken = '', name = '', polling = null, unread = 0, opened = false;
 
   function el(tag, cls, html) {
     var e = document.createElement(tag);
@@ -62,9 +63,10 @@
 
   function boot() {
     try { thread = localStorage.getItem(LS) || null; } catch (e) { thread = null; }
+    try { threadToken = localStorage.getItem(LS_TOKEN) || ''; } catch (e) { threadToken = ''; }
     name = nameInput.value.trim();
     if (thread) {
-      fetch(API + '/poll?thread_id=' + encodeURIComponent(thread), { credentials: 'same-origin' })
+      fetch(API + '/poll?thread_id=' + encodeURIComponent(thread) + '&token=' + encodeURIComponent(threadToken), { credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (d) { if (d && d.ok && d.thread) { nameInput.value = d.thread.name || nameInput.value; render(d.thread.messages); } })
         .catch(function () {});
@@ -75,7 +77,7 @@
     if (polling) return;
     polling = setInterval(function () {
       if (!thread) return;
-      fetch(API + '/poll?thread_id=' + encodeURIComponent(thread) + '&after=' + (lastCount || 0), { credentials: 'same-origin' })
+      fetch(API + '/poll?thread_id=' + encodeURIComponent(thread) + '&after=' + (lastCount || 0) + '&token=' + encodeURIComponent(threadToken), { credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (!d || !d.ok || !d.thread) return;
@@ -145,7 +147,8 @@
     }).then(function (r) { return r.json(); }).then(function (d) {
       if (!d.ok) { hint.textContent = d.error || '发送失败'; return; }
       thread = d.thread_id;
-      try { localStorage.setItem(LS, thread); } catch (e) {}
+      threadToken = d.token || '';
+      try { localStorage.setItem(LS, thread); localStorage.setItem(LS_TOKEN, threadToken); } catch (e) {}
       input.value = ''; hint.textContent = '已送达，客服会尽快回复';
       lastCount = d.thread.messages.length;
       render(d.thread.messages);

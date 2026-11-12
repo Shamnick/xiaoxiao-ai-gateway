@@ -3,6 +3,7 @@ data/db.json
 data/db.json.tmp
 backups/
 logs/
+logs/access-*.log
 
 # 抓取归档（含会话 Cookie，勿入库）
 src/

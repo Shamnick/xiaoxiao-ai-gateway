@@ -266,12 +266,35 @@
         '<div class="orders-mini">' + (d.recent_audit || []).map(a =>
           '<div class="row"><span class="mono">' + fmtDate(a.at) + '</span><b class="grow ellipsis">' + esc(a.actor) + '</b>' +
           '<span class="ellipsis">' + esc(a.detail || a.action) + '</span></div>').join('') +
-        '</div></div></div></div>';
+        '</div></div></div></div>' +
+        '<div class="card" style="margin-top:16px" id="sysCard"><div class="card-head"><h3>系统状态</h3><span class="sub">运行指标与缓存</span>' +
+        '<div class="right"><button class="btn btn-sm" data-act="sys-refresh">刷新</button></div></div>' +
+        '<div class="card-pad" id="sysBody"><div class="skeleton"><i style="width:40%"></i><i style="width:70%"></i></div></div></div>';
     },
     mount() {
       drawLineChart($('#chartPv'), (state.cache.overview || {}).trend || []);
+      loadSystem();
     },
   };
+
+  function loadSystem() {
+    const box = document.getElementById('sysBody');
+    if (!box) return;
+    api('/system').then(d => {
+      const kv = [
+        ['运行时长', Math.floor(d.uptime / 60) + ' 分钟'],
+        ['内存占用', d.rss + ' MB（堆 ' + d.heap + ' MB）'],
+        ['数据库', (d.db_size / 1048576).toFixed(2) + ' MB'],
+        ['今日请求', d.today_requests + ' 次'],
+        ['模型 / 渠道', d.models + ' / ' + d.channels],
+        ['密钥 / 调用日志', d.keys + ' / ' + d.logs],
+        ['缓存', '页面 ' + d.cache_pages + ' · gzip ' + d.gzip_cache],
+        ['健康检查', d.health_last ? fmtDate(d.health_last) : '尚未运行'],
+        ['Node 版本', d.node],
+      ];
+      box.innerHTML = '<dl class="kv">' + kv.map(([k, v]) => '<dt>' + k + '</dt><dd>' + esc(v) + '</dd>').join('') + '</dl>';
+    }).catch(e => { box.innerHTML = '<div class="help">加载失败：' + esc(e.message) + '</div>'; });
+  }
 
   function statCard(cls, lab, val, sub) {
     return '<div class="stat ' + cls + '"><div class="lab">' + lab + '</div><div class="val">' + val +
@@ -1153,6 +1176,7 @@
       }
 
       /* ----- 模型 ----- */
+      if (act === 'sys-refresh') { loadSystem(); toast('已刷新'); return; }
       if (act === 'model-query') {
         const s = vs('models');
         s.q = $('#modelQ').value.trim(); s.brand = $('#modelBrand').value; s.status = $('#modelStatus').value; s.page = 1;
@@ -1723,6 +1747,7 @@
     bindGlobal();
     try {
       const d = await api('/me');
+      if (!d || !d.admin) { showLogin(); window.addEventListener('hashchange', route); return; }
       state.admin = d.admin;
       showShell();
       if (!location.hash) location.hash = '#/dashboard';
