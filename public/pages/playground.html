@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Playground · 小小科技</title>
+<link rel="icon" type="image/png" href="/assets/img/logo-128.png">
+<link rel="stylesheet" href="/assets/css/platform.css">
+</head>
+<body class="pf-body">
+<header class="pf-top">
+  <a class="brand" href="/"><img src="/assets/img/logo-128.png" width="26" height="26" alt="">小小科技</a>
+  <nav class="nav"><a href="/">控制台</a><a href="/playground">Playground</a><a href="/usage">用量统计</a><a href="/?page=keys">API Keys</a><a href="/?page=docs">文档</a></nav>
+  <div class="right"><span id="pfUser">—</span><a href="/api/user/logout" onclick="event.preventDefault();fetch('/api/user/logout',{method:'POST'}).then(()=>location.href='/?page=login')">退出</a></div>
+</header>
+<main class="pf-wrap">
+  <div class="pf-grid">
+    <section class="pf-card">
+      <div class="pf-card-h">Playground <span class="sub">直接调用本平台的 /api/v1/chat/completions</span></div>
+      <div class="pf-card-b">
+        <div class="pf-field"><label>模型</label><select id="pfModel"></select></div>
+        <div class="pf-field"><label>系统提示（可选）</label><input id="pfSystem" placeholder="例如：你是一个严谨的技术助手"></div>
+        <div class="pf-field"><label>输入</label><textarea id="pfPrompt" rows="5" placeholder="输入要发送给模型的内容，Ctrl+Enter 发送">用一句话介绍你自己</textarea></div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="pf-btn primary" id="pfSend">发送</button>
+          <button class="pf-btn" id="pfStop" disabled>停止</button>
+          <label class="pf-hint" style="margin-left:auto;display:flex;gap:6px;align-items:center"><input type="checkbox" id="pfStream" checked> 流式输出</label>
+        </div>
+      </div>
+    </section>
+    <aside class="pf-card">
+      <div class="pf-card-h">响应</div>
+      <div class="pf-card-b">
+        <div class="pf-out" id="pfOut">等待请求…</div>
+        <div class="pf-meta" id="pfMeta"></div>
+        <div class="pf-hint" style="margin-top:12px">计费：固定请求费 + 输入/输出 token 单价（模型单价见「用量统计 → 模型」）</div>
+      </div>
+    </aside>
+  </div>
+</main>
+<script src="/assets/js/playground.js" defer></script>
+</body>
+</html>

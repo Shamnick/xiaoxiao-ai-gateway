@@ -1,0 +1,14 @@
+{
+  "name": "yutian-mirror",
+  "version": "2.6.0",
+  "private": true,
+  "description": "宇天科技官网 1:1 镜像站 + 完整管理后台（零依赖 Node）",
+  "scripts": {
+    "start": "node server/server.js",
+    "verify": "node tools/verify.js",
+    "test:api": "node tools/admin-api-test.js",
+    "test:ui": "node tools/browser-check.js",
+    "snap": "node tools/snap.js"
+  },
+  "engines": { "node": ">=18" }
+}

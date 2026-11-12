@@ -1,0 +1,16 @@
+# 运行时数据（含用户/密钥，勿入库）
+data/db.json
+data/db.json.tmp
+backups/
+logs/
+
+# 抓取归档（含会话 Cookie，勿入库）
+src/
+src-user/
+
+# 大体积演示视频（可自行从素材源获取）
+public/user/assets/video/
+
+node_modules/
+.DS_Store
+*.log

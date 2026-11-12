@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="宇天科技专注智能云服务与企业数字化解决方案，以稳定、安全、可持续的技术能力，助力开发者与合作伙伴持续成长。">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#060b14">
+  <title>宇天科技 — 官方品牌站</title>
+  <link rel="icon" href="/assets/img/logo.png?v=3d436340b1e8" type="image/png">
+  <link rel="preload" href="/assets/css/home-v2.css?v=018157332fc5" as="style">
+  <link rel="stylesheet" href="/assets/css/home-v2.css?v=018157332fc5">
+  <link rel="stylesheet" href="/assets/css/site-header.css?v=018157332fc5">
+</head>
+<body>
+<div class="nebula"></div>
+<canvas id="brain"></canvas>
+<div id="flash"></div>
+<div id="prog"></div>
+<header id="hd">
+  <a href="#home" class="logo" aria-label="宇天科技">
+    <img src="/assets/img/logo.png?v=3d436340b1e8" alt="宇天科技" width="40" height="40">
+    <span class="lt"><b>宇天科技</b><i>NEURAL&nbsp;CORE</i></span>
+  </a>
+  <nav class="links" id="navLinks">
+    <a href="#home">首页</a>
+    <a href="#about">关于</a>
+    <a href="#ability">能力</a>
+    <a href="/?page=models">模型广场</a>
+    <a href="#security">安全</a>
+    <a href="#contact">联系</a>
+    <a href="https://user.yutiankejiai.com/video/" class="nav-video">视频生成<span class="nav-neon">MiniMax-H3 · NEW</span></a>
+    <a href="https://user.yutiankejiai.com/image/" class="nav-video">图片生成<span class="nav-neon">10 MODELS · NEW</span></a>
+    <a href="https://a10.yutiankejiai.com/client/" class="nav-video" target="_blank" rel="noopener noreferrer">全模型无限额度工具<span class="nav-neon">NEW</span></a>
+    <a href="https://user.yutiankejiai.com/" class="cta" data-entry-open aria-haspopup="dialog">注册 / 登录</a>
+  </nav>
+  <button class="burger" id="burger" type="button" aria-label="菜单"><span></span><span></span><span></span></button>
+</header>
+<dialog id="ytEntry" aria-labelledby="ytEntryTitle">
+  <div class="ye-panel">
+    <button type="button" class="ye-x" data-entry-close aria-label="关闭">×</button>
+    <h2 id="ytEntryTitle" class="ye-title">你需要使用无限续杯还是 API 直连？</h2>
+    <div class="ye-grid">
+      <div class="ye-card ye-card-refill">
+        <h3 class="ye-name">无限续杯</h3>
+        <p class="ye-desc">在有效期内无限使用全站模型（非中转站）。</p>
+        <p class="ye-price">无限续杯套餐<b>最低 1.9 元起/天</b>，无限额度使用</p>
+        <p class="ye-note">需要使用续杯工具</p>
+                  <a class="ye-btn" href="https://a10.yutiankejiai.com/client/" target="_blank" rel="noopener noreferrer" data-entry-go>去使用无限续杯</a>
+              </div>
+      <div class="ye-card ye-card-api">
+        <h3 class="ye-name">API 直连</h3>
+        <p class="ye-desc">创建指定 API Key 进行模型调用。</p>
+        <p class="ye-price ye-price-api">API 无限套餐<b>比无限续杯贵 20%</b></p>
+        <a class="ye-btn" href="https://user.yutiankejiai.com/" data-entry-go>去使用 API 直连</a>
+      </div>
+    </div>
+  </div>
+</dialog>
+<main>
+  <!-- Hero -->
+  <section class="hero" id="home">
+    <div class="hero-copy">
+      <div class="deco-en">NEURAL CORE</div>
+      <div class="badge"><i></i>OFFICIAL · YUTIAN AI TECHNOLOGY</div>
+      <h1>宇天科技</h1>
+      <div class="hero-sub-title">智联云端 · 安全赋能</div>
+      <p class="hero-desc">宇天科技专注智能云服务与企业数字化解决方案，以稳定、安全、可持续的技术能力，助力开发者与合作伙伴持续成长。</p>
+      <div class="hero-btns">
+        <a href="/?page=models" class="btn btn-primary">模型广场</a>
+        <a href="#contact" class="btn btn-ghost">联系我们</a>
+        <span class="refill-wrap">
+          <a href="https://a10.yutiankejiai.com/client/" class="btn btn-refill" target="_blank" rel="noopener noreferrer">无限续杯使用</a>
+          <span class="refill-tag" aria-hidden="true">NEW-FREE</span>
+        </span>
+      </div>
+      <div class="hero-hint"><b>SCROLL</b> 滚动驱动神经中枢旋转&nbsp;&nbsp;·&nbsp;&nbsp;<b>CLICK</b> 点击触发全脑放电风暴&nbsp;&nbsp;·&nbsp;&nbsp;<b>HOVER</b> 鼠标激活神经元</div>
+    </div>
+    <div class="term">
+      <div class="term-head"><i></i><i></i><i></i><em>YUTIAN NEURAL CORE · REASONING STREAM</em></div>
+      <div class="term-body" id="termOut"></div>
+      <div class="term-foot">
+        <span>推理延迟 <b id="mLat">12ms</b></span>
+        <span>在线节点 <b id="mNode">328</b></span>
+        <span>tokens/s <b id="mTok">46,208</b></span>
+        <span>状态 <b class="stat-ok">NOMINAL</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 数据指标 -->
+  <section class="stats stats-models" id="models">
+    <div class="stats-grid">
+      <div class="stat reveal rd0">
+        <div class="num"><span data-count="99.9" data-dec="1">0.0</span>%</div>
+        <div class="lab">服务稳定性目标</div>
+        <div class="en">UPTIME TARGET</div>
+      </div>
+      <div class="stat reveal rd12">
+        <div class="num">稳定</div>
+        <div class="lab">持续可用的服务体验</div>
+        <div class="en">ALWAYS ON</div>
+      </div>
+      <div class="stat reveal rd24">
+        <div class="num">安全</div>
+        <div class="lab">传输与访问全程防护</div>
+        <div class="en">FULL SHIELD</div>
+      </div>
+      <div class="stat reveal rd36">
+        <div class="num"><span data-count="7" data-dec="0">0</span>×<span data-count="24" data-dec="0">0</span></div>
+        <div class="lab">全天候运维保障</div>
+        <div class="en">NONSTOP OPS</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 关于 -->
+  <section id="about">
+    <div class="sec-head reveal">
+      <div class="eyebrow">ABOUT · SYNAPTIC ORIGIN</div>
+      <h2>关于 <em>宇天科技</em></h2>
+      <p>以技术创新与可靠交付为核心，连接开发者生态与企业数字化需求。</p>
+    </div>
+    <div class="cards c3">
+      <div class="card tilt reveal rd0">
+        <span class="icon">◈</span>
+        <h3>使命</h3>
+        <p>让智能云能力以安全、稳定、可信赖的方式，服务每一位用户与合作伙伴。</p>
+      </div>
+      <div class="card tilt reveal rd12">
+        <span class="icon">◎</span>
+        <h3>愿景</h3>
+        <p>成为值得信赖的科技品牌，在创新、安全与体验之间取得长期平衡。</p>
+      </div>
+      <div class="card tilt reveal rd24">
+        <span class="icon">⬡</span>
+        <h3>价值观</h3>
+        <p>专业务实、安全优先、持续改进——用可验证的质量赢得信任。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 核心能力 -->
+  <section id="ability">
+    <div class="sec-head reveal">
+      <div class="eyebrow">CAPABILITIES · CORTEX MATRIX</div>
+      <h2>核心<em>能力</em></h2>
+      <p>面向企业级数字化场景，提供可扩展、可信赖的技术服务与支持。</p>
+    </div>
+    <div class="cards c4">
+      <div class="card tilt reveal rd0">
+        <span class="icon">⚡</span>
+        <h3>高效稳定</h3>
+        <p>注重响应速度与系统稳定性，保障业务连续性与良好使用体验。</p>
+      </div>
+      <div class="card tilt reveal rd10">
+        <span class="icon">☁</span>
+        <h3>弹性架构</h3>
+        <p>支持灵活部署与扩展，适应不同规模与阶段的业务需求。</p>
+      </div>
+      <div class="card tilt reveal rd20">
+        <span class="icon">🔐</span>
+        <h3>安全合规</h3>
+        <p>多层防护与访问控制，守护数据与业务安全。</p>
+      </div>
+      <div class="card tilt reveal rd30">
+        <span class="icon">📊</span>
+        <h3>专业运维</h3>
+        <p>完善监控与响应机制，问题可发现、可处理、可复盘。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 安全与性能 -->
+  <section id="security">
+    <div class="sec-head reveal">
+      <div class="eyebrow">SECURITY · FIREWALL PROTOCOL</div>
+      <h2>安全与<em>性能</em></h2>
+      <p>安全与体验并重，以业界通行做法构建可信赖的线上服务环境。</p>
+    </div>
+    <div class="sec-list">
+      <div class="sec-item reveal rd0"><span class="mk">[✓]</span><span>全站 HTTPS 加密访问</span></div>
+      <div class="sec-item reveal rd08"><span class="mk">[✓]</span><span>严格的内容与资源加载策略</span></div>
+      <div class="sec-item reveal rd16"><span class="mk">[✓]</span><span>防嵌入、防嗅探等基础防护</span></div>
+      <div class="sec-item reveal rd24"><span class="mk">[✓]</span><span>用户输入与页面输出安全处理</span></div>
+      <div class="sec-item reveal rd32"><span class="mk">[✓]</span><span>核心资源自主托管，降低外部依赖</span></div>
+      <div class="sec-item reveal rd40"><span class="mk">[✓]</span><span>轻量页面结构，兼顾加载速度与体验</span></div>
+    </div>
+  </section>
+
+  <!-- 联系 -->
+  <section id="contact">
+    <div class="contact-box">
+      <div class="sec-head reveal sec-head--contact">
+        <div class="eyebrow">CONTACT · ESTABLISH LINK</div>
+        <h2>携手 <em>宇天科技</em></h2>
+        <p>欢迎商务合作、渠道洽谈与技术咨询。我们将为您提供专业、可靠、可持续的支持。</p>
+      </div>
+      <div class="reveal rd15">
+        <a class="cs-btn" href="https://kefu.yutiankejiai.com/chat/?from=a1/home" data-kefu="" data-kefu-from="a1/home" target="_blank" rel="noopener">在线客服 · 立即咨询</a>
+        <p class="cs-note">工作时间内即时回复 · 商务合作与代理请选择「代理咨询」</p>
+        <p class="cs-note">邮箱 contact@yutiankejiai.com</p>      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <nav class="footer-legal" aria-label="法律声明">
+    <a href="/?page=terms">使用条款</a>
+    <a href="/?page=privacy">隐私政策</a>
+    <a href="/?page=refund">退款政策</a>
+    <a href="/?page=ip">知识产权</a>
+  </nav>
+  <img class="f-logo" src="/assets/img/logo.png?v=3d436340b1e8" alt="宇天科技" width="20" height="20">© 2026 宇天科技 · Yutian Technology. All rights reserved.<br>
+  <span class="site">a1.yutiankejiai.com</span> — 官方品牌展示站
+</footer>
+<canvas id="ytbFx" aria-hidden="true"></canvas>
+<div id="ytbBot" aria-hidden="true">
+  <div class="ytb-hud"><span id="ytbHudA">🧠 <b>97%</b></span><span id="ytbHudB">⚡ <b>12ms</b></span></div>
+  <div class="ytb-bubble right" id="ytbBubble"><span id="ytbBubbleText"></span></div>
+  <div class="ytb-zzz"><i>Z</i><i>z</i><i>z</i></div>
+  <svg id="ytbSvg" viewBox="0 0 140 170" shape-rendering="crispEdges" aria-label="橙色像素小螃蟹伙伴">
+    <g class="ytb-rock">
+    <!-- 四条小短腿（交替踏步） -->
+    <g fill="#ED8B5F">
+      <rect class="ytb-leg" x="34" y="108" width="10" height="14"/>
+      <rect class="ytb-leg" x="54" y="108" width="10" height="14"/>
+      <rect class="ytb-leg" x="76" y="108" width="10" height="14"/>
+      <rect class="ytb-leg" x="96" y="108" width="10" height="14"/>
+    </g>
+    <!-- 左右钳子（挥舞） -->
+    <g class="ytb-armL" fill="#ED8B5F">
+      <rect x="0" y="62" width="22" height="12"/>
+      <rect x="0" y="50" width="10" height="12"/>
+    </g>
+    <g class="ytb-armR" fill="#ED8B5F">
+      <rect x="118" y="62" width="22" height="12"/>
+      <rect x="130" y="50" width="10" height="12"/>
+    </g>
+    <!-- 头顶两只小耳朵 -->
+    <rect x="38" y="28" width="12" height="10" fill="#ED8B5F"/>
+    <rect x="90" y="28" width="12" height="10" fill="#ED8B5F"/>
+    <!-- 像素圆角身体（三段矩形） -->
+    <rect x="30" y="38" width="80" height="10" fill="#ED8B5F"/>
+    <rect x="20" y="48" width="100" height="50" fill="#ED8B5F"/>
+    <rect x="30" y="98" width="80" height="12" fill="#D0704A"/>
+    <g id="ytbBlinkG" class="ytb-blink">
+      <!-- 常态方块眼（跟随鼠标） -->
+      <g class="ytb-eyes-n" id="ytbEyesN" fill="#1B2431">
+        <rect x="45" y="56" width="11" height="20"/>
+        <rect x="84" y="56" width="11" height="20"/>
+      </g>
+      <!-- 开心 ∧∧ 像素眼 -->
+      <g class="ytb-eyes-h" fill="#1B2431">
+        <rect x="38" y="64" width="9" height="8"/><rect x="46" y="56" width="9" height="8"/><rect x="54" y="64" width="9" height="8"/>
+        <rect x="77" y="64" width="9" height="8"/><rect x="85" y="56" width="9" height="8"/><rect x="93" y="64" width="9" height="8"/>
+      </g>
+      <!-- 睡觉「— —」眼 -->
+      <g class="ytb-eyes-s" fill="#1B2431" opacity=".85">
+        <rect x="40" y="62" width="20" height="7"/>
+        <rect x="80" y="62" width="20" height="7"/>
+      </g>
+      <!-- 被甩晕的 ×× 像素眼 -->
+      <g class="ytb-eyes-d" fill="#1B2431">
+        <rect x="42" y="57" width="7" height="7"/><rect x="52" y="57" width="7" height="7"/>
+        <rect x="47" y="63" width="7" height="7"/>
+        <rect x="42" y="69" width="7" height="7"/><rect x="52" y="69" width="7" height="7"/>
+        <rect x="81" y="57" width="7" height="7"/><rect x="91" y="57" width="7" height="7"/>
+        <rect x="86" y="63" width="7" height="7"/>
+        <rect x="81" y="69" width="7" height="7"/><rect x="91" y="69" width="7" height="7"/>
+      </g>
+    </g>
+    </g>
+  </svg>
+</div>
+<div id="ytbBot2" aria-hidden="true">
+  <div class="ytb-hud"><span>🤖 <b>ONLINE</b></span><span>⚡ <b>12ms</b></span></div>
+  <div class="ytb-bubble right"><span></span></div>
+  <div class="ytb-zzz"><i>Z</i><i>z</i><i>z</i></div>
+  <svg viewBox="0 0 140 170" aria-label="AI 小机器人伙伴">
+    <g class="ytb-rock">
+      <defs>
+        <linearGradient id="ytbBodyG2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#9db1c9"/>
+          <stop offset="1" stop-color="#46566e"/>
+        </linearGradient>
+      </defs>
+      <!-- 天线 -->
+      <line x1="70" y1="21" x2="70" y2="13" stroke="#8ea3bd" stroke-width="3" stroke-linecap="round"/>
+      <circle class="mk-glow-m" cx="70" cy="9" r="4.4" fill="#ff4df6"/>
+      <!-- 垂腿（坐着会前后晃） -->
+      <g>
+        <rect class="ytb-leg" x="52" y="118" width="11" height="26" rx="5.5" fill="url(#ytbBodyG2)"/>
+        <rect class="ytb-leg" x="77" y="118" width="11" height="26" rx="5.5" fill="url(#ytbBodyG2)"/>
+      </g>
+      <!-- 手臂 -->
+      <g class="ytb-armL"><rect x="26" y="86" width="11" height="26" rx="5.5" fill="url(#ytbBodyG2)"/></g>
+      <g class="ytb-armR"><rect x="103" y="86" width="11" height="26" rx="5.5" fill="url(#ytbBodyG2)"/></g>
+      <!-- 身体 + 能源核心 -->
+      <rect x="42" y="79" width="56" height="44" rx="20" fill="url(#ytbBodyG2)"/>
+      <circle cx="70" cy="100" r="11" fill="none" stroke="rgba(34,211,238,.5)" stroke-width="2"/>
+      <circle class="mk-glow-c" cx="70" cy="100" r="6.5" fill="#22d3ee"/>
+      <!-- 头部 + 表情屏 -->
+      <rect x="29" y="19" width="82" height="60" rx="28" fill="url(#ytbBodyG2)"/>
+      <rect x="22" y="38" width="8" height="20" rx="4" fill="#2f3d52"/>
+      <rect x="110" y="38" width="8" height="20" rx="4" fill="#2f3d52"/>
+      <rect x="40" y="29" width="60" height="40" rx="17" fill="#020617"/>
+      <rect x="40" y="29" width="60" height="40" rx="17" fill="none" stroke="rgba(34,211,238,.4)" stroke-width="1.5"/>
+      <g class="ytb-blink">
+        <g class="ytb-eyes-n">
+          <circle class="mk-glow-c2" cx="56" cy="47" r="7.5" fill="#22d3ee"/>
+          <circle class="mk-glow-m2" cx="84" cy="47" r="7.5" fill="#ff4df6"/>
+          <circle cx="58.5" cy="44.5" r="2.4" fill="#e0faff"/>
+          <circle cx="86.5" cy="44.5" r="2.4" fill="#ffe0fc"/>
+        </g>
+        <g class="ytb-eyes-h" fill="none" stroke-width="4" stroke-linecap="round">
+          <path d="M48 50 Q56 41 64 50" stroke="#22d3ee"/>
+          <path d="M76 50 Q84 41 92 50" stroke="#ff4df6"/>
+        </g>
+        <g class="ytb-eyes-s" stroke="#22d3ee" stroke-width="4" stroke-linecap="round" opacity=".8">
+          <line x1="48" y1="47" x2="63" y2="47"/>
+          <line x1="77" y1="47" x2="92" y2="47"/>
+        </g>
+        <g class="ytb-eyes-d" fill="none" stroke="#ff4df6" stroke-width="3.5" stroke-linecap="round">
+          <line x1="49" y1="40" x2="63" y2="54"/><line x1="63" y1="40" x2="49" y2="54"/>
+          <line x1="77" y1="40" x2="91" y2="54"/><line x1="91" y1="40" x2="77" y2="54"/>
+        </g>
+      </g>
+      <rect x="64" y="58" width="12" height="3.5" rx="1.75" fill="#22d3ee" opacity=".85"/>
+    </g>
+  </svg>
+</div>
+  <script src="/assets/js/home-v2.js?v=f032791db76a" defer></script>
+  <script src="/assets/js/home-pets.js?v=018157332fc5" defer></script>
+  <script src="/assets/js/site-header.js?v=bcf4a39ee311" defer></script>
+  <script src="https://kefu.yutiankejiai.com/widget.js" data-from="a1/home" defer></script>
+</body>
+</html>

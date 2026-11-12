@@ -1,0 +1,162 @@
+/* 官网顶栏（结构 includes/site-header.php）。
+ * 首页、模型广场、法律页、a10 续杯工具购买页都只加载这一份，不要再把整份 home-v2.css
+ * 塞进别的页面 —— 那份里的 h1 / section / .btn / footer 是首页正文的全局规则，会串到别页正文。
+ * 规则一律挂在 #hd 下，并在 #hd 上锁住变量与字体：各页 :root 的 --cyan / --dim 取值不同，
+ * main.css 还有 a:hover 下划线、img max-width、.cta 外边距这类全局规则，不锁就会打进顶栏。 */
+
+:where(#hd, #hd *){box-sizing:border-box;margin:0;padding:0}
+
+#prog{
+  position:fixed;top:0;left:0;height:3px;width:100%;z-index:120;
+  background:linear-gradient(90deg,#22d3ee,#ff00ff);
+  transform-origin:0 50%;transform:scaleX(0);
+  box-shadow:0 0 12px rgba(34,211,238,.8);
+}
+
+#hd{
+  --cyan:#22d3ee;
+  --mag:#ff00ff;
+  --dim:#94a3b8;
+  --mono:Consolas,"Courier New",ui-monospace,monospace;
+  --sans:"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  font-family:var(--sans);font-size:16px;font-weight:400;font-style:normal;
+  line-height:1.6;letter-spacing:normal;text-align:start;color:#f8fafc;
+  -webkit-text-size-adjust:auto;text-size-adjust:auto;
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 5vw;transition:background .4s,border-color .4s,padding .4s;
+  border-bottom:1px solid transparent;
+}
+#hd.scrolled{
+  background:rgba(2,6,23,.82);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom-color:rgba(34,211,238,.18);
+  padding:12px 5vw;
+}
+#hd a,#hd a:hover{text-decoration:none}
+#hd .logo{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit}
+#hd .logo img{width:40px;height:40px;max-width:none;border-radius:10px;flex:none;
+  filter:drop-shadow(0 0 10px rgba(34,211,238,.55));
+  transition:transform .3s,filter .3s}
+#hd .logo:hover img{transform:scale(1.07) rotate(-4deg);filter:drop-shadow(0 0 16px rgba(34,211,238,.9))}
+#hd .logo .lt{display:flex;flex-direction:column;line-height:1.15}
+#hd .logo .lt b{
+  font-size:22px;font-weight:900;letter-spacing:.08em;
+  background:linear-gradient(100deg,#fff,var(--cyan) 70%,var(--mag));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+#hd .logo .lt i{font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.42em;color:var(--cyan);opacity:.75}
+#hd .links{display:flex;align-items:center;gap:30px}
+#hd .links a{
+  color:var(--dim);text-decoration:none;font-size:14.5px;letter-spacing:.06em;
+  position:relative;transition:color .3s;padding:4px 0;
+}
+#hd .links a::after{
+  content:"";position:absolute;left:0;bottom:-3px;height:2px;width:0;box-sizing:content-box;
+  background:linear-gradient(90deg,var(--cyan),var(--mag));
+  transition:width .3s;box-shadow:0 0 8px var(--cyan);
+}
+#hd .links a:hover{color:#fff}
+#hd .links a:hover::after{width:100%}
+#hd .links .cta{
+  color:#021018;font-weight:700;padding:9px 22px;border-radius:999px;margin:0;border:0;
+  background:linear-gradient(100deg,var(--cyan),#6ae4ff);
+  box-shadow:0 0 22px rgba(34,211,238,.5);
+  transition:transform .25s,box-shadow .25s;
+}
+#hd .links .cta::after{display:none}
+#hd .links .cta:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 0 36px rgba(34,211,238,.85);color:#021018}
+#hd .burger{
+  display:none;background:none;border:0;cursor:pointer;padding:8px;z-index:110;
+}
+#hd .burger span{display:block;width:24px;height:2px;background:var(--cyan);margin:5px 0;transition:transform .3s,opacity .3s;box-shadow:0 0 6px var(--cyan)}
+#hd.open .burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+#hd.open .burger span:nth-child(2){opacity:0}
+#hd.open .burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* 视频生成 / 图片生成 / 全模型无限额度工具入口：角标是流动渐变文字 */
+#hd .links a.nav-video{
+  display:inline-flex;align-items:center;gap:7px;
+  color:#fff;font-weight:600;
+}
+#hd .links a.nav-video:hover{color:#fff}
+#hd .nav-neon{
+  padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:800;letter-spacing:.02em;
+  border:1px solid rgba(255,255,255,.18);background-color:rgba(255,255,255,.05);
+  background-image:linear-gradient(90deg,#22d3ee,#a78bfa,#f472b6,#fbbf24,#22d3ee);
+  background-size:300% 100%;
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  animation:nav-neon-flow 4s linear infinite;
+}
+@keyframes nav-neon-flow{to{background-position:-300% 0}}
+@media (prefers-reduced-motion:reduce){#hd .nav-neon{animation:none}}
+
+/* 「注册 / 登录」先选使用方式的弹窗（<dialog>，同样不吃宿主页的全局规则）。
+   不能给 #ytEntry 本身设 display，否则会盖掉浏览器对未打开 dialog 的隐藏。 */
+:where(#ytEntry, #ytEntry *){box-sizing:border-box;margin:0;padding:0}
+#ytEntry{
+  --dim:#94a3b8;
+  --sans:"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  margin:auto;padding:0;border:0;background:transparent;color:#f8fafc;
+  width:min(680px,calc(100vw - 32px));max-width:none;max-height:none;overflow:visible;
+  font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.6;letter-spacing:normal;text-align:start;
+}
+#ytEntry::backdrop{background:rgba(2,6,23,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#ytEntry .ye-panel{
+  position:relative;max-height:calc(100vh - 32px);overflow:auto;
+  padding:30px 26px 24px;border-radius:18px;
+  background:linear-gradient(160deg,#0b1530,#050a19);
+  border:1px solid rgba(34,211,238,.32);
+  box-shadow:0 24px 70px rgba(0,0,0,.6),0 0 44px rgba(34,211,238,.14);
+}
+#ytEntry .ye-x{
+  position:absolute;top:12px;right:12px;width:32px;height:32px;border:0;border-radius:8px;
+  background:transparent;color:var(--dim);font:inherit;font-size:22px;line-height:1;cursor:pointer;
+}
+#ytEntry .ye-x:hover{color:#fff;background:rgba(255,255,255,.06)}
+#ytEntry .ye-title{margin:0 40px 18px 0;font-size:20px;font-weight:800;letter-spacing:.04em;line-height:1.4;color:#f8fafc}
+#ytEntry .ye-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#ytEntry .ye-card{
+  display:flex;flex-direction:column;gap:10px;padding:20px 18px 18px;border-radius:14px;
+  background:rgba(34,211,238,.04);border:1px solid rgba(34,211,238,.24);
+}
+#ytEntry .ye-card-refill{background:linear-gradient(160deg,rgba(167,139,250,.09),rgba(244,114,182,.05));border-color:rgba(244,114,182,.36)}
+#ytEntry .ye-name{font-size:18px;font-weight:800;letter-spacing:.04em;line-height:1.4;color:#fff}
+#ytEntry .ye-desc{font-size:14px;line-height:1.7;color:#cbd5e1}
+#ytEntry .ye-note{font-size:13px;line-height:1.6;color:#fbbf24}
+#ytEntry .ye-price{
+  font-size:13.5px;line-height:1.6;color:#fce7f3;
+  padding:7px 10px;border-radius:10px;background:rgba(236,72,153,.12);border:1px dashed rgba(236,72,153,.45);
+}
+#ytEntry .ye-price b{margin:0 4px;font-weight:800;color:#fde047}
+#ytEntry .ye-price-api{color:#cbd5e1;background:rgba(148,163,184,.08);border-color:rgba(148,163,184,.35)}
+#ytEntry .ye-price-api b{color:#fb923c}
+#ytEntry .ye-btn{
+  margin-top:auto;display:flex;align-items:center;justify-content:center;
+  padding:11px 18px;border:0;border-radius:999px;cursor:pointer;
+  font:inherit;font-size:14.5px;font-weight:700;letter-spacing:.06em;text-decoration:none;
+  color:#021018;background:linear-gradient(100deg,#22d3ee,#6ae4ff);
+  box-shadow:0 0 22px rgba(34,211,238,.45);transition:transform .25s,box-shadow .25s;
+}
+#ytEntry .ye-btn:hover{transform:translateY(-2px);box-shadow:0 0 34px rgba(34,211,238,.8);color:#021018;text-decoration:none}
+#ytEntry .ye-card-refill .ye-btn{color:#fff;background:linear-gradient(100deg,#a78bfa,#f472b6);box-shadow:0 0 22px rgba(244,114,182,.4)}
+#ytEntry .ye-card-refill .ye-btn:hover{color:#fff;box-shadow:0 0 34px rgba(244,114,182,.75)}
+@media (max-width:640px){
+  #ytEntry .ye-panel{padding:26px 18px 18px}
+  #ytEntry .ye-title{font-size:18px}
+  #ytEntry .ye-grid{grid-template-columns:1fr}
+}
+
+@media (max-width:900px){
+  #hd .links{
+    position:fixed;top:0;right:0;bottom:0;width:min(76vw,320px);
+    flex-direction:column;justify-content:center;gap:34px;
+    background:rgba(2,6,23,.96);backdrop-filter:blur(16px);
+    border-left:1px solid rgba(34,211,238,.25);
+    transform:translateX(105%);transition:transform .4s cubic-bezier(.2,.8,.25,1);
+  }
+  #hd.open .links{transform:none}
+  #hd .links a{font-size:18px}
+  #hd .burger{display:block}
+}

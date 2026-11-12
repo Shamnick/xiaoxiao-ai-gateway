@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小小科技 · 站点管理后台</title>
+<link rel="icon" href="/assets/img/logo.png?v=3d436340b1e8" type="image/png">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+<div id="app">
+  <!-- 登录 -->
+  <section id="loginView" class="login-wrap" hidden>
+    <div class="login-bg"><i></i><i></i><i></i></div>
+    <form class="login-card" id="loginForm" autocomplete="on">
+      <div class="login-brand">
+        <img src="/assets/img/logo.png?v=3d436340b1e8" alt="小小科技" width="46" height="46">
+        <div>
+          <h1>小小科技</h1>
+          <p>NEURAL CORE · 站点管理后台</p>
+        </div>
+      </div>
+      <label class="fld">
+        <span>账号</span>
+        <input type="text" name="username" id="loginUser" autocomplete="username" placeholder="请输入管理员账号" required>
+      </label>
+      <label class="fld">
+        <span>密码</span>
+        <input type="password" name="password" id="loginPass" autocomplete="current-password" placeholder="请输入登录密码" required>
+      </label>
+      <div class="login-row">
+        <label class="chk"><input type="checkbox" id="rememberMe" checked><i></i>记住账号</label>
+        <span class="login-hint" id="loginHint"></span>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit" id="loginBtn">登 录</button>
+      <p class="login-foot">© 2026 小小科技 · Xiaoxiao Technology</p>
+    </form>
+  </section>
+
+  <!-- 主界面 -->
+  <section id="shellView" class="shell" hidden>
+    <aside class="side">
+      <div class="side-brand">
+        <img src="/assets/img/logo.png?v=3d436340b1e8" alt="" width="34" height="34">
+        <div><b>小小科技</b><i>ADMIN CONSOLE</i></div>
+      </div>
+      <nav class="side-nav" id="sideNav"></nav>
+      <div class="side-foot">
+        <a href="/" target="_blank" rel="noopener" class="side-site">↗ 查看前台站点</a>
+        <div class="side-ver">v2.6.0 · mirror</div>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn only-mobile" id="btnMenu" aria-label="菜单">☰</button>
+        <div class="crumb" id="crumb">控制台</div>
+        <div class="topbar-tools">
+          <div class="quick-search">
+            <input type="search" id="globalSearch" placeholder="搜索模型 / 用户 / 订单…  Ctrl K" aria-label="全局搜索">
+          </div>
+          <button class="icon-btn" id="btnRefresh" title="刷新数据">⟳</button>
+          <div class="user-menu" id="userMenu">
+            <button class="user-btn" id="userBtn">
+              <span class="avatar" id="avatarText">A</span>
+              <span class="uname" id="uname">admin</span>
+              <i>▾</i>
+            </button>
+            <div class="user-drop" id="userDrop" hidden>
+              <button data-act="profile">账号信息</button>
+              <a href="/" target="_blank" rel="noopener">查看前台</a>
+              <button data-act="logout" class="danger">退出登录</button>
+            </div>
+          </div>
+        </div>
+      </header>
+      <div class="content" id="content"></div>
+    </main>
+  </section>
+</div>
+
+<!-- 通用模态 -->
+<div class="modal-mask" id="modalMask" hidden>
+  <div class="modal" id="modalBox" role="dialog" aria-modal="true">
+    <header class="modal-head">
+      <h3 id="modalTitle">标题</h3>
+      <button class="icon-btn" id="modalX" aria-label="关闭">×</button>
+    </header>
+    <div class="modal-body" id="modalBody"></div>
+    <footer class="modal-foot" id="modalFoot"></footer>
+  </div>
+</div>
+
+<!-- 确认框 -->
+<div class="modal-mask" id="confirmMask" hidden>
+  <div class="modal modal-sm" role="alertdialog" aria-modal="true">
+    <header class="modal-head"><h3 id="confirmTitle">确认操作</h3></header>
+    <div class="modal-body"><p id="confirmText"></p></div>
+    <footer class="modal-foot">
+      <button class="btn" id="confirmCancel">取消</button>
+      <button class="btn btn-danger" id="confirmOk">确认</button>
+    </footer>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<script src="/admin/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,2076 @@
+/* ══════════════════════════════════════════════════════════════
+ * 图片生成独立页（user.yutiankejiai.com/video/）—— 1:1 复刻秘塔 AI (生图工作台)
+ * 极致深色奢华质感：#0d0e12 纯暗底 + #15161c 模块卡片 + 绚丽紫/蓝发光特效
+ * 严格 CSP：无内联样式
+ * ══════════════════════════════════════════════════════════════ */
+
+.ig-body {
+  --bg: #0d0e12;
+  --card: #15161c;
+  --card2: #1c1d25;
+  --card3: #222430;
+  --line: #3a3d4d;
+  --line-light: rgba(255, 255, 255, .2);
+  --text: #ffffff;
+  --text-sub: #dedee6;
+  --dim: #7f8294;
+  --dim-dark: #525464;
+  --purple: #8b5cf6;
+  --purple-dark: #7c3aed;
+  --purple-glow: 0 0 16px rgba(139, 92, 246, .45);
+  --primary: #8b5cf6;
+  --primary2: #a78bfa;
+  --gold: #f59e0b;
+  --gold-pill: #fcd34d;
+  --ok: #34d399;
+  --danger: #f87171;
+
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  color: var(--text);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 50% -10%, rgba(124, 58, 237, .12), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 85% 15%, rgba(139, 92, 246, .08), transparent 60%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ig-body a { color: var(--purple); text-decoration: none; }
+.ig-body a:hover { text-decoration: none; }
+.ig-body .key-table { width: 100%; border-collapse: collapse; }
+.ig-body .key-table th, .ig-body .key-table td { border-color: var(--line); }
+
+/* ── 顶栏（对标秘塔）─────────────────────────────────────── */
+.ig-topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 52px; padding: 0 24px;
+  /*
+   * ⚠ 这里**不要用 backdrop-filter**（原本是 blur(16px)，已移除）。
+   * 正常浏览时没事，但截图/录屏工具抓屏会强制 GPU 重新合成整页，
+   * 而 backdrop-filter 每次合成都要把背景纹理读回来重新模糊 ——
+   * 叠加正在播放的视频解码，足以让浏览器卡死（用户按 Alt+A 截图时崩过）。
+   * sticky 顶栏 + backdrop-filter 是 Chromium 上有记录的性能陷阱组合。
+   * 顶栏本来就把下方内容遮住，用不透明底色视觉上几乎无差别。
+   */
+  background: #0f1015;
+  border-bottom: 1px solid var(--line);
+}
+
+.ig-topbar-left { display: flex; align-items: center; gap: 12px; }
+.ig-brand { display: flex; align-items: center; gap: 8px; color: #fff; }
+.ig-brand img { border-radius: 6px; }
+.ig-brand-name { font-size: 15px; font-weight: 800; letter-spacing: .02em; color: #fff; }
+
+/* 顶部中央精美折扣胶囊条（1:1 复刻秘塔 AI 样式） */
+.ig-ribbon {
+  display: flex; align-items: center; gap: 9px;
+  padding: 3px 14px 3px 5px; border-radius: 999px;
+  background: #181611;
+  border: 1px solid #3c3218;
+}
+.ig-ribbon-img-badge {
+  height: 24px; width: auto; object-fit: contain;
+}
+.ig-ribbon-title { font-size: 12.5px; font-weight: 700; color: #fff; white-space: nowrap; }
+.ig-ribbon-pill {
+  padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+  background: #282010; border: 1px solid #574419;
+  color: var(--gold-pill); font-size: 11.5px; font-weight: 700;
+}
+.ig-ribbon-link { color: #8e887a; font-size: 11.5px; white-space: nowrap; transition: color .2s; }
+.ig-ribbon-link:hover { color: var(--gold-pill); }
+
+.ig-topbar-right { display: flex; align-items: center; }
+.ig-topnav { display: flex; align-items: center; gap: 18px; }
+.ig-nav-link { color: var(--dim); font-size: 13px; font-weight: 600; transition: color .2s; }
+.ig-nav-link:hover { color: #fff; }
+.ig-topbal { color: var(--dim); font-size: 12.5px; white-space: nowrap; }
+.ig-topbal b { color: #fff; font-weight: 700; }
+.ig-user-btn {
+  padding: 4px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 600;
+  background: var(--card2); border: 1px solid var(--line); color: #fff;
+}
+.ig-toplogin {
+  padding: 6px 18px; border-radius: 999px;
+  background: #fff; color: #000 !important; font-size: 13px; font-weight: 700;
+  transition: transform .15s, opacity .15s;
+}
+.ig-toplogin:hover { transform: translateY(-1px); opacity: .92; }
+
+/* ── 主体容器 ─────────────────────────────────────────────
+ * 宽度断点 1:1 照抄秘塔的工作台栅格：
+ *   基础  w = min(1440px, 100vw-32px)，左栏 minmax(360px,448px)，gap/padding 16px
+ *   ≥1360 gap/padding 24px
+ *   ≥1920 w = min(1680px, 76vw)   ← 宽屏要继续放大，不能死死卡在 1440
+ *   ≤1360 左栏收窄成 minmax(340px,400px)
+ * ⚠ 别给 .ig-main 再加左右 padding：宽度已由 calc(100vw-32px) 兜住，
+ *   再加 padding 会让工作台缩成中间一小条（改坏过一次）。 */
+.ig-main {
+  flex: 1; width: min(1440px, calc(100vw - 32px)); margin: 0 auto;
+  padding: 16px 0 44px; display: flex; flex-direction: column; gap: 16px;
+}
+@media (min-width: 1360px) {
+  .ig-main { padding: 24px 0 48px; gap: 24px; }
+}
+@media (min-width: 1920px) {
+  .ig-main { width: min(1680px, 76vw); }
+}
+
+.ig-alert-closed {
+  align-self: center; padding: 5px 16px; border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, .3); background: rgba(245, 158, 11, .08);
+  color: #fbbf24; font-size: 12px; text-align: center;
+}
+
+/* ── 核心工作台两栏架构（对标秘塔）──────────────────────────── */
+/*
+ * 整页三段式：操作板 → 预览 → 我的作品，**上下排布**。
+ * 刻意不用视频页的左右分栏：图片的流程是「填参数 → 出图 → 挑图」，
+ * 横向铺开操作板后一屏能看完全部选项，不必在窄栏里上下滚。
+ */
+.ig-shell {
+  display: flex; flex-direction: column; gap: 16px;
+}
+@media (min-width: 1360px) {
+  .ig-shell { gap: 20px; }
+}
+@media (max-width: 1360px) {
+  .ig-shell { gap: 14px; }
+}
+
+.ig-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  /* 深色底上大范围阴影几乎不可见，却要参与每次合成 —— 靠 1px 边框区分层次就够 */
+}
+
+/* ── 操作板：横向三栏（模型 / 提示词 / 参数）───────────────────── */
+.ig-form { padding: 16px 18px; }
+.ig-form-row {
+  display: grid;
+  /*
+   * 模型栏**拉宽到 ~420px 排两列**：单列时十张卡要 640px 高，
+   * 右侧参数最少只需 400px，底下就空出一大片。两列后模型栏只需 ~390px，
+   * 三栏的自然高度终于对得上（这也是"把容器拉宽"的用意）。
+   */
+  grid-template-columns: minmax(360px, 420px) minmax(340px, 1.25fr) minmax(280px, 1fr);
+  gap: 0; align-items: stretch;
+  /*
+   * ★ 操作板**显式固定高度**。
+   * 三栏内容各自会变（换模型参数 2~7 项、比例选项 4~6 个可能换行），
+   * 让谁当基准都会被别人带着跳。给一个明确值、三栏内层一律绝对定位填满，
+   * 才能真正做到"切换模型窗口一动不动"。
+   * ⚠ 这个值与「模型数量」耦合：两列 5 行 = 394px 才不滚动；
+   *   模型加到 12 个（6 行 ≈ 472px）仍放得下，再多就要调高这里 ——
+   *   烟测的「模型栏不滚动」会先报警。
+   */
+  height: var(--ig-form-h, 545px);
+}
+.ig-form-col {
+  display: flex; flex-direction: column; gap: 14px; min-width: 0;
+  /* 竖分隔线：三栏各管一件事，有线在视觉上就不会读成"一堆散控件" */
+  padding: 0 18px;
+}
+.ig-form-col:first-child { padding-left: 0; }
+.ig-form-col:last-child { padding-right: 0; }
+.ig-form-col + .ig-form-col { border-left: 1px solid var(--line); }
+
+/*
+ * ★★ 三栏内容一律**绝对定位填满**固定高度的行。
+ *
+ * 绝对定位元素不参与父级尺寸计算，于是「换模型导致参数从 2 项变 7 项」
+ * 再也顶不开／缩不起整块窗口，超出的部分在该栏内部滚。
+ *
+ * ⚠ 这招依赖父级有确定高度（`.ig-form-row` 的 height + grid stretch）。
+ *   窄屏折行后行高改成 auto、每栏独占一行，绝对定位会塌成 0 高，
+ *   所以下面的媒体查询里**必须**把 `.ig-col-inner` 还原成 static。
+ */
+.ig-form-col { position: relative; padding: 0; }
+.ig-form-col > .ig-col-inner {
+  position: absolute; inset: 0; padding: 0 18px;
+  display: flex; flex-direction: column; gap: 14px;
+  overflow-y: auto; overflow-x: hidden;
+}
+/*
+ * ★ 内容超高时要**滚动**，不能被 flex 压扁。
+ * flex 子项默认 `shrink: 1`，超高时会挨个压缩 —— 表现为「创作风格第一行 chip
+ * 凭空少了一排」而不是出现滚动条，看起来像渲染 bug。
+ * 显式弹性的两块（提示词 / 官方参数）除外，它们本就该伸缩。
+ */
+.ig-col-inner > .ig-field { flex-shrink: 0; }
+/*
+ * ★ 弹性的两块用 `flex: 1 0 auto`（grow 1 / **shrink 0** / basis auto）：
+ *   有余量时拉伸填满，不足时**不压缩**、直接触发本栏滚动。
+ *   写成 `flex: 1`（= shrink 1）会先压缩它 —— 而 textarea 有 `min-height`
+ *   缩不下去，于是**溢出到下方元素上**：实测图生图模式下（第二栏多了参考图约 130px）
+ *   输入框盖住「创作风格」的 chips，看着像 chips 跑进了输入框里。
+ */
+.ig-col-inner > .ig-field-prompt, .ig-col-inner > .ig-field-params { flex: 1 0 auto; }
+.ig-col-model > .ig-col-inner { padding-left: 0; }
+.ig-col-params > .ig-col-inner { padding-right: 0; }
+/* 细滚动条：内部滚动是常态（参数多的模型），默认那条太抢视线 */
+.ig-controls::-webkit-scrollbar { width: 6px; }
+.ig-controls::-webkit-scrollbar-thumb { background: #2c2f3d; border-radius: 3px; }
+.ig-controls::-webkit-scrollbar-track { background: transparent; }
+.ig-col-inner::-webkit-scrollbar { width: 6px; }
+.ig-col-inner::-webkit-scrollbar-thumb { background: #2c2f3d; border-radius: 3px; }
+.ig-col-inner::-webkit-scrollbar-track { background: transparent; }
+
+/*
+ * 模型栏：**两列、不滚动**，十个模型全排出来（用户明确要求）。
+ * 两列 5 行 ≈ 390px，正好落在 `--ig-form-h` 之内。
+ */
+.ig-col-model .ig-models {
+  /*
+   * ⚠ 必须 `minmax(0, 1fr)` 不能写 `1fr`：`1fr` 等价于 `minmax(auto, 1fr)`，
+   *   而卡片里的 `nowrap` 文本会把 auto（=min-content）撑成整行文字的宽度，
+   *   于是两列总宽超过容器、右列被裁掉一截（实测右列卡片被切在分隔线上）。
+   */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: none; overflow: visible;
+  /* 适度拉伸吃掉栏底余量；上限 76px 免得卡片变成"内容浮在中间的空盒子" */
+  align-content: stretch; grid-auto-rows: minmax(56px, 76px);
+}
+/* 两列后单卡只有 ~195px 宽：名字行必须限一行，换行会让卡高参差、撑破"不滚动" */
+.ig-col-model .ig-model-name {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* 中窄屏先把参数栏折到第二行，提示词仍与模型并排 */
+@media (max-width: 1180px) {
+  /* ★ 折行后必须放开固定高度，否则第二行整个被裁在容器外面 */
+  .ig-form-row {
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    row-gap: 16px; height: auto;
+  }
+  /*
+   * 窄屏栏更窄，模型卡回到单列（两列会把名字挤成省略号）。
+   * ⚠ 同时要撤掉 stretch 与行高上限：折行后没有固定高度可填，
+   *   `grid-auto-rows` 的 76px 上限反而把每张卡都顶到 76px、
+   *   十张卡叠出 900+px 的操作板（宽屏 480px，只在窄屏发作）。
+   */
+  .ig-col-model .ig-models {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto; align-content: start;
+  }
+  /* 折行后第三栏独占一行：此时它上方要横线、左侧不要竖线 */
+  .ig-col-params {
+    grid-column: 1 / -1; border-left: none;
+    border-top: 1px solid var(--line); padding: 14px 0 0;
+  }
+  /*
+   * ★ 必须还原成 static：折行后该栏自己独占一行，没有"高个子"给它高度，
+   *   绝对定位会塌成 0 高 ⇒ 整栏内容凭空消失（页面看着正常，控制台也不报错）。
+   */
+  .ig-form-col > .ig-col-inner {
+    position: static; inset: auto; overflow: visible; padding: 0;
+  }
+  .ig-col-prompt { padding: 0 0 0 18px; }
+  /* static 之后弹性填充没有参照了，输入框回到固定高度免得塌成一条 */
+  .ig-col-prompt .ig-textarea { height: auto; min-height: 150px; max-height: none; }
+}
+@media (max-width: 760px) {
+  .ig-form-row { grid-template-columns: 1fr; }
+  .ig-col-params { grid-column: auto; }
+  .ig-form-col, .ig-col-prompt { padding: 0; }
+  .ig-form-col + .ig-form-col {
+    border-left: none; border-top: 1px solid var(--line); padding-top: 14px;
+  }
+}
+
+/* 模式切换 Tabs */
+.ig-modes {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+  padding: 3px; background: #1c1e28; border-radius: 10px;
+}
+.ig-mode {
+  height: 32px; border: none; border-radius: 8px;
+  background: transparent; color: #7f8294; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.ig-mode.is-active {
+  background: #2b2e3e; color: #fff;
+}
+.ig-mode:disabled { cursor: not-allowed; opacity: .45; }
+
+/* 提示词 */
+.ig-field { display: flex; flex-direction: column; gap: 6px; }
+/*
+ * ★ 作者样式的 `display: flex` 会**盖掉** `[hidden]` 属性自带的 `display: none`
+ *   （UA 样式优先级最低）。少了这一条，JS 的 `field.hidden = true` 形同虚设 ——
+ *   实测「参考图」在文生图模式下照样显示（同 `.ig-case-img` 那个老坑，见 PITFALLS）。
+ */
+.ig-field[hidden] { display: none; }
+.ig-field-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+}
+.ig-label { font-size: 12.5px; font-weight: 600; color: var(--text-sub); }
+.ig-hint { font-size: 11px; color: var(--dim); }
+
+.ig-textarea-wrap { position: relative; width: 100%; }
+.ig-textarea {
+  /*
+   * 高度收小：第二栏现在还要放 创作风格 + 画面比例 + 参考图，
+   * 输入框不能再吃掉整栏（用户反馈"输入框上下高度收小点"）。
+   * 仍保留 resize: vertical，要写长文的人可以自己拉。
+   */
+  width: 100%; min-height: 120px; box-sizing: border-box; resize: vertical;
+  padding: 10px 12px 22px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--card2); color: #fff; font-size: 13px; line-height: 1.55;
+  font-family: inherit; transition: border-color .15s;
+}
+.ig-textarea::placeholder { color: #525464; font-size: 12.5px; }
+.ig-textarea:focus { outline: none; border-color: var(--purple); }
+.ig-count {
+  position: absolute; right: 10px; bottom: 6px;
+  color: var(--dim-dark); font-size: 11px; pointer-events: none;
+}
+
+/* 图片上传（首尾帧） */
+.ig-frames { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* 槽位是定位上下文：缩略图与「上传中」都绝对定位盖在按钮上 */
+.ig-frame-slot { position: relative; }
+.ig-frame {
+  width: 100%;
+  height: 104px; border: 1px dashed #454859; border-radius: 10px;
+  background: var(--card2); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  color: var(--dim); cursor: pointer; transition: all .15s;
+}
+.ig-frame:hover { border-color: var(--purple); background: rgba(139, 92, 246, .06); }
+.ig-frame:hover .ig-frame-ico { stroke: #a78bfa; }
+.ig-frame:hover .ig-frame-t { color: #fff; }
+.ig-frame:active { transform: scale(.985); }
+.ig-frame:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.ig-frame-ico { width: 17px; height: 17px; stroke: #6b6e82; transition: stroke .15s; }
+.ig-frame-t { font-size: 12px; font-weight: 600; color: var(--text-sub); transition: color .15s; }
+.ig-frame-d { font-size: 10px; color: var(--dim-dark); }
+
+/* 已上传：缩略图铺满槽位，右上角删除、左下角角标 */
+.ig-frame-preview {
+  position: absolute; inset: 0; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--purple); background: #000;
+}
+.ig-frame-preview[hidden] { display: none !important; }
+.ig-frame-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ig-frame-del {
+  position: absolute; top: 5px; right: 5px;
+  width: 22px; height: 22px; border-radius: 50%;
+  border: none; background: rgba(0, 0, 0, .62); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .15s;
+}
+.ig-frame-del:hover { background: #e04b5e; }
+.ig-frame-del:active { transform: scale(.9); }
+.ig-frame-del:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.ig-frame-badge {
+  position: absolute; left: 5px; bottom: 5px;
+  padding: 1px 7px; border-radius: 5px;
+  background: rgba(0, 0, 0, .62); color: #fff;
+  font-size: 10px; font-weight: 700;
+}
+
+.ig-frame-busy {
+  position: absolute; inset: 0; border-radius: 10px;
+  background: rgba(13, 14, 18, .82);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  color: var(--text-sub); font-size: 11.5px; font-weight: 600;
+}
+.ig-frame-busy[hidden] { display: none !important; }
+.ig-frame-spin {
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid rgba(139, 92, 246, .3); border-top-color: var(--purple);
+  animation: vg-opt-spin .8s linear infinite;
+}
+
+.ig-frame-tip {
+  margin-top: 6px; padding: 5px 9px; border-radius: 7px;
+  border: 1px solid rgba(240, 120, 138, .32);
+  background: rgba(240, 120, 138, .08);
+  color: #f0a5af; font-size: 11.5px; line-height: 1.5;
+}
+.ig-frame-tip[hidden] { display: none !important; }
+
+/*
+ * 分辨率 与 时长（同一行紧凑布局）。
+ * 列宽从「110px 固定」改成两列按比例分（2026-08-22）：分辨率加了 standard 档后是三档，
+ * 110px 会把三个胶囊挤到看不清；时长四档、字更短，故给它略宽一点点。
+ */
+.ig-row-res-sec {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  gap: 10px; align-items: start;
+}
+.ig-sub-field { display: flex; flex-direction: column; gap: 6px; }
+
+/*
+ * 分段胶囊容器（分辨率 / 时长共用）。
+ * ⚠ 注意 CSS 里没有 `.ig-seg` 基类，样式全挂在 `-res` / `-sec` 这些具体类上；
+ * 新增分段控件时必须把容器样式一起加，否则子按钮的 flex:1 无处生效、
+ * 整排会塌成 inline 文本（2026-08-22 加时长档位时踩过）。
+ */
+.ig-seg-res,
+.ig-seg-sec {
+  display: flex; gap: 3px; background: var(--card2);
+  border: 1px solid var(--line); border-radius: 9px; padding: 2px;
+}
+.ig-seg-btn {
+  flex: 1; height: 28px; border: none; border-radius: 7px;
+  font-size: 11.5px; font-weight: 700; color: #7f8294; background: transparent;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.ig-seg-btn.is-active {
+  background: var(--purple); color: #fff;
+  box-shadow: 0 0 10px rgba(139, 92, 246, .45);
+}
+.ig-seg-btn.is-disabled { opacity: .4; cursor: not-allowed; }
+
+/*
+ * 时长档位（离散，不是滑块）。
+ * H3 只接受「帧数 % 17 == 5」的长度，可选时长天然是几个点，
+ * 原来的连续滑块给的是假自由度（拖到 6 秒后端会吸附成 6.58 秒），2026-08-22 改成分段按钮。
+ */
+.ig-sub-field-sec { flex: 1; }
+.ig-sec-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;
+}
+.ig-sec-badge {
+  padding: 2px 9px; border-radius: 6px;
+  background: var(--purple); color: #fff; font-size: 10.5px; font-weight: 800;
+  box-shadow: 0 0 8px rgba(139, 92, 246, .4);
+}
+/* 时长每档只有 2~3 个字符，字号与分辨率一致即可，靠 flex:1 均分宽度 */
+.ig-seg-sec .ig-seg-btn { letter-spacing: .2px; }
+/* 分辨率三档里「标准」是中文，比 480P/768P 窄，给中文档一点内边距避免视觉过挤 */
+.ig-seg-res .ig-seg-btn { padding: 0 2px; }
+
+/* 画面比例 */
+.ig-chips { display: flex; gap: 4px; flex-wrap: nowrap; }
+.ig-chip {
+  flex: 1 1 0; min-width: 0; padding: 6px 0; text-align: center;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--card2);
+  color: var(--dim); font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.ig-chip:hover { color: #fff; }
+.ig-chip.is-active {
+  background: var(--purple); color: #fff;
+  box-shadow: 0 0 10px rgba(139, 92, 246, .4);
+}
+
+/* 生成数量 */
+.ig-seg-count {
+  display: flex; gap: 6px;
+}
+.ig-seg-count .ig-seg-btn {
+  flex: 1; height: 32px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--card2); color: var(--dim); font-size: 11.5px; font-weight: 700;
+}
+.ig-seg-count .ig-seg-btn:hover { color: #fff; }
+.ig-seg-count .ig-seg-btn.is-active {
+  background: var(--purple); border-color: var(--purple); color: #fff;
+  box-shadow: 0 0 10px rgba(139, 92, 246, .4);
+}
+
+.ig-err {
+  padding: 8px 10px; border-radius: 8px; font-size: 12px;
+  background: rgba(248, 113, 113, .12); border: 1px solid rgba(248, 113, 113, .3);
+  color: #fca5a5;
+}
+
+/* 创建按钮（对标秘塔） */
+.ig-action-wrap { width: 100%; margin-top: 2px; }
+.ig-btn-create {
+  width: 100%; height: 42px; border: none; border-radius: 10px;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #fff; font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 2px 10px rgba(124, 58, 237, .4);
+  cursor: pointer; transition: filter .15s, transform .15s;
+}
+.ig-btn-create:hover:not(:disabled) {
+  filter: brightness(1.12); transform: translateY(-1px);
+}
+.ig-btn-create:disabled {
+  opacity: .35; cursor: not-allowed; transform: none; filter: none; box-shadow: none;
+}
+.ig-btn-icon { width: 15px; height: 15px; }
+.ig-submit-cost { font-size: 13.5px; opacity: .9; font-weight: 700; }
+.ig-btn-create-login { text-decoration: none; }
+
+/* ── 右侧大预览区与作品栏 ───────────────────────────────────
+ * ⚠ 右栏**不套卡片**：秘塔那边视频直接就是圆角块、下面跟缩略图，
+ *   外面再包一层带边框的 .ig-card 会平白多出一圈框，观感立刻就不一样了。 */
+.ig-stage {
+  padding: 0; background: transparent; border: none; box-shadow: none;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+/* 主播放器容器：**不限高**，就按 16:9 撑满右栏（限高会把画面压扁） */
+.ig-player {
+  position: relative; width: 100%; aspect-ratio: 16 / 9;
+  border-radius: 12px; border: 1px solid var(--line);
+  background: #000; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.ig-player-canvas { width: 100%; height: 100%; display: flex; }
+.ig-video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+
+.ig-player-badge {
+  position: absolute; top: 12px; left: 12px;
+  padding: 2px 8px; border-radius: 6px;
+  background: rgba(0, 0, 0, .6); border: 1px solid rgba(255, 255, 255, .15);
+  color: #fff; font-size: 11px; font-weight: 800; pointer-events: none;
+}
+
+/* 播放器底栏控制条（对标秘塔） */
+.ig-player-controls {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 40px; padding: 0 14px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .85));
+  display: flex; align-items: center; gap: 12px;
+}
+.ig-play-btn, .ig-mute-btn, .ig-fs-btn {
+  background: transparent; border: none; color: #fff;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  padding: 4px; opacity: .88; transition: opacity .15s;
+}
+.ig-play-btn:hover, .ig-mute-btn:hover, .ig-fs-btn:hover { opacity: 1; }
+.ig-ctrl-icon { width: 16px; height: 16px; }
+.ig-time { font-size: 11.5px; color: #ccc; font-variant-numeric: tabular-nums; }
+.ig-player-seekbar {
+  flex: 1; height: 3px; background: rgba(255, 255, 255, .25);
+  border-radius: 999px; overflow: hidden; cursor: pointer;
+ position: relative; transition: box-shadow .12s, background .12s;}
+/* 初始 0%：真实进度由 JS 的 syncPlayProgress 按 currentTime/duration 设置。
+   ⚠ 别在这里写死百分比 —— 早先写的 25% 让进度条永远停在四分之一处。 */
+.ig-player-seekfill {
+  position: absolute; left: 0; top: 0; height: 100%; width: 0;
+  background: var(--purple); transition: width .15s linear;
+}
+/* 缓冲条压在播放进度之下：半透明白，弱网时能看出已经下到哪儿了 */
+.ig-player-seekbuf {
+  position: absolute; left: 0; top: 0; height: 100%; width: 0;
+  background: rgba(255, 255, 255, .28); transition: width .25s linear;
+}
+/*
+ * 拖动中的视觉反馈：**只改颜色，不改尺寸**。
+ *
+ * ⚠ 起初是把 height 从 3px 撑到 7px（带 transition），结果每次 mousemove 都触发
+ *   布局变化 + 过渡动画，等待元素稳定的自动化操作会一直等下去（实测把拖拽卡死 2 分钟）。
+ *   真人操作虽不至于卡死，但同样是每帧强制 layout 的浪费。
+ *   改成 box-shadow + 提亮，视觉上一样明确，零布局开销。
+ */
+.ig-player-seekbar.is-dragging {
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, .25);
+  background: rgba(255, 255, 255, .35);
+}
+.ig-player-seekbar.is-dragging .ig-player-seekfill {
+  transition: none;   /* 跟手，不要慢半拍 */
+  filter: brightness(1.25);
+}
+
+/* 任务生成中遮罩 */
+@keyframes vg-spin { to { transform: rotate(360deg); } }
+/* 下方 4 联缩略图栏（对标秘塔） */
+.ig-gallery-strip { display: flex; flex-direction: column; gap: 10px; }
+.ig-strip-header {
+  display: flex; align-items: center; justify-content: flex-end;
+}
+.ig-strip-queue { color: var(--dim); font-size: 11.5px; }
+
+.ig-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+}
+.ig-thumb {
+  position: relative; aspect-ratio: 16 / 9; border-radius: 8px;
+  border: 1px solid var(--line); overflow: hidden; background: #000;
+  cursor: pointer; transition: all .18s;
+}
+.ig-thumb:hover { border-color: rgba(139, 92, 246, .6); }
+.ig-thumb.is-active {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, .55);
+}
+.ig-thumb-box {
+  width: 100%; height: 100%; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  background: #0f1015; overflow: hidden;
+}
+/* 同案例卡片：竖屏素材会撑破容器，绝对定位锁死 */
+.ig-thumb-img, .ig-thumb-video {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+}
+.ig-thumb-play {
+  position: absolute; width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 11px; box-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+}
+/* 三角视觉居中 */
+.ig-thumb-play svg { margin-left: 1.5px; }
+.ig-thumb-duration {
+  position: absolute; right: 6px; bottom: 4px;
+  padding: 1px 4px; border-radius: 4px; background: rgba(0, 0, 0, .6);
+  color: #fff; font-size: 10px; font-weight: 700;
+}
+.ig-thumb-cancel {
+  position: absolute; top: 4px; right: 4px; padding: 2px 6px;
+  border-radius: 4px; background: rgba(0, 0, 0, .7);
+  color: #f87171; font-size: 10px; font-weight: 700; border: none; cursor: pointer;
+}
+.ig-thumb-cancel:hover { background: #dc2626; color: #fff; }
+
+.ig-strip-footer { text-align: center; margin-top: 2px; }
+.ig-more-link {
+  color: #8b5cf6; font-size: 12px; font-weight: 600; transition: color .2s;
+}
+.ig-more-link:hover { color: #a78bfa; }
+
+/* ── 视频定价表（对标秘塔）─────────────────────────────────── */
+.ig-pricing { padding: 24px; margin-top: 10px; }
+.ig-sec-title-wrap { margin-bottom: 16px; }
+.ig-sec-title { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.ig-sec-sub { color: var(--dim); font-size: 12.5px; line-height: 1.6; }
+
+.ig-table-title {
+  font-size: 13.5px; font-weight: 700; color: #dedee6; margin: 18px 0 10px;
+}
+.ig-price-table { width: 100%; border-collapse: collapse; }
+.ig-price-table th {
+  background: var(--card2); color: var(--dim); font-size: 12px;
+  font-weight: 600; text-align: left; padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.ig-price-table td {
+  padding: 12px 14px; font-size: 13px; color: var(--dim);
+  border-bottom: 1px solid var(--line);
+}
+.ig-price-table td b { color: #fff; }
+.ig-price-dim { color: var(--dim-dark); font-size: 11px; margin-left: 6px; }
+.ig-text-highlight { color: #a78bfa !important; }
+.ig-soon-pill {
+  display: inline-block; padding: 1px 6px; border-radius: 999px;
+  background: rgba(255, 255, 255, .08); color: var(--dim); font-size: 10px; margin-left: 6px;
+}
+.is-soon-row td { opacity: .55; }
+
+.ig-pricing-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; margin-top: 16px; flex-wrap: wrap;
+}
+.ig-price-note { color: var(--dim-dark); font-size: 12px; line-height: 1.6; max-width: 800px; }
+.ig-btn-recharge {
+  padding: 8px 20px; border-radius: 8px;
+  background: var(--purple); color: #fff !important; font-size: 13px; font-weight: 700;
+  box-shadow: 0 0 14px rgba(139, 92, 246, .4);
+}
+.ig-btn-recharge:hover { filter: brightness(1.1); }
+
+/* ── 案例画廊区 ───────────────────────────────────────────── */
+.ig-gallery { text-align: center; padding: 36px 24px 44px; margin-top: 10px; }
+.ig-gallery-kicker {
+  color: var(--purple); font-size: 11px; font-weight: 800; letter-spacing: .2em;
+}
+.ig-gallery-title { font-size: 24px; font-weight: 800; margin: 10px 0 8px; color: #fff; }
+.ig-gallery-sub { color: var(--dim); font-size: 13px; }
+
+/* 不规则瀑布流（同秘塔）：横屏/竖屏/方形混排，高度由素材原始比例决定。
+   用 CSS multi-column 而不是 grid —— grid 要预先知道每格跨几行，
+   而这里的比例来自视频元数据，加载完才知道。 */
+.ig-cases {
+  columns: 3; column-gap: 14px; margin-top: 24px; text-align: left;
+}
+@media (max-width: 1100px) { .ig-cases { columns: 2; } }
+@media (max-width: 700px) { .ig-cases { columns: 1; } }
+
+.ig-case-card {
+  break-inside: avoid; margin-bottom: 14px;
+  background: var(--card2); border: 1px solid var(--line); border-radius: 12px;
+  overflow: hidden; display: flex; flex-direction: column;
+  transition: transform .2s, border-color .2s;
+}
+.ig-case-card:hover { transform: translateY(-2px); border-color: rgba(139, 92, 246, .55); }
+/* 瀑布流里**不锁比例**：让视频按自身宽高比撑开，才有不规则效果 */
+.ig-case-img-box { position: relative; width: 100%; background: #000; line-height: 0; }
+/* 封面图撑开容器高度（瀑布流靠它定位，不能让它消失导致跳动） */
+img.ig-case-img { width: 100%; height: auto; display: block; }
+/*
+ * 悬停时插入的 video **绝对定位盖在封面图上**，不进文档流。
+ * ⚠ 之前用 `img.hidden = true` + video 追加到后面，结果 `.ig-case-img` 的
+ *   `display:block` 把 hidden 属性覆盖了（同 .ig-player-mask 踩过的坑），
+ *   封面图没隐藏、video 排在它下方 —— 卡片高度翻倍、画面上下重叠。
+ *   改成叠加后：容器高度始终由封面图决定，切换零抖动，也不再依赖 hidden 生效。
+ */
+video.ig-case-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.ig-case-tag {
+  position: absolute; top: 8px; left: 8px;
+  padding: 2px 7px; border-radius: 4px; background: rgba(0, 0, 0, .7);
+  color: #fff; font-size: 10.5px; font-weight: 700;
+}
+/* 悬停才播放：未悬停时显示一个播放提示，避免整页十几条视频同时解码 */
+.ig-case-hint {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, .28); opacity: 1; transition: opacity .2s; pointer-events: none;
+}
+.ig-case-card:hover .ig-case-hint { opacity: 0; }
+.ig-case-hint span {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(0, 0, 0, .55); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .45);
+}
+/* 三角视觉居中：几何居中会显得偏左 */
+.ig-case-hint span svg { margin-left: 2px; }
+.ig-case-info { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.ig-case-prompt {
+  color: var(--text-sub); font-size: 12px; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ig-case-use {
+  align-self: flex-start; padding: 4px 10px; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--card); color: var(--purple);
+  font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.ig-case-use:hover { border-color: var(--purple); background: rgba(139, 92, 246, .1); }
+
+/* ── 页脚 ─────────────────────────────────────────────────── */
+.ig-footer {
+  padding: 24px; text-align: center; color: var(--dim-dark); font-size: 12px;
+  border-top: 1px solid var(--line); margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  .ig-ribbon { display: none; }
+}
+@media (max-width: 720px) {
+  .ig-topbar { height: auto; padding: 10px 14px; flex-wrap: wrap; }
+  .ig-topnav { gap: 12px; flex-wrap: wrap; }
+  .ig-main { padding: 12px 0 36px; }
+  .ig-row-res-sec { grid-template-columns: 1fr; }
+  .ig-strip { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* 静音状态的音量键：淡一点并给个提示色，让用户看出「可以点开声音」 */
+.ig-mute-btn.is-muted { opacity: .62; }
+.ig-mute-btn.is-muted:hover { opacity: 1; color: var(--primary2); }
+
+/* 首次播放的大按钮（默认不自动播 ⇒ 需要一个明确的启动入口） */
+.ig-player-start {
+  position: absolute; inset: 0; z-index: 3;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: transparent;
+  border: none; cursor: pointer; color: #fff;
+  transition: background .2s;
+}
+.ig-player-start[hidden] { display: none; }
+/* 悬停才压一层极淡的暗色，平时不遮画面 —— poster 本身就是卖点 */
+.ig-player-start:hover { background: rgba(0, 0, 0, .16); }
+/*
+ * 简约黑圆 + 白三角（同主流播放器的观感）。
+ * 三角用 border 拼而不是 SVG：更锐利，且天然带「视觉居中」偏移
+ * （几何居中的三角看起来会偏左，所以左内边距比右侧多 4px）。
+ */
+.ig-start-ico {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, .55); color: #fff;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, .45);
+  transition: transform .18s, background .18s;
+}
+.ig-player-start:hover .ig-start-ico {
+  transform: scale(1.06); background: rgba(0, 0, 0, .72);
+}
+.ig-start-ico svg { width: 22px; height: 22px; margin-left: 3px; }
+/* 文案默认不显示（用户要「简约」），悬停时才淡入说明有声音 */
+.ig-start-text {
+  font-size: 12px; font-weight: 600; letter-spacing: .02em;
+  padding: 3px 12px; border-radius: 999px; background: rgba(0, 0, 0, .55);
+  opacity: 0; transform: translateY(4px); transition: opacity .2s, transform .2s;
+}
+.ig-player-start:hover .ig-start-text { opacity: 1; transform: translateY(0); }
+
+/* 未开始播放时隐藏底部控制条：此时它没有意义，还会挡住 poster 画面 */
+.ig-player:not(.is-started) .ig-player-controls { display: none; }
+
+/* 案例卡片上的播放键（移动端无 hover，改成点按播放，需要一个可见入口） */
+.ig-case-hint { cursor: pointer; }
+body.ig-no-hover .ig-case-card:hover .ig-case-hint { opacity: 1; }
+body.ig-no-hover .ig-case-card.is-playing .ig-case-hint { opacity: 0; }
+
+/* ── 「使用提示词」按钮（白色胶囊 + 星光图标 + 右上箭头）──────
+ * 只在有真实提示词的素材上出现。缩略图里放左下角，案例卡片里浮在封面左下。 */
+.ig-use-prompt {
+  position: absolute; left: 7px; bottom: 7px; z-index: 4;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px; border: none; border-radius: 999px;
+  background: rgba(255, 255, 255, .95); color: #14151c;
+  font-size: 10.5px; font-weight: 700; line-height: 1; white-space: nowrap;
+  cursor: pointer; box-shadow: 0 2px 10px rgba(0, 0, 0, .45);
+  /* 默认隐藏、悬停才浮现：小窗本身就小，常驻会挡住画面 */
+  opacity: 0; pointer-events: none; transform: translateY(3px);
+  transition: opacity .18s, transform .18s, background .15s;
+}
+.ig-thumb:hover .ig-use-prompt,
+.ig-case-card:hover .ig-use-prompt {
+  opacity: 1; pointer-events: auto; transform: translateY(0);
+}
+.ig-use-prompt:hover { background: #fff; transform: translateY(-1px); }
+/* 触摸设备没有 hover，必须常驻否则永远点不到 */
+body.ig-no-hover .ig-use-prompt { opacity: 1; pointer-events: auto; transform: none; }
+/* 键盘可达性：Tab 聚焦到它时也要显示 */
+.ig-use-prompt:focus-visible { opacity: 1; pointer-events: auto; transform: none; outline: 2px solid var(--purple); }
+.ig-use-ico { width: 12px; height: 12px; flex: none; color: #7c3aed; }
+.ig-use-arrow { width: 10px; height: 10px; flex: none; opacity: .55; }
+
+/* 案例卡片上的那颗稍大一些（卡片本身更大，太小会显得局促） */
+.ig-use-prompt-case {
+  left: 10px; bottom: 10px; padding: 6px 12px; font-size: 11.5px; gap: 5px;
+}
+.ig-use-prompt-case .ig-use-ico { width: 14px; height: 14px; }
+.ig-use-prompt-case .ig-use-arrow { width: 11px; height: 11px; }
+
+/* 案例卡片的封面区需要能容纳绝对定位的按钮（原本 line-height:0 会压掉） */
+.ig-case-card { position: relative; }
+
+/* ── 我的作品（定价表上方，2026-08-22 从右侧演示缩略图条里拆出来）──
+ *
+ * 拆分原因见 user.js 的 render()：作品原先直接 innerHTML 覆盖 #ig-strip，
+ * 既让用户分不清哪条是自己的，又把演示轮播依赖的 DOM 节点冲掉了。
+ */
+/*
+ * 我的作品：首页只显示最新一排，点缩略图放大到下方预览区。
+ *
+ * ⚠ 这块原先整段抄自 video.css，留下三个错位：
+ *   ① 容器少了 grid 类 ⇒ 每张作品块级铺满整宽，一屏只看得到一张；
+ *   ② `.ig-work-bar` 沿用视频的**进度条**样式（4px 高 + overflow:hidden），
+ *      把模型名/积分/下载按钮压成一条线；
+ *   ③ 16:9 的占位比例是给视频的，方图塞进去会被裁掉上下。
+ * 图片没有播放概念，`.ig-work-video` / `.ig-work-spin` 这类也一并不再使用。
+ */
+.ig-works-card {
+  padding: 16px 18px 18px;
+  /* 点缩略图后让作品板块停在 sticky 顶栏（52px）下方，作品与预览可同时看见 */
+  scroll-margin-top: 64px;
+}
+/*
+ * 标题栏：必须是 flex —— 分页器靠 `margin-left:auto` 贴右侧，
+ * 这个 class 之前只写在 HTML 里、样式表压根没有定义，靠右会静默失效。
+ */
+.ig-works-head {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14.5px; font-weight: 700; color: var(--text);
+}
+.ig-works-head .ig-hint { font-weight: 400; }
+.ig-works { padding: 0; margin-top: 12px; }
+/*
+ * 首页作品区只渲染与列数相同的 N 张，因此永远恰好一排。
+ * JS 从 --ig-work-cols 读取当前断点列数，避免 5 列断点仍渲染 7 张而换成第二排。
+ */
+.ig-works-grid {
+  --ig-work-cols: 7;
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(var(--ig-work-cols), minmax(0, 1fr));
+}
+@media (max-width: 1400px) { .ig-works-grid { --ig-work-cols: 5; } }
+@media (max-width: 1100px) { .ig-works-grid { --ig-work-cols: 4; } }
+@media (max-width: 760px) { .ig-works-grid { --ig-work-cols: 3; } }
+@media (max-width: 520px) { .ig-works-grid { --ig-work-cols: 2; } }
+
+.ig-more-works {
+  margin-left: auto; padding: 5px 11px;
+  border: 1px solid rgba(139, 92, 246, .45); border-radius: 8px;
+  background: rgba(139, 92, 246, .1); color: #c4b5fd;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.ig-more-works:hover { border-color: var(--purple); background: rgba(139, 92, 246, .2); color: #fff; }
+
+/* 分页器：仅用于“全部作品”弹窗 */
+.ig-pager { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.ig-pager-btn {
+  min-width: 26px; height: 26px; padding: 0 7px;
+  border: 1px solid var(--line); border-radius: 7px;
+  background: var(--card2); color: var(--text);
+  font-size: 14px; line-height: 1; cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.ig-pager-btn:hover:not(:disabled) { border-color: var(--purple); color: #fff; }
+.ig-pager-btn:disabled { opacity: .38; cursor: default; }
+.ig-pager-info { color: var(--dim); font-size: 12.5px; min-width: 52px; text-align: center; }
+
+.ig-works-dialog[open] {
+  width: min(96vw, 1240px); height: min(92vh, 900px); max-width: none; max-height: none;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.ig-dialog-count { margin-left: 6px; color: var(--dim); font-size: 12px; font-weight: 500; }
+.ig-works-dialog-body {
+  flex: 1; min-height: 0; padding: 14px 18px 16px;
+  display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 14px;
+}
+.ig-library-groups {
+  min-width: 0; padding-right: 12px; border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.ig-library-side-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-bottom: 9px; color: var(--text-sub); font-size: 12.5px; font-weight: 700;
+}
+.ig-library-side-head button,
+.ig-library-filter button,
+.ig-library-toolbar button {
+  padding: 5px 9px; border: 1px solid var(--line); border-radius: 7px;
+  background: var(--card2); color: var(--text-sub); font-size: 11px; font-weight: 650;
+  cursor: pointer; white-space: nowrap;
+}
+.ig-library-side-head button:hover,
+.ig-library-filter button:hover,
+.ig-library-toolbar button:hover:not(:disabled) {
+  border-color: var(--purple); color: #fff;
+}
+.ig-library-toolbar button:disabled { opacity: .4; cursor: default; }
+.ig-group-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+.ig-group-row { display: flex; align-items: center; gap: 3px; min-width: 0; }
+.ig-group-item {
+  flex: 1; min-width: 0; padding: 7px 8px; border: 1px solid transparent; border-radius: 7px;
+  display: flex; align-items: center; justify-content: space-between; gap: 7px;
+  background: transparent; color: var(--dim); font-size: 11.5px; cursor: pointer;
+}
+.ig-group-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ig-group-item b { color: var(--dim-dark); font-size: 10.5px; }
+.ig-group-item:hover { background: rgba(139, 92, 246, .08); color: #fff; }
+.ig-group-item.is-active {
+  border-color: rgba(139, 92, 246, .45); background: rgba(139, 92, 246, .16); color: #fff;
+}
+.ig-group-item.is-active b { color: #c4b5fd; }
+.ig-group-edit {
+  flex: none; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px;
+  background: transparent; color: var(--dim-dark); cursor: pointer;
+}
+.ig-group-edit:hover { color: #fff; background: var(--card2); }
+.ig-group-edit.is-danger:hover { color: var(--danger); }
+.ig-library-main {
+  min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 9px;
+}
+.ig-library-filter, .ig-library-toolbar {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+}
+.ig-library-filter label {
+  display: flex; align-items: center; gap: 5px; color: var(--dim); font-size: 11px;
+}
+.ig-library-filter input, .ig-library-toolbar select, .ig-viewer-meta input, .ig-viewer-meta select {
+  min-width: 0; box-sizing: border-box; padding: 5px 7px;
+  border: 1px solid var(--line); border-radius: 7px;
+  background: var(--card2); color: var(--text-sub); color-scheme: dark; font-size: 11.5px;
+}
+.ig-library-toolbar {
+  padding: 7px 9px; border: 1px solid var(--line); border-radius: 9px; background: #11131a;
+  color: var(--dim); font-size: 11.5px;
+}
+.ig-library-checkall { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.ig-library-checkall input, .ig-library-select input { accent-color: var(--purple); }
+.ig-library-toolbar select { margin-left: auto; max-width: 160px; }
+.ig-library-card {
+  position: relative; min-width: 0; border: 1px solid var(--line); border-radius: 9px;
+  overflow: hidden; background: var(--card2);
+}
+.ig-library-card.is-selected { border-color: var(--purple); box-shadow: inset 0 0 0 1px var(--purple); }
+.ig-library-thumb {
+  width: 100%; aspect-ratio: 1 / 1; padding: 0; border: 0; display: block;
+  overflow: hidden; background: #0a0b10; cursor: zoom-in;
+}
+.ig-library-thumb .ig-work-img { transition: transform .18s; }
+.ig-library-thumb:hover .ig-work-img { transform: scale(1.04); }
+.ig-library-select {
+  position: absolute; z-index: 3; top: 5px; left: 5px; padding: 3px 6px;
+  display: inline-flex; align-items: center; gap: 3px; border-radius: 6px;
+  background: rgba(6, 7, 12, .82); color: #fff; font-size: 9.5px; cursor: pointer;
+}
+.ig-library-card-info { padding: 6px 7px 7px; min-width: 0; }
+.ig-library-card-info strong, .ig-library-card-info span {
+  display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* 卡片底部信息压在深色卡上，原来的 --text-sub / --dim-dark 对比度不够，一律走白色 */
+.ig-library-card-info strong { color: #fff; font-size: 11.5px; font-weight: 650; }
+.ig-library-card-info span { margin-top: 2px; color: rgba(255, 255, 255, .78); font-size: 10.5px; }
+/* 备注行：文字占满剩余宽度，笔按钮固定贴右 */
+.ig-library-note-row { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.ig-library-note-row strong { flex: 1; min-width: 0; }
+.ig-note-edit {
+  flex: none; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 5px;
+  background: transparent; color: rgba(255, 255, 255, .6);
+  font-size: 11px; line-height: 1; cursor: pointer; transition: color .15s, background .15s;
+}
+.ig-note-edit:hover { color: #fff; background: rgba(139, 92, 246, .3); }
+.ig-note-edit:focus-visible { outline: 2px solid var(--purple); outline-offset: 1px; }
+/* 就地编辑：输入框替换掉整块信息区，宽度与卡片对齐 */
+.ig-note-input {
+  width: 100%; box-sizing: border-box; padding: 3px 6px;
+  border: 1px solid var(--purple); border-radius: 6px;
+  background: #0a0b10; color: #fff; font-size: 11.5px;
+}
+.ig-note-input:disabled { opacity: .6; }
+.ig-note-tip {
+  display: block; margin-top: 2px;
+  color: rgba(255, 255, 255, .5); font-size: 9.5px; white-space: nowrap;
+}
+.ig-library-card .ig-work-holder { aspect-ratio: 1 / 1; height: auto; font-size: 11px; }
+.ig-library-card .ig-work-img { width: 100%; height: 100%; object-fit: cover; }
+.ig-library-card button:focus-visible,
+.ig-library-side-head button:focus-visible,
+.ig-library-toolbar button:focus-visible {
+  outline: 2px solid var(--purple); outline-offset: 1px;
+}
+.ig-archive-grid {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 2px 5px 2px 2px;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px; align-content: start;
+}
+.ig-archive-grid .ig-work-box { aspect-ratio: 4 / 3; border-radius: 8px; }
+.ig-archive-grid .ig-work-bar { padding: 4px 5px; }
+.ig-archive-grid .ig-work-dl, .ig-archive-grid .ig-work-prompt { padding: 2px 7px; font-size: 10px; }
+.ig-archive-empty {
+  grid-column: 1 / -1; min-height: 180px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--dim); font-size: 13px;
+}
+.ig-archive-pager {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  flex-shrink: 0;
+}
+.ig-archive-pager[hidden] { display: none !important; }
+@media (max-width: 620px) {
+  .ig-works-dialog[open] { width: 96vw; height: 94vh; }
+  .ig-works-dialog-body {
+    padding: 9px; grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); gap: 8px;
+  }
+  .ig-library-groups {
+    padding: 0 0 7px; border-right: 0; border-bottom: 1px solid var(--line); overflow: visible;
+  }
+  .ig-group-list { flex-direction: row; overflow-x: auto; padding-bottom: 2px; }
+  .ig-group-row { flex: none; }
+  .ig-group-item { flex: none; min-width: 82px; }
+  .ig-group-edit { width: 22px; height: 22px; background: var(--card2); }
+  .ig-library-filter { gap: 5px; }
+  .ig-library-filter label { flex: 1 1 135px; }
+  .ig-library-filter input { width: 100%; }
+  .ig-library-toolbar select { margin-left: 0; max-width: 130px; }
+  .ig-archive-grid { gap: 5px; }
+  .ig-library-card-info { padding: 4px 5px; }
+  .ig-library-card-info span { display: none; }
+  .ig-library-select span { display: none; }
+}
+
+.ig-work {
+  border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+  background: var(--card2); transition: border-color .15s, transform .12s;
+}
+.ig-work:hover { border-color: var(--purple); }
+/* 正方形占位：生图以方图居多，比 16:9 更贴合，也不会把主体裁掉 */
+.ig-work-box {
+  position: relative; aspect-ratio: 1 / 1; background: #0a0b10;
+  cursor: pointer; overflow: hidden;
+}
+.ig-work-box:hover { border-color: var(--purple); }
+.ig-work-box:hover .ig-work-img { transform: scale(1.04); }
+/* 当前正显示在预览区的那张，给个明确的选中态 */
+.ig-work-box.is-active { outline: 2px solid var(--purple); outline-offset: -2px; }
+/* 刚完成的新作品：呼吸两次后自动移除，不能常驻抢掉当前选中态 */
+.ig-work-box.is-just-done { animation: ig-work-done-pulse 1.5s ease-in-out 2; }
+@keyframes ig-work-done-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+  50% { box-shadow: 0 0 0 3px rgba(52, 211, 153, .9), 0 0 22px rgba(52, 211, 153, .65); }
+}
+.ig-work-spec {
+  position: absolute; left: 6px; top: 6px; z-index: 2;
+  padding: 1px 6px; border-radius: 5px; font-size: 10px; font-weight: 700;
+  color: #fff; background: rgba(10, 11, 16, .72);
+}
+/* 生成中 / 失败 的占位块 */
+.ig-work-holder {
+  width: 100%; height: 100%;
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  font-size: 12px; font-weight: 600; color: var(--dim-dark); text-align: center; padding: 0 12px;
+  overflow: hidden;
+}
+.ig-work-holder.is-bad { color: #f0788a; }
+
+/*
+ * 生成中：整卡绿色动态加载 + 边框渐变跑马灯。
+ * 进度用 --p（0-100）从底部往上填；没进度时也保持呼吸，避免空卡发呆。
+ */
+@property --ig-spin {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.ig-work-box.is-gen, .ig-preview.is-gen { isolation: isolate; }
+.ig-work-box.is-gen::before, .ig-preview.is-gen::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--ig-spin), transparent 0 50%, #34d399 68%, #a7f3d0 80%, transparent 100%);
+  animation: ig-marquee 1.6s linear infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+.ig-work-holder.is-gen {
+  background: #07140f;
+  color: #6ee7b7;
+}
+.ig-work-holder.is-gen::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(110deg, transparent 25%, rgba(110, 231, 183, .22) 48%, transparent 70%);
+  background-size: 220% 100%;
+  animation: ig-shimmer 1.8s linear infinite;
+}
+.ig-work-holder.is-gen::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 0;
+  height: calc(max(8, var(--p, 8)) * 1%);
+  background: linear-gradient(0deg, rgba(52, 211, 153, .58), rgba(52, 211, 153, .12));
+  transition: height .45s ease;
+}
+.ig-work-holder.is-gen > * { position: relative; z-index: 1; }
+@keyframes ig-marquee { to { --ig-spin: 360deg; } }
+@keyframes ig-shimmer {
+  0% { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+.ig-work-refund { font-size: 11px; color: var(--dim-dark); font-weight: 500; }
+.ig-work-spin {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2.5px solid rgba(139, 92, 246, .25); border-top-color: var(--purple);
+  animation: vg-work-spin 0.9s linear infinite;
+}
+@keyframes vg-work-spin { to { transform: rotate(360deg); } }
+/*
+ * 缩略图底部的信息条。
+ * ⚠ 这里**不是**视频那个 4px 高的进度条 —— 沿用那套会把文字与按钮压没
+ *   （2026-08-29 线上真出现过：只剩一条细线，用户看不到积分也点不到下载）。
+ */
+.ig-work-bar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 7px;
+  background: linear-gradient(transparent, rgba(6, 7, 12, .88) 42%);
+  font-size: 10.5px; color: rgba(255, 255, 255, .82); line-height: 1.3;
+}
+.ig-work-cost-tag { font-weight: 700; color: #c4b5fd; white-space: nowrap; }
+.ig-work-acts { margin-left: auto; display: flex; gap: 4px; }
+/* 元信息行 */
+.ig-work-meta {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; font-size: 11.5px; color: var(--dim-dark);
+}
+.ig-work-time { font-weight: 600; }
+.ig-work-cost { margin-left: auto; color: #c4b5fd; font-weight: 700; }
+.ig-work-dl, .ig-work-cancel {
+  padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  border: 1px solid var(--line); background: transparent; color: #fff;
+  cursor: pointer; text-decoration: none; transition: all .15s; white-space: nowrap;
+}
+.ig-work-dl:hover { background: var(--purple); border-color: var(--purple); }
+.ig-work-cancel:hover { border-color: #f0788a; color: #f0788a; }
+
+/* 「提示词」按钮：与下载并排，用次要样式（下载才是主动作） */
+.ig-work-prompt {
+  padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  border: 1px solid var(--line); background: transparent; color: var(--text-sub);
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.ig-work-prompt:hover { color: #fff; border-color: var(--purple); background: rgba(139, 92, 246, .12); }
+.ig-work-prompt:active { transform: scale(.94); }
+
+/*
+ * 缩略图提示词浮层：挂在 body 下用 `position: fixed` 跟随鼠标。
+ * ⚠ 不做成缩略图内部的绝对定位子元素 —— 7 列时缩略图只有 ~180px 宽，
+ *   浮层会被 `.ig-work-box` 的 `overflow: hidden` 裁掉，且第一/最后一列会溢出屏幕。
+ */
+.ig-tip-pop {
+  position: fixed; z-index: 60; max-width: 340px;
+  padding: 9px 11px; border-radius: 10px;
+  border: 1px solid var(--line); background: #14161f;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .55);
+  pointer-events: none; /* 别挡住底下的缩略图点击 */
+}
+.ig-tip-pop-head {
+  font-size: 11px; font-weight: 700; color: #c4b5fd;
+  margin-bottom: 5px; display: flex; gap: 8px; align-items: center;
+}
+.ig-tip-pop-body {
+  font-size: 12px; line-height: 1.55; color: var(--text-sub);
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 190px; overflow: hidden;
+}
+.ig-tip-pop-foot { margin-top: 6px; font-size: 10.5px; color: var(--dim); }
+.ig-work-prompt:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+/* ── 查看提示词弹窗 ────────────────────────────────────────── */
+.ig-prompt-dialog { max-width: 620px; width: calc(100vw - 32px); }
+.ig-pd-meta {
+  display: block; margin-top: 3px;
+  font-size: 11.5px; font-weight: 500; color: var(--dim);
+}
+.ig-pd-body {
+  /* 提示词可能上千字：给固定高度可滚，别把弹窗撑到出屏 */
+  max-height: 52vh; overflow-y: auto;
+  padding: 12px 14px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--card2);
+  color: var(--text); font-size: 12.5px; line-height: 1.75;
+  white-space: pre-wrap; word-break: break-word;
+  /* 等宽字体：三字段结构化提示词对齐后更好读 */
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.ig-pd-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.ig-pd-reuse {
+  padding: 6px 14px; border-radius: 8px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--text-sub); font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.ig-pd-reuse:hover { color: #fff; border-color: var(--purple); }
+.ig-pd-reuse:active { transform: scale(.96); }
+.ig-pd-copy {
+  padding: 6px 18px; border-radius: 8px; border: none;
+  background: linear-gradient(135deg, #8b5cf6, #6d3bef); color: #fff;
+  font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.ig-pd-copy:hover { filter: brightness(1.1); }
+.ig-pd-copy:active { transform: scale(.96); }
+
+@media (max-width: 720px) {
+  .ig-works { padding: 0; }
+}
+
+/* ── 按钮点击态反馈（2026-08-22）──
+ * 起因：用户反馈「有时候点了没反应」，根因其实是事件委托没用 closest；
+ * 但没有任何按下反馈这件事本身也放大了困惑 —— 点下去毫无变化，
+ * 用户无法区分「没点中」和「点中了在处理」。
+ * 这里给主操作按钮补一个 96% 的按下缩放，纯 CSS、零 JS 成本。
+ */
+.ig-btn-create:not(:disabled):active { transform: scale(.97); }
+.ig-btn-create { transition: transform .08s ease, opacity .15s, box-shadow .15s; }
+/* 置灰态要一眼可辨，并且鼠标提示原因（title 由 JS 写入） */
+.ig-btn-create:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.ig-work-dl:active, .ig-work-cancel:active { transform: scale(.94); }
+.ig-work-dl, .ig-work-cancel { transition: transform .08s ease, background .15s, border-color .15s, color .15s; }
+/* 键盘可达性：Tab 聚焦时要有可见轮廓（:active 缩放不影响它） */
+.ig-btn-create:focus-visible,
+.ig-work-dl:focus-visible,
+.ig-work-cancel:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+/* ── 提示词清空按钮（2026-08-22）── */
+.ig-field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ig-prompt-clear {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 6px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--dim-dark); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.ig-prompt-clear:hover { color: #fff; border-color: #f0788a; }
+.ig-prompt-clear:active { transform: scale(.94); }
+.ig-prompt-clear:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.ig-prompt-clear[hidden] { display: none !important; }
+
+/* ── 提示词工具条（一键优化 / 还原 / 清空）────────────────────────────── */
+.ig-prompt-tools { display: inline-flex; align-items: center; gap: 6px; }
+
+/* 一键优化：H3 三段式里缺失的 Context-IR 改写层，是画质主要来源，故给主色强调 */
+.ig-prompt-opt {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px; border-radius: 6px;
+  border: 1px solid rgba(139, 92, 246, .55);
+  background: linear-gradient(135deg, rgba(139, 92, 246, .18), rgba(139, 92, 246, .08));
+  color: #c9b6ff; font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.ig-prompt-opt:hover:not(:disabled) {
+  color: #fff; border-color: var(--purple);
+  background: linear-gradient(135deg, rgba(139, 92, 246, .34), rgba(139, 92, 246, .16));
+}
+.ig-prompt-opt:active:not(:disabled) { transform: scale(.94); }
+.ig-prompt-opt:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.ig-prompt-opt:disabled { opacity: .55; cursor: default; }
+/* 改写要 5~10 秒，图标转起来让用户知道还在跑 */
+.ig-prompt-opt.is-busy svg { animation: vg-opt-spin 1.1s linear infinite; }
+@keyframes vg-opt-spin { to { transform: rotate(360deg); } }
+
+.ig-prompt-undo {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 6px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--dim-dark); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.ig-prompt-undo:hover { color: #fff; border-color: var(--purple); }
+.ig-prompt-undo:active { transform: scale(.94); }
+.ig-prompt-undo:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.ig-prompt-undo[hidden] { display: none !important; }
+
+.ig-opt-tip {
+  margin-top: 6px; padding: 6px 9px; border-radius: 7px;
+  border: 1px solid rgba(139, 92, 246, .3);
+  background: rgba(139, 92, 246, .08);
+  color: #b9a6f0; font-size: 11.5px; line-height: 1.55;
+}
+.ig-opt-tip.is-warn {
+  border-color: rgba(240, 120, 138, .32);
+  background: rgba(240, 120, 138, .08);
+  color: #f0a5af;
+}
+.ig-opt-tip[hidden] { display: none !important; }
+
+/* ── 价格明细（加价上线后同一模型有多个价，必须摊开给用户看）────────── */
+.ig-cost-detail {
+  display: flex; flex-direction: column; gap: 2px;
+  margin-top: 8px; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--card2);
+  font-size: 11.5px; line-height: 1.6;
+}
+.ig-cost-detail[hidden] { display: none !important; }
+.ig-cost-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ig-cost-row i { color: var(--dim); font-style: normal; }
+.ig-cost-row b { color: #fff; font-weight: 700; white-space: nowrap; }
+.ig-cost-up { color: #f0a5af !important; }
+.ig-cost-down { color: #7ee0a8 !important; }
+.ig-cost-total {
+  margin-top: 3px; padding-top: 5px; border-top: 1px dashed var(--line);
+}
+.ig-cost-total b { color: var(--purple-lite, #c9b6ff); }
+.ig-cost-plain { color: var(--dim-dark); }
+/* 夹顶提示要显眼：不说的话用户会以为「加了功能价格没变 = 功能坏了」 */
+.ig-cost-capped {
+  margin-top: 5px; padding: 5px 8px; border-radius: 6px;
+  border: 1px solid rgba(250, 204, 21, .35); background: rgba(250, 204, 21, .08);
+  color: #f0d68a; font-size: 11px; line-height: 1.5;
+}
+
+/* ── 中文对照（悬停「译」按钮触发）────────────────────────────── */
+.ig-prompt-trans {
+  min-width: 24px; padding: 2px 8px; border-radius: 6px;
+  border: 1px solid rgba(126, 224, 168, .45); background: rgba(126, 224, 168, .1);
+  color: #7ee0a8; font-size: 11px; font-weight: 800;
+  cursor: pointer; transition: all .15s;
+}
+.ig-prompt-trans:hover { color: #fff; border-color: #7ee0a8; background: rgba(126, 224, 168, .24); }
+.ig-prompt-trans[hidden] { display: none !important; }
+.ig-trans-box {
+  margin-top: 6px; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid rgba(126, 224, 168, .28); background: rgba(126, 224, 168, .06);
+}
+.ig-trans-box[hidden] { display: none !important; }
+.ig-trans-head {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; color: #7ee0a8; margin-bottom: 4px;
+}
+.ig-trans-head span { color: var(--dim-dark); font-weight: 500; }
+.ig-trans-body {
+  font-size: 12px; line-height: 1.65; color: var(--dim);
+  max-height: 150px; overflow-y: auto; white-space: pre-wrap;
+}
+
+/* ── 以图反推（对标 Midjourney /describe）：与一键优化同形，配色区分开 ── */
+.ig-prompt-desc {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px; border-radius: 6px;
+  border: 1px solid rgba(56, 189, 248, .5);
+  background: linear-gradient(135deg, rgba(56, 189, 248, .16), rgba(56, 189, 248, .06));
+  color: #9fdcf7; font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.ig-prompt-desc:hover:not(:disabled) {
+  color: #fff; border-color: #38bdf8;
+  background: linear-gradient(135deg, rgba(56, 189, 248, .32), rgba(56, 189, 248, .14));
+}
+.ig-prompt-desc:active:not(:disabled) { transform: scale(.94); }
+.ig-prompt-desc:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+/* 没上传参考图时按钮是禁用的，透明度要足够低才看得出「现在点不了」 */
+.ig-prompt-desc:disabled { opacity: .45; cursor: default; }
+.ig-prompt-desc.is-busy svg { animation: vg-opt-spin 1.1s linear infinite; }
+
+/* ── 收藏 / 收藏夹 ── */
+.ig-prompt-fav {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 6px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--dim-dark); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.ig-prompt-fav:hover { color: #fff; border-color: rgba(250, 204, 21, .6); }
+.ig-prompt-fav:active { transform: scale(.94); }
+.ig-prompt-fav:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+.ig-fav-dialog { max-width: 720px; width: calc(100vw - 32px); }
+.ig-fav-sub { margin-left: 8px; color: var(--dim-dark); font-size: 11.5px; font-weight: 500; }
+.ig-fav-list { display: flex; flex-direction: column; gap: 8px; max-height: 62vh; overflow-y: auto; padding: 4px 2px; }
+.ig-fav-empty { color: var(--dim-dark); font-size: 12.5px; line-height: 1.7; padding: 14px 4px; }
+.ig-fav-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 11px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--card2);
+}
+.ig-fav-main { flex: 1; min-width: 0; }
+.ig-fav-title {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 5px;
+  color: #fff; font-size: 12.5px; font-weight: 700; margin-bottom: 3px;
+}
+.ig-fav-tag {
+  padding: 1px 7px; border-radius: 999px;
+  background: rgba(139, 92, 246, .18); border: 1px solid rgba(139, 92, 246, .35);
+  color: #c9b6ff; font-size: 10.5px; font-weight: 600;
+}
+/* 提示词可能几百字，收两行即可，展开靠「填入」后在输入框看 */
+.ig-fav-text {
+  color: var(--dim); font-size: 11.5px; line-height: 1.6;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ig-fav-ops { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.ig-fav-ops button {
+  padding: 3px 9px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--dim); font-size: 11px; font-weight: 600; transition: all .15s;
+}
+.ig-fav-use:hover { color: #fff; border-color: var(--purple); background: rgba(139, 92, 246, .18); }
+.ig-fav-ren:hover { color: #fff; border-color: rgba(148, 163, 184, .7); }
+.ig-fav-del:hover { color: #f0a5af; border-color: rgba(240, 120, 138, .55); }
+
+/* ── 创作风格 chips（跨模型的提示词层预设，可叠加，选中融入 prompt）──────── */
+.ig-styles { display: flex; flex-wrap: wrap; gap: 6px; }
+.ig-style-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card2);
+  color: var(--dim); font-size: 11.5px; font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.ig-style-chip:hover { color: #fff; border-color: rgba(139, 92, 246, .5); }
+.ig-style-chip.is-active {
+  background: var(--purple); border-color: var(--purple); color: #fff;
+  box-shadow: 0 0 10px rgba(139, 92, 246, .4);
+}
+/*
+ * 冲突/已满：置灰但**不隐藏**，并保留 pointer —— 点下去会给出「为什么不能选」的解释。
+ * 直接 disabled 或消失会让用户以为功能坏了。
+ */
+.ig-style-chip.is-blocked:not(.is-active) {
+  opacity: .38; border-style: dashed;
+}
+.ig-style-chip.is-blocked:not(.is-active):hover { color: var(--dim); border-color: var(--line); }
+/* 叠加次序角标：只在第 2、3 个上出现，用来表达「谁是主风格」 */
+.ig-style-ord:empty { display: none; }
+.ig-style-ord {
+  min-width: 14px; height: 14px; padding: 0 3px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px; background: rgba(255, 255, 255, .22);
+  font-size: 9.5px; font-weight: 800; line-height: 1;
+}
+.ig-style-chip:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+.ig-style-tip {
+  margin-top: 6px; color: var(--dim-dark); font-size: 11px; line-height: 1.5;
+}
+.ig-style-tip[hidden] { display: none !important; }
+
+/* ── 风格向导入口 ── */
+.ig-prompt-wiz {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px; border-radius: 6px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--text-sub); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.ig-prompt-wiz:hover { color: #fff; border-color: var(--purple); background: rgba(139, 92, 246, .1); }
+.ig-prompt-wiz:active { transform: scale(.94); }
+.ig-prompt-wiz:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+/* ── 风格向导弹窗 ──────────────────────────────────────────── */
+.ig-wizard-dialog { max-width: 720px; width: calc(100vw - 32px); }
+.ig-wiz-sub {
+  display: block; margin-top: 3px;
+  font-size: 11.5px; font-weight: 500; color: var(--dim);
+}
+
+/* 第一步：风格卡片 */
+.ig-wiz-styles {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px; padding: 4px 0 2px;
+  max-height: 62vh; overflow-y: auto;
+}
+.ig-wiz-styles[hidden] { display: none !important; }
+.ig-wiz-loading { grid-column: 1 / -1; padding: 24px 0; text-align: center; color: var(--dim); font-size: 12.5px; }
+.ig-wiz-card {
+  text-align: left; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--card2);
+  cursor: pointer; transition: all .15s;
+}
+.ig-wiz-card:hover { border-color: var(--purple); background: rgba(139, 92, 246, .08); transform: translateY(-1px); }
+.ig-wiz-card:active { transform: scale(.99); }
+.ig-wiz-card:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.ig-wiz-card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.ig-wiz-card-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.ig-wiz-card-tag {
+  padding: 1px 6px; border-radius: 4px;
+  background: rgba(139, 92, 246, .18); color: #c9b6ff;
+  font-size: 10px; font-weight: 700; white-space: nowrap;
+}
+.ig-wiz-card-sum {
+  font-size: 11.5px; line-height: 1.5; color: var(--dim);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* 第二步：对话 */
+.ig-wiz-chat { display: flex; flex-direction: column; gap: 8px; }
+.ig-wiz-chat[hidden] { display: none !important; }
+.ig-wiz-log {
+  display: flex; flex-direction: column; gap: 8px;
+  /* 固定高度而非 max-height：内容增长时不会让整个弹窗跳动 */
+  height: 46vh; min-height: 240px; overflow-y: auto;
+  padding: 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--card2);
+}
+.ig-wiz-msg {
+  max-width: 86%; padding: 7px 11px; border-radius: 10px;
+  font-size: 12.5px; line-height: 1.65; white-space: pre-wrap; word-break: break-word;
+  /*
+   * ⚠ flex 子项默认 `flex-shrink: 1`：`.ig-wiz-log` 是纵向 flex，
+   *   对话一长，后面的气泡就会被前面的挤扁 —— 成品提示词那条被压成一行，
+   *   用户报「最后出来的提示词窗口看不见」就是这个（2026-08-23）。
+   *   容器本来就能滚，消息一律不许被压缩。
+   */
+  flex: none;
+}
+.ig-wiz-msg.is-ai { align-self: flex-start; background: #22242e; color: var(--text); }
+.ig-wiz-msg.is-me { align-self: flex-end; background: var(--purple); color: #fff; }
+.ig-wiz-msg.is-tip { align-self: center; background: transparent; color: var(--dim); font-size: 11.5px; }
+/* 成品提示词：等宽字体 + 可滚动，长度动辄两三千字 */
+.ig-wiz-msg.is-prompt {
+  align-self: stretch; max-width: 100%;
+  /* 成品是这场对话的目的，给足高度；仍可滚（提示词动辄两三千字） */
+  min-height: 120px; max-height: 240px; overflow-y: auto;
+  background: rgba(139, 92, 246, .08); border: 1px solid rgba(139, 92, 246, .3);
+  color: #cbb9ff; font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.ig-wiz-typing { align-self: flex-start; display: inline-flex; gap: 3px; padding: 9px 11px; }
+.ig-wiz-typing i {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--dim);
+  animation: vg-wiz-bounce 1.2s infinite;
+}
+.ig-wiz-typing i:nth-child(2) { animation-delay: .15s; }
+.ig-wiz-typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes vg-wiz-bounce { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+
+.ig-wiz-input-row { display: flex; gap: 6px; align-items: stretch; }
+.ig-wiz-input {
+  flex: 1; resize: none; padding: 8px 10px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--card2); color: var(--text);
+  font-size: 12.5px; line-height: 1.55; font-family: inherit;
+}
+.ig-wiz-input:focus { outline: none; border-color: var(--purple); }
+.ig-wiz-send {
+  width: 42px; border-radius: 9px; border: none;
+  background: var(--purple); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .15s;
+}
+.ig-wiz-send:hover:not(:disabled) { filter: brightness(1.12); }
+.ig-wiz-send:active:not(:disabled) { transform: scale(.94); }
+.ig-wiz-send:disabled { opacity: .45; cursor: default; }
+
+.ig-wiz-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ig-wiz-foot-right { display: flex; align-items: center; gap: 6px; }
+.ig-wiz-finish {
+  padding: 5px 12px; border-radius: 8px;
+  border: 1px solid rgba(139, 92, 246, .5); background: rgba(139, 92, 246, .1);
+  color: #c9b6ff; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.ig-wiz-finish:hover { color: #fff; border-color: var(--purple); background: rgba(139, 92, 246, .22); }
+.ig-wiz-finish:active { transform: scale(.96); }
+.ig-wiz-finish:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.ig-wiz-finish[hidden] { display: none !important; }
+.ig-wiz-back {
+  padding: 5px 12px; border-radius: 8px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--text-sub); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.ig-wiz-back:hover { color: #fff; border-color: var(--purple); }
+.ig-wiz-use {
+  padding: 6px 16px; border-radius: 8px; border: none;
+  background: linear-gradient(135deg, #8b5cf6, #6d3bef); color: #fff;
+  font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.ig-wiz-use:hover { filter: brightness(1.1); }
+.ig-wiz-use:active { transform: scale(.96); }
+.ig-wiz-use[hidden] { display: none !important; }
+
+@media (max-width: 640px) {
+  .ig-wiz-styles { grid-template-columns: 1fr; max-height: 56vh; }
+  .ig-wiz-log { height: 42vh; }
+}
+
+/* ── 执行器离线提示（GPU 按需开机，关机期间显示）── */
+.ig-offline {
+  display: flex; align-items: flex-start; gap: 7px;
+  margin-top: 8px; padding: 9px 11px; border-radius: 9px;
+  border: 1px solid rgba(240, 180, 90, .32);
+  background: rgba(240, 180, 90, .09);
+  color: #e8bd7a; font-size: 12px; line-height: 1.55;
+}
+.ig-offline svg { flex: none; margin-top: 1px; }
+.ig-offline[hidden] { display: none !important; }
+
+/* ── 错误条里的「去充值」直达按钮 ── */
+.ig-err-recharge {
+  margin-left: 6px; padding: 2px 10px; border-radius: 6px;
+  border: none; background: var(--purple); color: #fff;
+  font-size: 11px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.ig-err-recharge:hover { filter: brightness(1.12); }
+.ig-err-recharge:active { transform: scale(.94); }
+
+/* ── 充值弹窗（复用 /?page=recharge 的面板，深色变量由 .ig-body 提供）── */
+.ig-recharge-dialog { max-width: 880px; width: min(92vw, 880px); }
+.ig-recharge-dialog .amount-grid { margin-top: 4px; }
+.ig-recharge-foot {
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
+  color: var(--dim-dark); font-size: 12px; text-align: center;
+}
+
+/*
+ * ⚠ 这里原先有一段从视频页照搬来的 `.ig-work-box::after`：用 SVG data-uri 在缩略图
+ * 正中画一个播放三角（给 `preload=none` 的视频当"可点播放"提示）。
+ * 图片没有播放概念，那个三角是纯噪声，且**它是 CSS 伪元素**——
+ * 删 HTML 的 `<video>` / `.ig-player` 时不会跟着消失，只能在样式表里删。
+ * 今后从视频页复制样式时，`::after`/`:has(video)` 这类要逐条过一遍。
+ */
+
+/* 预览缩略图带切到「用户作品」模式时的补充样式（2026-08-22）
+ * 老作品没有封面（poster_path 是后加的列），用一个深色占位块代替，
+ * 别让它塌成 0 高度把整排布局挤歪。 */
+.ig-thumb-blank {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #14161f, #1b1e2b);
+}
+
+/*
+ * ⚠ 这里原有一批从视频页复制来的死样式：`.ig-thumb-hovervid`（悬停播放）与
+ * `.ig-strip-pager` 那套 `.ig-pager-btn` / `.ig-pager-info`。
+ * 图片页零引用，但它们**写在作品区分页样式的后面**，于是靠层叠顺序
+ * 悄悄覆盖了真正在用的那份（按钮被压成 22×22、颜色也不对）——
+ * 「样式写了没生效」查起来极费时。已删。
+ */
+
+/* ── 我的作品：筛选条 ── */
+.ig-works-filter { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.ig-filter-btn {
+  padding: 4px 12px; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--card2);
+  color: var(--dim-dark); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.ig-filter-btn:hover { color: #fff; }
+.ig-filter-btn.is-active { background: var(--purple); border-color: var(--purple); color: #fff; }
+.ig-filter-btn:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.ig-filter-btn[hidden] { display: none !important; }
+.ig-filter-num { opacity: .75; margin-left: 2px; font-variant-numeric: tabular-nums; }
+.ig-works-empty {
+  color: var(--dim-dark); font-size: 12.5px; text-align: center; padding: 24px 0 8px;
+}
+
+/* ── 模型货架 ────────────────────────────────────────────── */
+/*
+ * 模型货架：**单列**。
+ * 横向三栏后这一栏只有 ~300px，两列意味着每张卡 ~140px ——
+ * 「GPT Image 2」这种名字会折成三行，卡片高度参差不齐。单列虽然要滚，
+ * 但每张卡信息完整（名字 + 厂商 + 能力 + 价格一行读完）。
+ */
+/*
+ * 模型货架：**单列、不滚动、十个全展示**（用户明确要求）。
+ * 它的自然高度就是整块操作板的高度基准，所以卡片压得比较紧
+ * —— 改这里的 padding / 行高会连带改变操作板高度，动之前先想清楚。
+ */
+.ig-models {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.ig-model {
+  text-align: left;
+  /*
+   * 压紧：10 张卡要在不滚动的前提下排完。
+   * ⚠ 这个 padding 直接决定**整块操作板的高度**（模型栏是高度基准），
+   *   调大一点右侧参数栏底部就会多出一片空白 —— 两者是联动的。
+   */
+  padding: 5px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.ig-model:hover { border-color: var(--primary); }
+.ig-model.is-active {
+  border-color: var(--primary);
+  background: rgba(139, 92, 246, .12);
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, .35);
+}
+.ig-model.is-off { opacity: .55; }
+.ig-model.is-no-i2i {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.ig-model.is-no-i2i:hover { border-color: var(--line); }
+.ig-model-name { display: block; font-size: 12.5px; font-weight: 700; line-height: 1.25; }
+.ig-model-vendor { font-size: 10.5px; color: var(--dim); margin-left: 6px; font-weight: 500; }
+/* 一句话卖点：限一行、超出省略 —— 换行会让卡片高度参差，也会撑破"不滚动"的前提 */
+.ig-model-tag {
+  display: block; margin-top: 1px; font-size: 10.5px; color: var(--text-sub);
+  line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ig-model-meta { display: flex; gap: 8px; margin-top: 1px; font-size: 10px; color: var(--dim); align-items: center; }
+.ig-model-price { color: var(--gold-pill); font-weight: 700; }
+.ig-model-badge {
+  margin-left: auto; padding: 0 6px; border-radius: 999px;
+  background: rgba(139, 92, 246, .25); color: var(--primary2); font-weight: 700;
+}
+.ig-model-badge.is-warn {
+  background: rgba(248, 113, 113, .16);
+  color: var(--danger);
+}
+/*
+ * 官方参数：**两列网格 + 行高均分**。
+ *
+ * 各家参数项数差得很远（recraft-v4 只有 2 项、flux-2-max 有 7 项）。
+ * 两列 + 选项多的控件跨列（`.is-wide`）先把横向利用起来；
+ * 再用 `align-content: stretch` 让**行均分整栏高度** ——
+ * 参数少的模型每张卡片长得高一点，参数多的自动收紧，
+ * **两种情况都填满整栏、不留死区**，这就是"每个模型都兼容同一页面高度"的做法。
+ * （只靠 `align-content: start` 时，参数少的模型下方会空出一两百像素。）
+ */
+.ig-controls {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px 14px; align-content: stretch;
+  /*
+   * `dense` 让后面的窄卡片**回填**前面留下的半列空位。
+   * 不加的话「跨两列的宽卡 → 窄卡 → 宽卡 → 窄卡」会让每个窄卡旁边空半列
+   * （实测 gpt-image-2 的「背景」「内容审核」右侧各空一格）。
+   * 代价是视觉顺序可能与 DOM 顺序不完全一致 —— 这些参数彼此独立，可以接受。
+   */
+  grid-auto-flow: row dense;
+  /*
+   * ★ 下限必须是 `auto`（=内容高度），**不能写固定 52px**：
+   *   `minmax(52px, 92px)` 的 max 会**裁掉**超过 92px 的内容 ——
+   *   实测带两行 hint 的滑块卡片，当前值「28」「3.5」被挤到卡片边框外面。
+   *   `auto` 保证内容永远放得下，92px 只在 stretch 有余量时充当拉伸上限
+   *   （只写 stretch 不给上限的话，参数少的模型每行会被拉到 120px+、
+   *    卡片变成"内容浮在中间的空盒子"）。
+   */
+  grid-auto-rows: minmax(auto, 104px);
+  /*
+   * ★ 必须给网格自己 `overflow-y: auto`。
+   *   行高下限是 auto（内容不许被裁），所以参数多的模型总高会超过本栏 ——
+   *   默认 `visible` 之下内容会**溢出压到下方的「生成数量」和创建按钮上**
+   *   （实测 midjourney-v8 溢出 63px，种子输入框与数量按钮重叠 24px）。
+   */
+  overflow-y: auto; overflow-x: hidden;
+}
+/*
+ * 每项做成小卡片：行被拉高后，光秃秃的 label + chip 会显得飘；
+ * 有底色和边框就读成"一张参数卡"，高度富余时也像是有意留白。
+ */
+.ig-ctl {
+  display: flex; flex-direction: column; gap: 7px; min-width: 0;
+  padding: 10px 12px; border-radius: 10px;
+  background: var(--card2); border: 1px solid var(--line);
+  justify-content: center;
+}
+/*
+ * 半列只有 ~135px 宽，官方原文的说明（如「0 最严格，6 最宽松（官方口径）」）
+ * 会换到三四行，把滑块挤到卡片边缘。限两行省略，完整文案仍在 title 里。
+ */
+.ig-ctl-head { display: flex; align-items: baseline; gap: 8px; }
+/*
+ * ★ 卡片内的子项不许被压缩：`.ig-ctl` 是 flex column，子项默认 `shrink: 1`，
+ *   行高吃紧时会把 hint 压掉半行（文字被切一半，比溢出更难看，且看不出是压缩造成的）。
+ *   宁可让参数区整体滚动，也不要裁字。
+ */
+.ig-ctl > * { flex-shrink: 0; }
+/* 滑块当前值贴右：与名称同一行，省掉滑杆下方那一行的 20px */
+.ig-ctl-head .ig-range-val { margin-left: auto; }
+.ig-ctl .ig-ctl-hint {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+/* 选项 ≥3 的 select 与文本/种子输入跨满两列（挤在半列里会换行成两排 chip） */
+.ig-ctl.is-wide { grid-column: 1 / -1; }
+/* 「画面比例」独占一块，本来就宽，不需要分两列 */
+.ig-controls-shape { grid-template-columns: 1fr; }
+.ig-controls-shape .ig-ctl.is-wide { grid-column: auto; }
+/* 这块没有字段标题（见 index.php 的说明），控件自己的 label 就是标题，字号对齐 .ig-label */
+.ig-controls-shape .ig-ctl-lab { font-size: 12.5px; }
+
+/*
+ * 必选态：尺寸没选时整块描红。用边框+底色而不是只显示一行红字 ——
+ * 这一栏内容不少，一行小字很容易被忽略，用户只会觉得"创建按钮怎么点不动"。
+ */
+.ig-shape-req {
+  margin: 2px 0 0; font-size: 11.5px; font-weight: 600; color: #f0788a;
+}
+#ig-shape-field.is-required .ig-ctl {
+  border-color: rgba(240, 120, 138, .55);
+  background: rgba(240, 120, 138, .06);
+}
+#ig-shape-field.is-required .ig-ctl-lab::after {
+  content: " *"; color: #f0788a; font-weight: 700;
+}
+
+/*
+ * ★ 各栏内部**弹性填满**，不留死区。
+ *
+ * 第三栏：「官方参数」这一块吃掉剩余高度（内部的行再均分，见 .ig-controls），
+ * 后面的 生成数量 / 价格明细 / 创建按钮 依次贴到底部。
+ * 第二栏：提示词输入框吃掉剩余高度。
+ *
+ * `min-height: 0` 是 flex 子项能收缩的前提；缺了它，参数多的模型会把
+ * 这一块顶出栏外（而外层是绝对定位、不会跟着长，于是内容被裁掉看不见）。
+ */
+.ig-col-params .ig-field-params { flex: 1; min-height: 0; position: relative; }
+/* 可滚动时才出这道渐隐（类名由 JS 的 syncCtlScrollHint 按实测 scrollHeight 加） */
+.ig-col-params .ig-field-params.is-scrollable::after {
+  content: ""; position: absolute; left: 0; right: 7px; bottom: 0; height: 22px;
+  background: linear-gradient(rgba(20, 22, 31, 0), var(--card));
+  pointer-events: none;
+}
+/* 网格本体也要跟着 field 拉伸，否则 align-content: stretch 没有多余高度可分 */
+.ig-col-params .ig-field-params .ig-controls { flex: 1; min-height: 0; }
+.ig-col-params .ig-action-wrap { margin-top: auto; }
+
+.ig-col-prompt > .ig-col-inner > .ig-field-prompt {
+  flex: 1 0 auto; min-height: 0; overflow: hidden;
+}
+/*
+ * ★ wrap 也要 `flex: 1 0 auto` + 自己的 `min-height`。
+ *   写 `flex: 1`（basis 0）时它的**自然高度算作 0**，于是父 field 的自然高度
+ *   只有标题那 24px，而 textarea 的 `min-height` 缩不下去 ⇒ 溢出到下方，
+ *   表现为输入框盖住「创作风格」的 chips（图生图模式下必现，因为多了参考图约 130px）。
+ */
+.ig-col-prompt .ig-textarea-wrap { flex: 1 0 auto; min-height: 120px; display: flex; }
+/*
+ * 输入框跟着栏高长，但**给上限**：这一栏下面还有 创作风格 / 画面比例 / 参考图，
+ * 输入框独吞 400px 会把它们挤到看不见的地方。上限之外的余量交给参考图区。
+ */
+.ig-col-prompt .ig-textarea { height: auto; min-height: 120px; max-height: 180px; }
+/*
+ * 图生图：参考图一出来，提示词必须让出高度，否则 textarea 会盖住风格 chips。
+ * `:has()` 只在 refs 真显示时收紧，文生图仍用上面那档。
+ */
+.ig-col-prompt:has(#ig-refs-field:not([hidden])) > .ig-col-inner > .ig-field-prompt {
+  flex: 0 0 auto;
+}
+.ig-col-prompt:has(#ig-refs-field:not([hidden])) .ig-textarea-wrap {
+  flex: 0 0 auto; min-height: 88px;
+}
+.ig-col-prompt:has(#ig-refs-field:not([hidden])) .ig-textarea {
+  min-height: 88px; max-height: 110px; height: 110px;
+}
+.ig-col-prompt .ig-field:has(#ig-styles) { position: relative; z-index: 1; }
+
+/*
+ * 参考图：吸收输入框上限之后剩下的高度。
+ * 槽位在这一栏里排成四列自适应方格（原来固定 78px，在 590px 宽的栏里只占一角），
+ * 缩略图大一点也更好确认自己传的是哪张。
+ */
+.ig-col-prompt .ig-field-refs { flex: 1; min-height: 0; }
+.ig-col-prompt .ig-refs {
+  /* auto-fill：只有一个"+"槽位时它就占一格，不会被 4 等分拉成大方块 */
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 108px));
+  gap: 8px; align-content: start;
+}
+.ig-col-prompt .ig-ref-slot { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+.ig-ctl-lab { font-size: 12.5px; font-weight: 650; color: var(--text-sub); }
+.ig-ctl-hint { font-size: 11px; color: var(--dim); }
+.ig-ctl-row { display: flex; flex-wrap: wrap; gap: 6px; }
+/*
+ * ★ 参数区的 chip 按**内容宽度**排，超出就换行。
+ * `.ig-chip` 基类是 `flex: 1 1 0` + `min-width: 0`（为「画面比例」那种等宽均分设计的），
+ * 在这里会让 chip 宽度与内容无关 ⇒ 配上 `nowrap` 就是**相邻标签的文字互相压**
+ * （实测「矢量插画（可出 SVG）」「赛博朋克」等被截断，midjourney 的两个标签直接叠字）。
+ * 只覆盖 `flex-shrink` 不够 —— `flex-basis: 0` 才是宽度失真的根源，要整条 `flex` 一起改；
+ * 基类左右 padding 是 0（等宽时靠 grow 撑开），按内容排就必须补回来。
+ */
+.ig-ctl-row > .ig-chip { flex: 0 0 auto; padding: 6px 10px; }
+.ig-range { width: 100%; accent-color: var(--primary); }
+.ig-range-val { font-variant-numeric: tabular-nums; color: var(--primary2); font-size: 12px; }
+.ig-seed, .ig-textin {
+  width: 100%; box-sizing: border-box;
+  background: var(--card3); border: 1px solid var(--line); color: var(--text);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px;
+}
+.ig-toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ig-refs { display: flex; flex-wrap: wrap; gap: 8px; }
+.ig-ref-slot {
+  position: relative; width: 78px; height: 78px;
+  border: 1px dashed var(--line); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card2); cursor: pointer; overflow: hidden;
+}
+.ig-ref-slot img { width: 100%; height: 100%; object-fit: cover; }
+.ig-ref-add { color: var(--dim); font-size: 22px; line-height: 1; }
+.ig-ref-del {
+  position: absolute; top: 3px; right: 3px;
+  width: 18px; height: 18px; border: 0; border-radius: 50%;
+  background: rgba(0,0,0,.65); color: #fff; cursor: pointer; font-size: 11px;
+}
+/*
+ * 预览区：**固定高度**，图片 contain 自适应。
+ * 不用 `aspect-ratio`／`height:100%` —— 出图有方形/横版/竖版三种比例，
+ * 容器跟着图片变的话每次切缩略图整页都会跳一下。固定容器 + contain 让画面稳定居中，
+ * 竖图两侧留黑边是可接受的代价（比页面抖动好得多）。
+ */
+.ig-preview-wrap { position: relative; }
+.ig-preview {
+  position: relative;
+  width: 100%; height: 520px;
+  display: flex; align-items: center; justify-content: center;
+  background: #000; border-radius: 12px; overflow: hidden;
+}
+@media (max-width: 1180px) { .ig-preview { height: 440px; } }
+@media (max-width: 760px) { .ig-preview { height: 320px; } }
+.ig-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.ig-preview-empty { color: var(--dim); font-size: 13.5px; text-align: center; padding: 24px; }
+.ig-preview-holder { font-size: 15px; }
+
+/* 切到某张作品后短暂描边，明确预览已更新；动画结束由 JS 移除类名 */
+.ig-preview.is-flash {
+  animation: ig-preview-flash 1.2s ease-out;
+}
+@keyframes ig-preview-flash {
+  0% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0), 0 0 0 rgba(139, 92, 246, 0); }
+  22% { box-shadow: 0 0 0 4px rgba(167, 139, 250, .95), 0 0 26px rgba(139, 92, 246, .72); }
+  100% { box-shadow: 0 0 0 1px rgba(167, 139, 250, 0), 0 0 4px rgba(139, 92, 246, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ig-preview.is-flash { animation-duration: .01ms; }
+  .ig-work-box.is-just-done { animation-duration: .01ms; }
+}
+
+/* 大图查看器：图片在独立画布内缩放/拖拽，提示词固定留在底部 */
+.ig-preview > img { cursor: zoom-in; }
+.ig-viewer-dialog[open] {
+  width: min(96vw, 1380px); height: min(94vh, 920px); max-width: none; max-height: none;
+  display: flex; flex-direction: column; overflow: hidden; background: #0c0d12;
+}
+.ig-viewer-head { flex-shrink: 0; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.ig-viewer-tools { display: flex; align-items: center; gap: 7px; }
+.ig-viewer-tools button, .ig-viewer-tools a {
+  min-width: 34px; height: 30px; padding: 0 9px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 7px;
+  background: var(--card2); color: var(--text-sub);
+  font-size: 12px; font-weight: 650; text-decoration: none; cursor: pointer;
+}
+.ig-viewer-tools button:hover, .ig-viewer-tools a:hover { color: #fff; border-color: var(--purple); }
+.ig-viewer-tools .dialog-x { min-width: 32px; padding: 0; font-size: 22px; background: transparent; }
+.ig-viewer-tools [hidden], .ig-viewer-canvas[hidden], .ig-viewer-image[hidden] { display: none !important; }
+#ig-viewer-scale { min-width: 46px; text-align: center; color: #c4b5fd; font-size: 12px; }
+.ig-viewer-body {
+  flex: 1; min-height: 0; padding: 12px 16px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ig-viewer-canvas {
+  flex: 1; min-height: 220px; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px; background:
+    linear-gradient(45deg, #11131a 25%, transparent 25%),
+    linear-gradient(-45deg, #11131a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #11131a 75%),
+    linear-gradient(-45deg, transparent 75%, #11131a 75%), #090a0e;
+  background-size: 24px 24px; background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+  touch-action: none; cursor: grab;
+}
+.ig-viewer-canvas.is-dragging { cursor: grabbing; }
+.ig-viewer-image {
+  max-width: 100%; max-height: 100%; object-fit: contain;
+  transform-origin: center; user-select: none; pointer-events: none;
+  will-change: transform;
+}
+.ig-viewer-prompt-wrap {
+  flex-shrink: 0; max-height: 150px; overflow-y: auto;
+  padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--card2);
+}
+.ig-viewer-prompt-head { margin-bottom: 4px; color: #c4b5fd; font-size: 11.5px; font-weight: 700; }
+.ig-viewer-prompt {
+  color: var(--text-sub); font-size: 12px; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word;
+}
+.ig-viewer-meta {
+  flex-shrink: 0; display: grid; grid-template-columns: minmax(180px, 1fr) 180px auto minmax(60px, auto);
+  align-items: end; gap: 8px; padding: 9px 12px;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--card2);
+}
+.ig-viewer-meta label {
+  min-width: 0; display: flex; flex-direction: column; gap: 4px;
+  color: var(--dim); font-size: 10.5px;
+}
+.ig-viewer-meta input, .ig-viewer-meta select { width: 100%; }
+.ig-viewer-meta button {
+  height: 30px; padding: 0 13px; border: 1px solid var(--purple); border-radius: 7px;
+  background: rgba(139, 92, 246, .2); color: #fff; font-size: 11.5px; font-weight: 700; cursor: pointer;
+}
+#ig-viewer-meta-status { align-self: center; color: #7ee0a8; font-size: 11px; }
+@media (max-width: 700px) {
+  .ig-viewer-head { align-items: flex-start; gap: 8px; }
+  .ig-viewer-tools { flex-wrap: wrap; justify-content: flex-end; }
+  .ig-viewer-tools #ig-viewer-reset { display: none; }
+  .ig-viewer-body { padding: 8px; }
+  .ig-viewer-meta { grid-template-columns: minmax(0, 1fr) minmax(100px, .65fr); }
+  .ig-viewer-meta button { grid-column: 1; }
+  #ig-viewer-meta-status { grid-column: 2; }
+}
+
+/* 预览区左右切图：大按钮，不挡住画面主体（贴左右边缘） */
+.ig-stage-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  z-index: 5;
+  width: 56px; height: 72px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 14px;
+  background: rgba(8, 10, 16, .62);
+  color: #fff; font-size: 36px; font-weight: 500; line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background .15s, border-color .15s, opacity .15s, transform .15s;
+}
+.ig-stage-nav:hover:not(:disabled) {
+  background: rgba(139, 92, 246, .55);
+  border-color: rgba(196, 181, 253, .7);
+  transform: translateY(-50%) scale(1.04);
+}
+.ig-stage-nav:disabled { opacity: .28; cursor: not-allowed; }
+.ig-stage-nav[hidden] { display: none !important; }
+#ig-stage-prev { left: 14px; }
+#ig-stage-next { right: 14px; }
+@media (max-width: 760px) {
+  .ig-stage-nav { width: 44px; height: 56px; font-size: 28px; }
+  #ig-stage-prev { left: 8px; }
+  #ig-stage-next { right: 8px; }
+}
+.ig-work-img { width: 100%; height: 100%; object-fit: cover; display: block; background: #0a0b10; }
+/* 小屏：列数本来就是 1，这里只把高度收一收，别让模型列表吃掉整屏 */
+@media (max-width: 900px) {
+  .ig-models { max-height: 260px; }
+}

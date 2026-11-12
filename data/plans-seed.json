@@ -1,0 +1,116 @@
+[
+ {
+  "id": "ultra",
+  "category": "plan3",
+  "cls": "sub-card is-featured is-hidden-cat",
+  "price": "499",
+  "name": "无限额度-季订阅-【双并发】",
+  "subtitle": "团队与重度 Agent",
+  "period": "每季 · 有效 90 天",
+  "badge": "最受欢迎",
+  "features": [
+   "无限次调用",
+   "不限上下文长度",
+   "优先通道",
+   "支持 2 Agent并发",
+   "主流模型调用"
+  ],
+  "total": "不限",
+  "daily": "不限",
+  "concurrency": "2 路",
+  "models_count": 67,
+  "visible": true,
+  "html": "<div class=\"sub-card is-featured is-hidden-cat\" data-sub-plan=\"ultra\"\n                data-category=\"plan3\"\n                data-price=\"499\"\n                data-name=\"无限额度-季订阅-【双并发】\"\n                data-has-qr=\"1\"\n                data-models=\"[&quot;Claude-Fable-5-Thinking-High&quot;,&quot;Claude-Haiku-4.5&quot;,&quot;Claude-Opus-4.5-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-Max&quot;,&quot;Claude-Opus-4.7-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-Max&quot;,&quot;Claude-Sonnet-4.5-Thinking&quot;,&quot;Claude-Sonnet-4.6-Thinking&quot;,&quot;Claude-Sonnet-5-Thinking&quot;,&quot;DeepSeek-V4-Flash&quot;,&quot;Gemini-3.5-Flash&quot;,&quot;gemini-3.6-flash&quot;,&quot;Gemini-3.7-Flash&quot;,&quot;GLM-5.1&quot;,&quot;GLM-5.2&quot;,&quot;GLM-5.3&quot;,&quot;gpt-5.2-Medium-Fast&quot;,&quot;GPT-5.4-Nano-Medium&quot;,&quot;GPT-5.5-Extra-High&quot;,&quot;GPT-5.6-Sol-Max-Fast&quot;,&quot;Grok-4.6-Extra-High-Fast&quot;,&quot;Hy3&quot;,&quot;Kimi-K2.5&quot;,&quot;Kimi-K2.6&quot;,&quot;Kimi-K2.7-Code&quot;,&quot;Kimi-K3&quot;,&quot;MiniMax-M2.5&quot;,&quot;MiniMax-M2.7&quot;,&quot;MiniMax-M3&quot;,&quot;Qwen3.5-Plus&quot;,&quot;Qwen3.6-Max&quot;,&quot;Qwen3.7-Max&quot;,&quot;Qwen3.8-Max&quot;,&quot;MiniMax-M2.7-highspeed&quot;,&quot;Claude-Fable-5-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-High&quot;,&quot;Claude-Opus-4.7-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-High&quot;,&quot;Claude-Opus-4.5-Thinking-High&quot;,&quot;GPT-5.6-Terra-Max-Fast&quot;,&quot;GPT-5.6-Luna-Max-Fast&quot;,&quot;MiniMax-M2.5-highspeed&quot;,&quot;Grok-4.5-Extra-High-Fast&quot;,&quot;YT-puls3.1-Opus-4.8-Thinking&quot;,&quot;YT-plus3.2-Opus-5-Thinking&quot;,&quot;YT-Pro2.8-Thinking&quot;,&quot;YT-Pro2.5-Thinking&quot;,&quot;claude-fable-5-1-thinking-max&quot;,&quot;Claude-Opus-5.5-Thinking-Max&quot;,&quot;GPT-6-Astra-max&quot;,&quot;GPT-6-Sol-MAX&quot;,&quot;GPT-6-Astra&quot;,&quot;GPT-6.1-sol&quot;,&quot;GPT-5.6-Sol&quot;,&quot;GPT-6-sol&quot;,&quot;GPT-5.5&quot;,&quot;grok-4.7&quot;,&quot;gemini-4-argon&quot;,&quot;muse-wonder-1.0&quot;,&quot;gpt-5.6-sol-max&quot;,&quot;claude-fable-5-2-high&quot;,&quot;muse-spark-1.3-minimal&quot;,&quot;claude-haiku-5-5&quot;,&quot;kimi-k3-max&quot;,&quot;deepseek-v41-flash-1017&quot;]\">\n                                  <span class=\"sub-badge\">最受欢迎</span>\n                                <h3 class=\"sub-name\">无限额度-季订阅-【双并发】</h3>\n                                  <p class=\"sub-subtitle\">团队与重度 Agent</p>\n                                <div class=\"sub-price\">\n                  <span class=\"sub-price-cur\">¥</span>\n                  <span class=\"sub-price-num\">499</span>\n                </div>\n                <p class=\"sub-period\">每季 · 有效 90 天</p>\n                <button type=\"button\" class=\"btn-primary sub-buy\" data-sub-buy=\"ultra\">立即订阅</button>\n                <ul class=\"sub-features\">\n                                                            <li>无限次调用</li>\n                                          <li>不限上下文长度</li>\n                                          <li>优先通道</li>\n                                          <li>支持 2 Agent并发</li>\n                                          <li>主流模型调用</li>\n                                                      </ul>\n                <div class=\"sub-quota\">\n                                      <span>总次数 <b>不限</b></span>\n                                    <span>每日 <b>不限</b></span>\n                                                                          <span>并发 <b>2 路</b></span>\n                                                      <button type=\"button\" class=\"sub-models-link\" data-sub-models=\"ultra\">\n                    查看可用模型（67）                  </button>\n                </div>\n              </div>\n                                        "
+ },
+ {
+  "id": "plan4",
+  "category": "plan1",
+  "cls": "sub-card is-hidden-cat",
+  "price": "78",
+  "name": "无限额度-周订阅-【双并发】",
+  "subtitle": "轻量日常使用",
+  "period": "每周 · 有效 7 天",
+  "badge": "",
+  "features": [
+   "每月无限次 次调用",
+   "全站模型",
+   "不限上下文长度",
+   "并发2"
+  ],
+  "total": "不限",
+  "daily": "不限",
+  "concurrency": "2 路",
+  "models_count": 67,
+  "visible": true,
+  "html": "<div class=\"sub-card is-hidden-cat\" data-sub-plan=\"plan4\"\n                data-category=\"plan1\"\n                data-price=\"78\"\n                data-name=\"无限额度-周订阅-【双并发】\"\n                data-has-qr=\"1\"\n                data-models=\"[&quot;Claude-Fable-5-Thinking-High&quot;,&quot;Claude-Haiku-4.5&quot;,&quot;Claude-Opus-4.5-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-Max&quot;,&quot;Claude-Opus-4.7-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-Max&quot;,&quot;Claude-Sonnet-4.5-Thinking&quot;,&quot;Claude-Sonnet-4.6-Thinking&quot;,&quot;Claude-Sonnet-5-Thinking&quot;,&quot;DeepSeek-V4-Flash&quot;,&quot;Gemini-3.5-Flash&quot;,&quot;gemini-3.6-flash&quot;,&quot;Gemini-3.7-Flash&quot;,&quot;GLM-5.1&quot;,&quot;GLM-5.2&quot;,&quot;GLM-5.3&quot;,&quot;gpt-5.2-Medium-Fast&quot;,&quot;GPT-5.4-Nano-Medium&quot;,&quot;GPT-5.5-Extra-High&quot;,&quot;GPT-5.6-Sol-Max-Fast&quot;,&quot;Grok-4.6-Extra-High-Fast&quot;,&quot;Hy3&quot;,&quot;Kimi-K2.5&quot;,&quot;Kimi-K2.6&quot;,&quot;Kimi-K2.7-Code&quot;,&quot;Kimi-K3&quot;,&quot;MiniMax-M2.5&quot;,&quot;MiniMax-M2.7&quot;,&quot;MiniMax-M3&quot;,&quot;Qwen3.5-Plus&quot;,&quot;Qwen3.6-Max&quot;,&quot;Qwen3.7-Max&quot;,&quot;Qwen3.8-Max&quot;,&quot;MiniMax-M2.7-highspeed&quot;,&quot;Claude-Fable-5-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-High&quot;,&quot;Claude-Opus-4.7-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-High&quot;,&quot;Claude-Opus-4.5-Thinking-High&quot;,&quot;GPT-5.6-Terra-Max-Fast&quot;,&quot;GPT-5.6-Luna-Max-Fast&quot;,&quot;MiniMax-M2.5-highspeed&quot;,&quot;Grok-4.5-Extra-High-Fast&quot;,&quot;YT-puls3.1-Opus-4.8-Thinking&quot;,&quot;YT-plus3.2-Opus-5-Thinking&quot;,&quot;YT-Pro2.8-Thinking&quot;,&quot;YT-Pro2.5-Thinking&quot;,&quot;claude-fable-5-1-thinking-max&quot;,&quot;Claude-Opus-5.5-Thinking-Max&quot;,&quot;GPT-6-Astra-max&quot;,&quot;GPT-6-Sol-MAX&quot;,&quot;GPT-6-Astra&quot;,&quot;GPT-6.1-sol&quot;,&quot;GPT-5.6-Sol&quot;,&quot;GPT-6-sol&quot;,&quot;GPT-5.5&quot;,&quot;grok-4.7&quot;,&quot;gemini-4-argon&quot;,&quot;muse-wonder-1.0&quot;,&quot;gpt-5.6-sol-max&quot;,&quot;claude-fable-5-2-high&quot;,&quot;muse-spark-1.3-minimal&quot;,&quot;claude-haiku-5-5&quot;,&quot;kimi-k3-max&quot;,&quot;deepseek-v41-flash-1017&quot;]\">\n                                <h3 class=\"sub-name\">无限额度-周订阅-【双并发】</h3>\n                                  <p class=\"sub-subtitle\">轻量日常使用</p>\n                                <div class=\"sub-price\">\n                  <span class=\"sub-price-cur\">¥</span>\n                  <span class=\"sub-price-num\">78</span>\n                </div>\n                <p class=\"sub-period\">每周 · 有效 7 天</p>\n                <button type=\"button\" class=\"btn-primary sub-buy\" data-sub-buy=\"plan4\">立即订阅</button>\n                <ul class=\"sub-features\">\n                                                            <li>每月无限次 次调用</li>\n                                          <li>全站模型</li>\n                                          <li>不限上下文长度</li>\n                                          <li>并发2</li>\n                                                      </ul>\n                <div class=\"sub-quota\">\n                                      <span>总次数 <b>不限</b></span>\n                                    <span>每日 <b>不限</b></span>\n                                                                          <span>并发 <b>2 路</b></span>\n                                                      <button type=\"button\" class=\"sub-models-link\" data-sub-models=\"plan4\">\n                    查看可用模型（67）                  </button>\n                </div>\n              </div>\n                                        "
+ },
+ {
+  "id": "plan5",
+  "category": "plan2",
+  "cls": "sub-card",
+  "price": "128",
+  "name": "每日3千次调用-月订阅-【3并发】",
+  "subtitle": "每日万次调用【全模型】",
+  "period": "每月 · 有效 30 天",
+  "badge": "",
+  "features": [
+   "每月 90000 次调用",
+   "每日上限 3000 次",
+   "全站模型",
+   "优先响应",
+   "支持三Agent并发",
+   "主流模型调用"
+  ],
+  "total": "不限",
+  "daily": "3,000 次",
+  "concurrency": "3 路",
+  "models_count": 67,
+  "visible": true,
+  "html": "<div class=\"sub-card\" data-sub-plan=\"plan5\"\n                data-category=\"plan2\"\n                data-price=\"128\"\n                data-name=\"每日3千次调用-月订阅-【3并发】\"\n                data-has-qr=\"1\"\n                data-models=\"[&quot;Claude-Fable-5-Thinking-High&quot;,&quot;Claude-Haiku-4.5&quot;,&quot;Claude-Opus-4.5-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-Max&quot;,&quot;Claude-Opus-4.7-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-Max&quot;,&quot;Claude-Sonnet-4.5-Thinking&quot;,&quot;Claude-Sonnet-4.6-Thinking&quot;,&quot;Claude-Sonnet-5-Thinking&quot;,&quot;DeepSeek-V4-Flash&quot;,&quot;Gemini-3.5-Flash&quot;,&quot;gemini-3.6-flash&quot;,&quot;Gemini-3.7-Flash&quot;,&quot;GLM-5.1&quot;,&quot;GLM-5.2&quot;,&quot;GLM-5.3&quot;,&quot;gpt-5.2-Medium-Fast&quot;,&quot;GPT-5.4-Nano-Medium&quot;,&quot;GPT-5.5-Extra-High&quot;,&quot;GPT-5.6-Sol-Max-Fast&quot;,&quot;Grok-4.6-Extra-High-Fast&quot;,&quot;Hy3&quot;,&quot;Kimi-K2.5&quot;,&quot;Kimi-K2.6&quot;,&quot;Kimi-K2.7-Code&quot;,&quot;Kimi-K3&quot;,&quot;MiniMax-M2.5&quot;,&quot;MiniMax-M2.7&quot;,&quot;MiniMax-M3&quot;,&quot;Qwen3.5-Plus&quot;,&quot;Qwen3.6-Max&quot;,&quot;Qwen3.7-Max&quot;,&quot;Qwen3.8-Max&quot;,&quot;MiniMax-M2.7-highspeed&quot;,&quot;Claude-Fable-5-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-High&quot;,&quot;Claude-Opus-4.7-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-High&quot;,&quot;Claude-Opus-4.5-Thinking-High&quot;,&quot;GPT-5.6-Terra-Max-Fast&quot;,&quot;GPT-5.6-Luna-Max-Fast&quot;,&quot;MiniMax-M2.5-highspeed&quot;,&quot;Grok-4.5-Extra-High-Fast&quot;,&quot;YT-puls3.1-Opus-4.8-Thinking&quot;,&quot;YT-plus3.2-Opus-5-Thinking&quot;,&quot;YT-Pro2.8-Thinking&quot;,&quot;YT-Pro2.5-Thinking&quot;,&quot;claude-fable-5-1-thinking-max&quot;,&quot;Claude-Opus-5.5-Thinking-Max&quot;,&quot;GPT-6-Astra-max&quot;,&quot;GPT-6-Sol-MAX&quot;,&quot;GPT-6-Astra&quot;,&quot;GPT-6.1-sol&quot;,&quot;GPT-5.6-Sol&quot;,&quot;GPT-6-sol&quot;,&quot;GPT-5.5&quot;,&quot;grok-4.7&quot;,&quot;gemini-4-argon&quot;,&quot;muse-wonder-1.0&quot;,&quot;gpt-5.6-sol-max&quot;,&quot;claude-fable-5-2-high&quot;,&quot;muse-spark-1.3-minimal&quot;,&quot;claude-haiku-5-5&quot;,&quot;kimi-k3-max&quot;,&quot;deepseek-v41-flash-1017&quot;]\">\n                                <h3 class=\"sub-name\">每日3千次调用-月订阅-【3并发】</h3>\n                                  <p class=\"sub-subtitle\">每日万次调用【全模型】</p>\n                                <div class=\"sub-price\">\n                  <span class=\"sub-price-cur\">¥</span>\n                  <span class=\"sub-price-num\">128</span>\n                </div>\n                <p class=\"sub-period\">每月 · 有效 30 天</p>\n                <button type=\"button\" class=\"btn-primary sub-buy\" data-sub-buy=\"plan5\">立即订阅</button>\n                <ul class=\"sub-features\">\n                                                            <li>每月 90000 次调用</li>\n                                          <li>每日上限 3000 次</li>\n                                          <li>全站模型</li>\n                                          <li>优先响应</li>\n                                          <li>支持三Agent并发</li>\n                                          <li>主流模型调用</li>\n                                                      </ul>\n                <div class=\"sub-quota\">\n                                      <span>总次数 <b>不限</b></span>\n                                    <span>每日 <b>3,000 次</b></span>\n                                                                          <span>并发 <b>3 路</b></span>\n                                                      <button type=\"button\" class=\"sub-models-link\" data-sub-models=\"plan5\">\n                    查看可用模型（67）                  </button>\n                </div>\n              </div>\n                                        "
+ },
+ {
+  "id": "plan6",
+  "category": "plan3",
+  "cls": "sub-card is-hidden-cat",
+  "price": "388",
+  "name": "每日5000次调用-季度订阅-【三并发】",
+  "subtitle": "团队与重度 Agent",
+  "period": "每季 · 有效 90 天",
+  "badge": "",
+  "features": [
+   "每日上限 5000 次",
+   "全站模型",
+   "优先通道",
+   "支持 3 Agent并发",
+   "主流模型调用"
+  ],
+  "total": "不限",
+  "daily": "5,000 次",
+  "concurrency": "3 路",
+  "models_count": 67,
+  "visible": true,
+  "html": "<div class=\"sub-card is-hidden-cat\" data-sub-plan=\"plan6\"\n                data-category=\"plan3\"\n                data-price=\"388\"\n                data-name=\"每日5000次调用-季度订阅-【三并发】\"\n                data-has-qr=\"1\"\n                data-models=\"[&quot;Claude-Fable-5-Thinking-High&quot;,&quot;Claude-Haiku-4.5&quot;,&quot;Claude-Opus-4.5-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-Max&quot;,&quot;Claude-Opus-4.7-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-Max&quot;,&quot;Claude-Sonnet-4.5-Thinking&quot;,&quot;Claude-Sonnet-4.6-Thinking&quot;,&quot;Claude-Sonnet-5-Thinking&quot;,&quot;DeepSeek-V4-Flash&quot;,&quot;Gemini-3.5-Flash&quot;,&quot;gemini-3.6-flash&quot;,&quot;Gemini-3.7-Flash&quot;,&quot;GLM-5.1&quot;,&quot;GLM-5.2&quot;,&quot;GLM-5.3&quot;,&quot;gpt-5.2-Medium-Fast&quot;,&quot;GPT-5.4-Nano-Medium&quot;,&quot;GPT-5.5-Extra-High&quot;,&quot;GPT-5.6-Sol-Max-Fast&quot;,&quot;Grok-4.6-Extra-High-Fast&quot;,&quot;Hy3&quot;,&quot;Kimi-K2.5&quot;,&quot;Kimi-K2.6&quot;,&quot;Kimi-K2.7-Code&quot;,&quot;Kimi-K3&quot;,&quot;MiniMax-M2.5&quot;,&quot;MiniMax-M2.7&quot;,&quot;MiniMax-M3&quot;,&quot;Qwen3.5-Plus&quot;,&quot;Qwen3.6-Max&quot;,&quot;Qwen3.7-Max&quot;,&quot;Qwen3.8-Max&quot;,&quot;MiniMax-M2.7-highspeed&quot;,&quot;Claude-Fable-5-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-High&quot;,&quot;Claude-Opus-4.7-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-High&quot;,&quot;Claude-Opus-4.5-Thinking-High&quot;,&quot;GPT-5.6-Terra-Max-Fast&quot;,&quot;GPT-5.6-Luna-Max-Fast&quot;,&quot;MiniMax-M2.5-highspeed&quot;,&quot;Grok-4.5-Extra-High-Fast&quot;,&quot;YT-puls3.1-Opus-4.8-Thinking&quot;,&quot;YT-plus3.2-Opus-5-Thinking&quot;,&quot;YT-Pro2.8-Thinking&quot;,&quot;YT-Pro2.5-Thinking&quot;,&quot;claude-fable-5-1-thinking-max&quot;,&quot;Claude-Opus-5.5-Thinking-Max&quot;,&quot;GPT-6-Astra-max&quot;,&quot;GPT-6-Sol-MAX&quot;,&quot;GPT-6-Astra&quot;,&quot;GPT-6.1-sol&quot;,&quot;GPT-5.6-Sol&quot;,&quot;GPT-6-sol&quot;,&quot;GPT-5.5&quot;,&quot;grok-4.7&quot;,&quot;gemini-4-argon&quot;,&quot;muse-wonder-1.0&quot;,&quot;gpt-5.6-sol-max&quot;,&quot;claude-fable-5-2-high&quot;,&quot;muse-spark-1.3-minimal&quot;,&quot;claude-haiku-5-5&quot;,&quot;kimi-k3-max&quot;,&quot;deepseek-v41-flash-1017&quot;]\">\n                                <h3 class=\"sub-name\">每日5000次调用-季度订阅-【三并发】</h3>\n                                  <p class=\"sub-subtitle\">团队与重度 Agent</p>\n                                <div class=\"sub-price\">\n                  <span class=\"sub-price-cur\">¥</span>\n                  <span class=\"sub-price-num\">388</span>\n                </div>\n                <p class=\"sub-period\">每季 · 有效 90 天</p>\n                <button type=\"button\" class=\"btn-primary sub-buy\" data-sub-buy=\"plan6\">立即订阅</button>\n                <ul class=\"sub-features\">\n                                                            <li>每日上限 5000 次</li>\n                                          <li>全站模型</li>\n                                          <li>优先通道</li>\n                                          <li>支持 3 Agent并发</li>\n                                          <li>主流模型调用</li>\n                                                      </ul>\n                <div class=\"sub-quota\">\n                                      <span>总次数 <b>不限</b></span>\n                                    <span>每日 <b>5,000 次</b></span>\n                                                                          <span>并发 <b>3 路</b></span>\n                                                      <button type=\"button\" class=\"sub-models-link\" data-sub-models=\"plan6\">\n                    查看可用模型（67）                  </button>\n                </div>\n              </div>\n                                        "
+ },
+ {
+  "id": "yt-plus",
+  "category": "plan1",
+  "cls": "sub-card is-hidden-cat",
+  "price": "65",
+  "name": "无限额度-周订阅-【单并发】",
+  "subtitle": "高性价比日常",
+  "period": "每周 · 有效 7 天",
+  "badge": "",
+  "features": [
+   "每月无限次 次调用",
+   "全站模型",
+   "不限上下文长度",
+   "并发1"
+  ],
+  "total": "不限",
+  "daily": "不限",
+  "concurrency": "1 路",
+  "models_count": 67,
+  "visible": true,
+  "html": "<div class=\"sub-card is-hidden-cat\" data-sub-plan=\"yt-plus\"\n                data-category=\"plan1\"\n                data-price=\"65\"\n                data-name=\"无限额度-周订阅-【单并发】\"\n                data-has-qr=\"1\"\n                data-models=\"[&quot;Claude-Fable-5-Thinking-High&quot;,&quot;Claude-Haiku-4.5&quot;,&quot;Claude-Opus-4.5-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-Max&quot;,&quot;Claude-Opus-4.7-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-Max&quot;,&quot;Claude-Sonnet-4.5-Thinking&quot;,&quot;Claude-Sonnet-4.6-Thinking&quot;,&quot;Claude-Sonnet-5-Thinking&quot;,&quot;DeepSeek-V4-Flash&quot;,&quot;Gemini-3.5-Flash&quot;,&quot;gemini-3.6-flash&quot;,&quot;Gemini-3.7-Flash&quot;,&quot;GLM-5.1&quot;,&quot;GLM-5.2&quot;,&quot;GLM-5.3&quot;,&quot;gpt-5.2-Medium-Fast&quot;,&quot;GPT-5.4-Nano-Medium&quot;,&quot;GPT-5.5-Extra-High&quot;,&quot;GPT-5.6-Sol-Max-Fast&quot;,&quot;Grok-4.6-Extra-High-Fast&quot;,&quot;Hy3&quot;,&quot;Kimi-K2.5&quot;,&quot;Kimi-K2.6&quot;,&quot;Kimi-K2.7-Code&quot;,&quot;Kimi-K3&quot;,&quot;MiniMax-M2.5&quot;,&quot;MiniMax-M2.7&quot;,&quot;MiniMax-M3&quot;,&quot;Qwen3.5-Plus&quot;,&quot;Qwen3.6-Max&quot;,&quot;Qwen3.7-Max&quot;,&quot;Qwen3.8-Max&quot;,&quot;MiniMax-M2.7-highspeed&quot;,&quot;Claude-Fable-5-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-High&quot;,&quot;Claude-Opus-4.7-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-High&quot;,&quot;Claude-Opus-4.5-Thinking-High&quot;,&quot;GPT-5.6-Terra-Max-Fast&quot;,&quot;GPT-5.6-Luna-Max-Fast&quot;,&quot;MiniMax-M2.5-highspeed&quot;,&quot;Grok-4.5-Extra-High-Fast&quot;,&quot;YT-puls3.1-Opus-4.8-Thinking&quot;,&quot;YT-plus3.2-Opus-5-Thinking&quot;,&quot;YT-Pro2.8-Thinking&quot;,&quot;YT-Pro2.5-Thinking&quot;,&quot;claude-fable-5-1-thinking-max&quot;,&quot;Claude-Opus-5.5-Thinking-Max&quot;,&quot;GPT-6-Astra-max&quot;,&quot;GPT-6-Sol-MAX&quot;,&quot;GPT-6-Astra&quot;,&quot;GPT-6.1-sol&quot;,&quot;GPT-5.6-Sol&quot;,&quot;GPT-6-sol&quot;,&quot;GPT-5.5&quot;,&quot;grok-4.7&quot;,&quot;gemini-4-argon&quot;,&quot;muse-wonder-1.0&quot;,&quot;gpt-5.6-sol-max&quot;,&quot;claude-fable-5-2-high&quot;,&quot;muse-spark-1.3-minimal&quot;,&quot;claude-haiku-5-5&quot;,&quot;kimi-k3-max&quot;,&quot;deepseek-v41-flash-1017&quot;]\">\n                                <h3 class=\"sub-name\">无限额度-周订阅-【单并发】</h3>\n                                  <p class=\"sub-subtitle\">高性价比日常</p>\n                                <div class=\"sub-price\">\n                  <span class=\"sub-price-cur\">¥</span>\n                  <span class=\"sub-price-num\">65</span>\n                </div>\n                <p class=\"sub-period\">每周 · 有效 7 天</p>\n                <button type=\"button\" class=\"btn-primary sub-buy\" data-sub-buy=\"yt-plus\">立即订阅</button>\n                <ul class=\"sub-features\">\n                                                            <li>每月无限次 次调用</li>\n                                          <li>全站模型</li>\n                                          <li>不限上下文长度</li>\n                                          <li>并发1</li>\n                                                      </ul>\n                <div class=\"sub-quota\">\n                                      <span>总次数 <b>不限</b></span>\n                                    <span>每日 <b>不限</b></span>\n                                                                          <span>并发 <b>1 路</b></span>\n                                                      <button type=\"button\" class=\"sub-models-link\" data-sub-models=\"yt-plus\">\n                    查看可用模型（67）                  </button>\n                </div>\n              </div>"
+ }
+]

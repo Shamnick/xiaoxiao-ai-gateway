@@ -1,0 +1,48 @@
+/* 自建在线客服浮窗（替代第三方 kefu 组件） */
+#ytkSupportBtn{
+  position:fixed;right:22px;bottom:22px;z-index:2147483000;
+  display:flex;align-items:center;gap:8px;padding:11px 18px;border:0;border-radius:999px;cursor:pointer;
+  background:linear-gradient(135deg,#1e4fd8,#22a3ee 60%,#38bdf8);
+  color:#fff;font:600 14px/1 system-ui,-apple-system,"PingFang SC",sans-serif;
+  box-shadow:0 10px 30px rgba(30,79,216,.42),0 0 0 1px rgba(120,200,255,.35) inset;
+  transition:transform .16s,box-shadow .16s;
+}
+#ytkSupportBtn:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(30,79,216,.55)}
+#ytkSupportBtn svg{width:18px;height:18px;flex:0 0 auto}
+#ytkSupportBtn .dot{width:8px;height:8px;border-radius:50%;background:#5ff09a;box-shadow:0 0 8px #5ff09a}
+#ytkSupportPanel{
+  position:fixed;right:22px;bottom:78px;z-index:2147483001;width:360px;max-width:calc(100vw - 32px);
+  height:520px;max-height:calc(100vh - 120px);display:none;flex-direction:column;overflow:hidden;
+  background:linear-gradient(180deg,#0d1a2c,#0a1320);border:1px solid rgba(90,160,230,.35);border-radius:16px;
+  box-shadow:0 24px 60px rgba(0,8,20,.6);color:#e6f1ff;font:14px/1.6 system-ui,-apple-system,"PingFang SC",sans-serif;
+}
+#ytkSupportPanel.open{display:flex}
+.ytk-s-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(90,160,230,.18);background:rgba(20,40,70,.5)}
+.ytk-s-head b{font-size:14px}
+.ytk-s-head .st{font-size:11.5px;color:#7ee7a8;display:flex;align-items:center;gap:5px}
+.ytk-s-head .st i{width:6px;height:6px;border-radius:50%;background:#5ff09a;display:inline-block;box-shadow:0 0 6px #5ff09a}
+.ytk-s-x{margin-left:auto;width:28px;height:28px;border-radius:8px;border:1px solid rgba(90,160,230,.25);background:transparent;color:#9fb3cd;cursor:pointer;font-size:16px;line-height:1}
+.ytk-s-x:hover{color:#fff;border-color:rgba(120,200,255,.5)}
+.ytk-s-body{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.ytk-s-tip{font-size:12px;color:#6d829c;text-align:center;line-height:1.8}
+.ytk-s-msg{max-width:82%;padding:9px 12px;border-radius:12px;font-size:13.5px;word-break:break-word;white-space:pre-wrap}
+.ytk-s-msg.user{align-self:flex-end;background:linear-gradient(135deg,#1e4fd8,#22a3ee);color:#fff;border-bottom-right-radius:4px}
+.ytk-s-msg.agent{align-self:flex-start;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.22);color:#d9f7ff;border-bottom-left-radius:4px}
+.ytk-s-msg .who{display:block;font-size:11px;opacity:.7;margin-bottom:3px}
+.ytk-s-foot{border-top:1px solid rgba(90,160,230,.18);padding:10px;display:flex;flex-direction:column;gap:8px}
+.ytk-s-name,.ytk-s-input{
+  width:100%;box-sizing:border-box;padding:9px 11px;border-radius:10px;background:rgba(6,12,22,.9);
+  border:1px solid rgba(90,160,230,.25);color:#e6f1ff;font:inherit;outline:none;
+}
+.ytk-s-input{resize:none;min-height:64px}
+.ytk-s-name:focus,.ytk-s-input:focus{border-color:#22d3ee;box-shadow:0 0 0 3px rgba(34,211,238,.14)}
+.ytk-s-actions{display:flex;align-items:center;gap:8px}
+.ytk-s-send{margin-left:auto;padding:8px 18px;border:0;border-radius:10px;cursor:pointer;font-weight:600;
+  background:linear-gradient(135deg,#22d3ee,#0ea5c4);color:#03131a}
+.ytk-s-send:disabled{opacity:.5;cursor:not-allowed}
+.ytk-s-hint{font-size:11px;color:#6d829c}
+.ytk-s-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#ef4444;color:#fff;font-size:11px;line-height:18px;text-align:center;padding:0 5px;display:none}
+#ytkSupportBtn{position:fixed}
+.ytk-s-wrap{position:fixed;right:22px;bottom:22px;z-index:2147483000}
+.ytk-s-wrap .ytk-s-badge{right:-2px;top:-2px}
+@media (max-width:480px){#ytkSupportPanel{height:70vh;bottom:70px}}

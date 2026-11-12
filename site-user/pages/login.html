@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>宇天科技-用户中心</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo-128.png?v=fce98cd7e66c">
+  <link rel="stylesheet" href="/assets/css/user.css?v=840d1db4bf23">
+</head>
+<body class="auth-body" data-site-title="宇天科技-用户中心">
+  <div class="auth-card">
+    <div class="auth-head">
+      <img class="auth-logo" src="/assets/img/logo-128.png?v=fce98cd7e66c" alt="宇天科技" width="56" height="56" decoding="async">
+      <a class="auth-brand" href="https://a1.yutiankejiai.com/">宇天科技</a>
+      <p class="auth-sub">用户中心 · 登录</p>
+    </div>
+                    <div class="auth-tabs" role="tablist">
+        <button type="button" class="auth-tab is-active" data-auth-tab="pwd" role="tab">账号密码登录</button>
+        <button type="button" class="auth-tab" data-auth-tab="code" role="tab">邀请码登录</button>
+      </div>
+      <form method="post" action="/?page=login" class="auth-form" data-auth-pane="pwd">
+        <input type="hidden" name="csrf" value="892b307c632ebce0e45957adc2437b3bbe3e20ddb7426a2d1c628c20a1d43e1f">
+        <input type="hidden" name="action" value="login">
+        <label class="auth-label">用户名
+          <input class="auth-input" type="text" name="username" required maxlength="64" autocomplete="username" autofocus>
+        </label>
+        <label class="auth-label">密码
+          <input class="auth-input" type="password" name="password" required maxlength="128" autocomplete="current-password">
+        </label>
+                  <div class="cf-turnstile auth-cf" data-sitekey="0x4AAAAAAEUIwjUTfIDP-Zqg" data-theme="light" data-language="zh-cn"
+               data-callback="ytCfDone" data-expired-callback="ytCfExpired" data-error-callback="ytCfError"></div>
+                <button class="auth-btn is-cf-wait" type="submit" data-cf-guard data-cf-label="登录"
+          disabled>请先完成人机验证</button>
+                  <p class="auth-switch">还没有账号？<a href="/?page=register">立即注册</a></p>
+              </form>
+      <form method="post" action="/?page=login" class="auth-form" data-auth-pane="code" hidden>
+        <input type="hidden" name="csrf" value="892b307c632ebce0e45957adc2437b3bbe3e20ddb7426a2d1c628c20a1d43e1f">
+        <input type="hidden" name="action" value="login_by_code">
+        <label class="auth-label">邀请码
+          <input class="auth-input auth-input-code" type="text" name="invite_code" required maxlength="32"
+            value="" placeholder="输入好友给你的邀请码"
+            autocomplete="off" spellcheck="false">
+          <span class="auth-field-hint">无需注册，用邀请码直接进站；系统会为你创建账号，登录后请立即设置自己的账号密码</span>
+        </label>
+                  <div class="cf-turnstile auth-cf" data-sitekey="0x4AAAAAAEUIwjUTfIDP-Zqg" data-theme="light" data-language="zh-cn"
+               data-callback="ytCfDone" data-expired-callback="ytCfExpired" data-error-callback="ytCfError"></div>
+                <button class="auth-btn is-cf-wait" type="submit" data-cf-guard data-cf-label="用邀请码进入"
+          disabled>请先完成人机验证</button>
+        <p class="auth-switch">一个邀请码只能使用一次，用后即失效</p>
+      </form>
+      </div>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script src="/assets/js/user.js?v=5d2dbfa8b598" defer></script>
+    <script src="https://kefu.yutiankejiai.com/widget.js" data-from="user/auth" defer></script>
+</body>
+</html>

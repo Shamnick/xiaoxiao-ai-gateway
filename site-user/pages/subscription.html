@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+    <title>宇天科技-用户中心</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo-128.png?v=fce98cd7e66c">
+  <link rel="stylesheet" href="/assets/css/user.css?v=840d1db4bf23">
+</head>
+<body class="shell-body" data-site-title="宇天科技-用户中心" data-page="subscription">
+    <header class="shell-topbar">
+    <div class="shell-topbar-inner">
+      <span class="shell-topbar-left">用户中心</span>
+      <div class="shell-topbar-actions">
+        <a class="shell-top-link" href="https://a1.yutiankejiai.com/" target="_blank" rel="noopener"
+          data-home-link><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> 首页</a>
+        <div class="user-menu" id="user-menu">
+          <button type="button" class="shell-user-pill" data-toggle-menu="user-menu" aria-haspopup="true">
+            <svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> sham<span class="pill-caret">▾</span>
+          </button>
+          <div class="user-dropdown" hidden>
+            <div class="user-dropdown-head">
+              <img class="user-dropdown-avatar" src="/assets/img/logo-128.png?v=fce98cd7e66c" alt="" width="38" height="38">
+              <b>sham</b>
+            </div>
+            <div class="user-dropdown-actions">
+              <a class="user-dropdown-btn" href="/?page=settings"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 个人中心</a>
+              <form method="post" action="/?page=subscription" class="user-dropdown-form">
+                <input type="hidden" name="csrf" value="fe2331a15e0e6995a74ddd026e4de9317fcac495754fd84e240bc9c9dc350e39">
+                <input type="hidden" name="action" value="logout">
+                <button type="submit" class="user-dropdown-btn is-danger"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> 退出登录</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="shell-layout">
+    <aside class="shell-sidebar">
+      <div class="shell-side-scroll">
+        <div class="shell-side-title">导航</div>
+        <nav class="shell-nav">
+                                  <a class="shell-nav-item" href="/">
+              <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>控制台</span>
+                          </a>
+                                  <a class="shell-nav-item" href="/?page=keys">
+              <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg><span>我的 Key</span>
+                          </a>
+                                  <a class="shell-nav-item" href="/?page=billing">
+              <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>积分账单</span>
+                          </a>
+                                  <a class="shell-nav-item" href="/?page=recharge">
+              <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span>充值积分</span>
+                          </a>
+                                  <a class="shell-nav-item is-active" href="/?page=subscription">
+              <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 18h20l-2-9-5 4-3-7-3 7-5-4z"/><line x1="2" y1="21" x2="22" y2="21"/></svg><span>无限额度订阅</span>
+              <em class="nav-neon">NEW</em>            </a>
+                                  <a class="shell-nav-item" href="/video/" data-no-pjax>
+              <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="18" rx="2" ry="2"/><line x1="7" y1="3" x2="7" y2="21"/><line x1="17" y1="3" x2="17" y2="21"/><line x1="2" y1="9" x2="7" y2="9"/><line x1="2" y1="15" x2="7" y2="15"/><line x1="17" y1="9" x2="22" y2="9"/><line x1="17" y1="15" x2="22" y2="15"/></svg><span>视频生成</span>
+              <em class="nav-neon">NEW</em>            </a>
+                                  <a class="shell-nav-item" href="/image/" data-no-pjax>
+              <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>图片生成</span>
+              <em class="nav-neon">NEW</em>            </a>
+                                  <a class="shell-nav-item" href="/?page=invite">
+              <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg><span>邀请有奖</span>
+                          </a>
+                                  <a class="shell-nav-item" href="/?page=docs">
+              <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>API 文档</span>
+                          </a>
+                  </nav>
+        <div class="shell-side-title shell-side-title-gap">资源</div>
+        <nav class="shell-nav">
+          <a class="shell-nav-item" href="https://a1.yutiankejiai.com/?page=models" target="_blank" rel="noopener">
+            <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span>模型广场 ↗</span>
+          </a>
+        </nav>
+        <div class="shell-side-title shell-side-title-gap">个人中心</div>
+        <nav class="shell-nav">
+          <a class="shell-nav-item" href="/?page=settings">
+            <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>个人设置</span>
+          </a>
+        </nav>
+      </div>
+                  <a class="shell-side-brand" href="/" title="宇天科技 用户中心">
+        <img class="shell-brand-logo" src="/assets/img/logo-128.png?v=fce98cd7e66c" alt="宇天科技" width="36" height="36" decoding="async">
+        <span class="shell-brand-text"><strong>宇天科技</strong><small>用户中心</small></span>
+      </a>
+    </aside>
+    <main class="shell-main" id="shell-main">
+            <div class="sub-renew-tip" id="sub-renew-tip" hidden></div>
+      <div class="page-head">
+        <h1>无限额度订阅</h1>
+              </div>
+
+            <section class="panel">
+                          <div class="sub-tabs" id="sub-tabs">
+                          <button type="button" class="sub-tab is-active"
+                data-sub-tab="plan2">月套餐</button>
+                          <button type="button" class="sub-tab"
+                data-sub-tab="plan3">无限额度季套餐</button>
+                          <button type="button" class="sub-tab"
+                data-sub-tab="plan1">无限额度周套餐</button>
+                      </div>
+                                      <p class="sub-cat-desc" data-cat-desc="plan2">
+              面向个人开发者、Coding 用户、日常办公场景，全模态不限用量额度，单价最低，适合长期高频的文本 / 代码场景。            </p>
+                                        <p class="sub-cat-desc" data-cat-desc="plan3" hidden>
+              面向个人开发者、Coding 用户、日常办公场景，全模态不限用量额度，单价最低，适合长期高频的文本 / 代码场景。            </p>
+                                        <p class="sub-cat-desc" data-cat-desc="plan1" hidden>
+              面向个人开发者、Coding 用户、日常办公场景，全模态不限用量额度，单价最低，适合长期高频的文本 / 代码场景。            </p>
+                          <p class="panel-sub sub-shelf-note">订阅后立即获得一把专属密钥；重复购买同一套餐只会<b>延长有效期</b>，密钥不变</p>
+
+                  <div class="sub-grid" id="sub-grid" data-active-cat="plan2">
+                                        <div class="sub-card is-featured is-hidden-cat" data-sub-plan="ultra"
+                data-category="plan3"
+                data-price="499"
+                data-name="无限额度-季订阅-【双并发】"
+                data-has-qr="1"
+                data-models="[&quot;Claude-Fable-5-Thinking-High&quot;,&quot;Claude-Haiku-4.5&quot;,&quot;Claude-Opus-4.5-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-Max&quot;,&quot;Claude-Opus-4.7-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-Max&quot;,&quot;Claude-Sonnet-4.5-Thinking&quot;,&quot;Claude-Sonnet-4.6-Thinking&quot;,&quot;Claude-Sonnet-5-Thinking&quot;,&quot;DeepSeek-V4-Flash&quot;,&quot;Gemini-3.5-Flash&quot;,&quot;gemini-3.6-flash&quot;,&quot;Gemini-3.7-Flash&quot;,&quot;GLM-5.1&quot;,&quot;GLM-5.2&quot;,&quot;GLM-5.3&quot;,&quot;gpt-5.2-Medium-Fast&quot;,&quot;GPT-5.4-Nano-Medium&quot;,&quot;GPT-5.5-Extra-High&quot;,&quot;GPT-5.6-Sol-Max-Fast&quot;,&quot;Grok-4.6-Extra-High-Fast&quot;,&quot;Hy3&quot;,&quot;Kimi-K2.5&quot;,&quot;Kimi-K2.6&quot;,&quot;Kimi-K2.7-Code&quot;,&quot;Kimi-K3&quot;,&quot;MiniMax-M2.5&quot;,&quot;MiniMax-M2.7&quot;,&quot;MiniMax-M3&quot;,&quot;Qwen3.5-Plus&quot;,&quot;Qwen3.6-Max&quot;,&quot;Qwen3.7-Max&quot;,&quot;Qwen3.8-Max&quot;,&quot;MiniMax-M2.7-highspeed&quot;,&quot;Claude-Fable-5-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-High&quot;,&quot;Claude-Opus-4.7-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-High&quot;,&quot;Claude-Opus-4.5-Thinking-High&quot;,&quot;GPT-5.6-Terra-Max-Fast&quot;,&quot;GPT-5.6-Luna-Max-Fast&quot;,&quot;MiniMax-M2.5-highspeed&quot;,&quot;Grok-4.5-Extra-High-Fast&quot;,&quot;YT-puls3.1-Opus-4.8-Thinking&quot;,&quot;YT-plus3.2-Opus-5-Thinking&quot;,&quot;YT-Pro2.8-Thinking&quot;,&quot;YT-Pro2.5-Thinking&quot;,&quot;claude-fable-5-1-thinking-max&quot;,&quot;Claude-Opus-5.5-Thinking-Max&quot;,&quot;GPT-6-Astra-max&quot;,&quot;GPT-6-Sol-MAX&quot;,&quot;GPT-6-Astra&quot;,&quot;GPT-6.1-sol&quot;,&quot;GPT-5.6-Sol&quot;,&quot;GPT-6-sol&quot;,&quot;GPT-5.5&quot;,&quot;grok-4.7&quot;,&quot;gemini-4-argon&quot;,&quot;muse-wonder-1.0&quot;,&quot;gpt-5.6-sol-max&quot;,&quot;claude-fable-5-2-high&quot;,&quot;muse-spark-1.3-minimal&quot;,&quot;claude-haiku-5-5&quot;,&quot;kimi-k3-max&quot;,&quot;deepseek-v41-flash-1017&quot;]">
+                                  <span class="sub-badge">最受欢迎</span>
+                                <h3 class="sub-name">无限额度-季订阅-【双并发】</h3>
+                                  <p class="sub-subtitle">团队与重度 Agent</p>
+                                <div class="sub-price">
+                  <span class="sub-price-cur">¥</span>
+                  <span class="sub-price-num">499</span>
+                </div>
+                <p class="sub-period">每季 · 有效 90 天</p>
+                <button type="button" class="btn-primary sub-buy" data-sub-buy="ultra">立即订阅</button>
+                <ul class="sub-features">
+                                                            <li>无限次调用</li>
+                                          <li>不限上下文长度</li>
+                                          <li>优先通道</li>
+                                          <li>支持 2 Agent并发</li>
+                                          <li>主流模型调用</li>
+                                                      </ul>
+                <div class="sub-quota">
+                                      <span>总次数 <b>不限</b></span>
+                                    <span>每日 <b>不限</b></span>
+                                                                          <span>并发 <b>2 路</b></span>
+                                                      <button type="button" class="sub-models-link" data-sub-models="ultra">
+                    查看可用模型（67）                  </button>
+                </div>
+              </div>
+                                        <div class="sub-card is-hidden-cat" data-sub-plan="plan4"
+                data-category="plan1"
+                data-price="78"
+                data-name="无限额度-周订阅-【双并发】"
+                data-has-qr="1"
+                data-models="[&quot;Claude-Fable-5-Thinking-High&quot;,&quot;Claude-Haiku-4.5&quot;,&quot;Claude-Opus-4.5-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-Max&quot;,&quot;Claude-Opus-4.7-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-Max&quot;,&quot;Claude-Sonnet-4.5-Thinking&quot;,&quot;Claude-Sonnet-4.6-Thinking&quot;,&quot;Claude-Sonnet-5-Thinking&quot;,&quot;DeepSeek-V4-Flash&quot;,&quot;Gemini-3.5-Flash&quot;,&quot;gemini-3.6-flash&quot;,&quot;Gemini-3.7-Flash&quot;,&quot;GLM-5.1&quot;,&quot;GLM-5.2&quot;,&quot;GLM-5.3&quot;,&quot;gpt-5.2-Medium-Fast&quot;,&quot;GPT-5.4-Nano-Medium&quot;,&quot;GPT-5.5-Extra-High&quot;,&quot;GPT-5.6-Sol-Max-Fast&quot;,&quot;Grok-4.6-Extra-High-Fast&quot;,&quot;Hy3&quot;,&quot;Kimi-K2.5&quot;,&quot;Kimi-K2.6&quot;,&quot;Kimi-K2.7-Code&quot;,&quot;Kimi-K3&quot;,&quot;MiniMax-M2.5&quot;,&quot;MiniMax-M2.7&quot;,&quot;MiniMax-M3&quot;,&quot;Qwen3.5-Plus&quot;,&quot;Qwen3.6-Max&quot;,&quot;Qwen3.7-Max&quot;,&quot;Qwen3.8-Max&quot;,&quot;MiniMax-M2.7-highspeed&quot;,&quot;Claude-Fable-5-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-High&quot;,&quot;Claude-Opus-4.7-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-High&quot;,&quot;Claude-Opus-4.5-Thinking-High&quot;,&quot;GPT-5.6-Terra-Max-Fast&quot;,&quot;GPT-5.6-Luna-Max-Fast&quot;,&quot;MiniMax-M2.5-highspeed&quot;,&quot;Grok-4.5-Extra-High-Fast&quot;,&quot;YT-puls3.1-Opus-4.8-Thinking&quot;,&quot;YT-plus3.2-Opus-5-Thinking&quot;,&quot;YT-Pro2.8-Thinking&quot;,&quot;YT-Pro2.5-Thinking&quot;,&quot;claude-fable-5-1-thinking-max&quot;,&quot;Claude-Opus-5.5-Thinking-Max&quot;,&quot;GPT-6-Astra-max&quot;,&quot;GPT-6-Sol-MAX&quot;,&quot;GPT-6-Astra&quot;,&quot;GPT-6.1-sol&quot;,&quot;GPT-5.6-Sol&quot;,&quot;GPT-6-sol&quot;,&quot;GPT-5.5&quot;,&quot;grok-4.7&quot;,&quot;gemini-4-argon&quot;,&quot;muse-wonder-1.0&quot;,&quot;gpt-5.6-sol-max&quot;,&quot;claude-fable-5-2-high&quot;,&quot;muse-spark-1.3-minimal&quot;,&quot;claude-haiku-5-5&quot;,&quot;kimi-k3-max&quot;,&quot;deepseek-v41-flash-1017&quot;]">
+                                <h3 class="sub-name">无限额度-周订阅-【双并发】</h3>
+                                  <p class="sub-subtitle">轻量日常使用</p>
+                                <div class="sub-price">
+                  <span class="sub-price-cur">¥</span>
+                  <span class="sub-price-num">78</span>
+                </div>
+                <p class="sub-period">每周 · 有效 7 天</p>
+                <button type="button" class="btn-primary sub-buy" data-sub-buy="plan4">立即订阅</button>
+                <ul class="sub-features">
+                                                            <li>每月无限次 次调用</li>
+                                          <li>全站模型</li>
+                                          <li>不限上下文长度</li>
+                                          <li>并发2</li>
+                                                      </ul>
+                <div class="sub-quota">
+                                      <span>总次数 <b>不限</b></span>
+                                    <span>每日 <b>不限</b></span>
+                                                                          <span>并发 <b>2 路</b></span>
+                                                      <button type="button" class="sub-models-link" data-sub-models="plan4">
+                    查看可用模型（67）                  </button>
+                </div>
+              </div>
+                                        <div class="sub-card" data-sub-plan="plan5"
+                data-category="plan2"
+                data-price="128"
+                data-name="每日3千次调用-月订阅-【3并发】"
+                data-has-qr="1"
+                data-models="[&quot;Claude-Fable-5-Thinking-High&quot;,&quot;Claude-Haiku-4.5&quot;,&quot;Claude-Opus-4.5-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-Max&quot;,&quot;Claude-Opus-4.7-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-Max&quot;,&quot;Claude-Sonnet-4.5-Thinking&quot;,&quot;Claude-Sonnet-4.6-Thinking&quot;,&quot;Claude-Sonnet-5-Thinking&quot;,&quot;DeepSeek-V4-Flash&quot;,&quot;Gemini-3.5-Flash&quot;,&quot;gemini-3.6-flash&quot;,&quot;Gemini-3.7-Flash&quot;,&quot;GLM-5.1&quot;,&quot;GLM-5.2&quot;,&quot;GLM-5.3&quot;,&quot;gpt-5.2-Medium-Fast&quot;,&quot;GPT-5.4-Nano-Medium&quot;,&quot;GPT-5.5-Extra-High&quot;,&quot;GPT-5.6-Sol-Max-Fast&quot;,&quot;Grok-4.6-Extra-High-Fast&quot;,&quot;Hy3&quot;,&quot;Kimi-K2.5&quot;,&quot;Kimi-K2.6&quot;,&quot;Kimi-K2.7-Code&quot;,&quot;Kimi-K3&quot;,&quot;MiniMax-M2.5&quot;,&quot;MiniMax-M2.7&quot;,&quot;MiniMax-M3&quot;,&quot;Qwen3.5-Plus&quot;,&quot;Qwen3.6-Max&quot;,&quot;Qwen3.7-Max&quot;,&quot;Qwen3.8-Max&quot;,&quot;MiniMax-M2.7-highspeed&quot;,&quot;Claude-Fable-5-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-High&quot;,&quot;Claude-Opus-4.7-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-High&quot;,&quot;Claude-Opus-4.5-Thinking-High&quot;,&quot;GPT-5.6-Terra-Max-Fast&quot;,&quot;GPT-5.6-Luna-Max-Fast&quot;,&quot;MiniMax-M2.5-highspeed&quot;,&quot;Grok-4.5-Extra-High-Fast&quot;,&quot;YT-puls3.1-Opus-4.8-Thinking&quot;,&quot;YT-plus3.2-Opus-5-Thinking&quot;,&quot;YT-Pro2.8-Thinking&quot;,&quot;YT-Pro2.5-Thinking&quot;,&quot;claude-fable-5-1-thinking-max&quot;,&quot;Claude-Opus-5.5-Thinking-Max&quot;,&quot;GPT-6-Astra-max&quot;,&quot;GPT-6-Sol-MAX&quot;,&quot;GPT-6-Astra&quot;,&quot;GPT-6.1-sol&quot;,&quot;GPT-5.6-Sol&quot;,&quot;GPT-6-sol&quot;,&quot;GPT-5.5&quot;,&quot;grok-4.7&quot;,&quot;gemini-4-argon&quot;,&quot;muse-wonder-1.0&quot;,&quot;gpt-5.6-sol-max&quot;,&quot;claude-fable-5-2-high&quot;,&quot;muse-spark-1.3-minimal&quot;,&quot;claude-haiku-5-5&quot;,&quot;kimi-k3-max&quot;,&quot;deepseek-v41-flash-1017&quot;]">
+                                <h3 class="sub-name">每日3千次调用-月订阅-【3并发】</h3>
+                                  <p class="sub-subtitle">每日万次调用【全模型】</p>
+                                <div class="sub-price">
+                  <span class="sub-price-cur">¥</span>
+                  <span class="sub-price-num">128</span>
+                </div>
+                <p class="sub-period">每月 · 有效 30 天</p>
+                <button type="button" class="btn-primary sub-buy" data-sub-buy="plan5">立即订阅</button>
+                <ul class="sub-features">
+                                                            <li>每月 90000 次调用</li>
+                                          <li>每日上限 3000 次</li>
+                                          <li>全站模型</li>
+                                          <li>优先响应</li>
+                                          <li>支持三Agent并发</li>
+                                          <li>主流模型调用</li>
+                                                      </ul>
+                <div class="sub-quota">
+                                      <span>总次数 <b>不限</b></span>
+                                    <span>每日 <b>3,000 次</b></span>
+                                                                          <span>并发 <b>3 路</b></span>
+                                                      <button type="button" class="sub-models-link" data-sub-models="plan5">
+                    查看可用模型（67）                  </button>
+                </div>
+              </div>
+                                        <div class="sub-card is-hidden-cat" data-sub-plan="plan6"
+                data-category="plan3"
+                data-price="388"
+                data-name="每日5000次调用-季度订阅-【三并发】"
+                data-has-qr="1"
+                data-models="[&quot;Claude-Fable-5-Thinking-High&quot;,&quot;Claude-Haiku-4.5&quot;,&quot;Claude-Opus-4.5-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-Max&quot;,&quot;Claude-Opus-4.7-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-Max&quot;,&quot;Claude-Sonnet-4.5-Thinking&quot;,&quot;Claude-Sonnet-4.6-Thinking&quot;,&quot;Claude-Sonnet-5-Thinking&quot;,&quot;DeepSeek-V4-Flash&quot;,&quot;Gemini-3.5-Flash&quot;,&quot;gemini-3.6-flash&quot;,&quot;Gemini-3.7-Flash&quot;,&quot;GLM-5.1&quot;,&quot;GLM-5.2&quot;,&quot;GLM-5.3&quot;,&quot;gpt-5.2-Medium-Fast&quot;,&quot;GPT-5.4-Nano-Medium&quot;,&quot;GPT-5.5-Extra-High&quot;,&quot;GPT-5.6-Sol-Max-Fast&quot;,&quot;Grok-4.6-Extra-High-Fast&quot;,&quot;Hy3&quot;,&quot;Kimi-K2.5&quot;,&quot;Kimi-K2.6&quot;,&quot;Kimi-K2.7-Code&quot;,&quot;Kimi-K3&quot;,&quot;MiniMax-M2.5&quot;,&quot;MiniMax-M2.7&quot;,&quot;MiniMax-M3&quot;,&quot;Qwen3.5-Plus&quot;,&quot;Qwen3.6-Max&quot;,&quot;Qwen3.7-Max&quot;,&quot;Qwen3.8-Max&quot;,&quot;MiniMax-M2.7-highspeed&quot;,&quot;Claude-Fable-5-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-High&quot;,&quot;Claude-Opus-4.7-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-High&quot;,&quot;Claude-Opus-4.5-Thinking-High&quot;,&quot;GPT-5.6-Terra-Max-Fast&quot;,&quot;GPT-5.6-Luna-Max-Fast&quot;,&quot;MiniMax-M2.5-highspeed&quot;,&quot;Grok-4.5-Extra-High-Fast&quot;,&quot;YT-puls3.1-Opus-4.8-Thinking&quot;,&quot;YT-plus3.2-Opus-5-Thinking&quot;,&quot;YT-Pro2.8-Thinking&quot;,&quot;YT-Pro2.5-Thinking&quot;,&quot;claude-fable-5-1-thinking-max&quot;,&quot;Claude-Opus-5.5-Thinking-Max&quot;,&quot;GPT-6-Astra-max&quot;,&quot;GPT-6-Sol-MAX&quot;,&quot;GPT-6-Astra&quot;,&quot;GPT-6.1-sol&quot;,&quot;GPT-5.6-Sol&quot;,&quot;GPT-6-sol&quot;,&quot;GPT-5.5&quot;,&quot;grok-4.7&quot;,&quot;gemini-4-argon&quot;,&quot;muse-wonder-1.0&quot;,&quot;gpt-5.6-sol-max&quot;,&quot;claude-fable-5-2-high&quot;,&quot;muse-spark-1.3-minimal&quot;,&quot;claude-haiku-5-5&quot;,&quot;kimi-k3-max&quot;,&quot;deepseek-v41-flash-1017&quot;]">
+                                <h3 class="sub-name">每日5000次调用-季度订阅-【三并发】</h3>
+                                  <p class="sub-subtitle">团队与重度 Agent</p>
+                                <div class="sub-price">
+                  <span class="sub-price-cur">¥</span>
+                  <span class="sub-price-num">388</span>
+                </div>
+                <p class="sub-period">每季 · 有效 90 天</p>
+                <button type="button" class="btn-primary sub-buy" data-sub-buy="plan6">立即订阅</button>
+                <ul class="sub-features">
+                                                            <li>每日上限 5000 次</li>
+                                          <li>全站模型</li>
+                                          <li>优先通道</li>
+                                          <li>支持 3 Agent并发</li>
+                                          <li>主流模型调用</li>
+                                                      </ul>
+                <div class="sub-quota">
+                                      <span>总次数 <b>不限</b></span>
+                                    <span>每日 <b>5,000 次</b></span>
+                                                                          <span>并发 <b>3 路</b></span>
+                                                      <button type="button" class="sub-models-link" data-sub-models="plan6">
+                    查看可用模型（67）                  </button>
+                </div>
+              </div>
+                                        <div class="sub-card is-hidden-cat" data-sub-plan="yt-plus"
+                data-category="plan1"
+                data-price="65"
+                data-name="无限额度-周订阅-【单并发】"
+                data-has-qr="1"
+                data-models="[&quot;Claude-Fable-5-Thinking-High&quot;,&quot;Claude-Haiku-4.5&quot;,&quot;Claude-Opus-4.5-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-Max&quot;,&quot;Claude-Opus-4.7-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-Max&quot;,&quot;Claude-Sonnet-4.5-Thinking&quot;,&quot;Claude-Sonnet-4.6-Thinking&quot;,&quot;Claude-Sonnet-5-Thinking&quot;,&quot;DeepSeek-V4-Flash&quot;,&quot;Gemini-3.5-Flash&quot;,&quot;gemini-3.6-flash&quot;,&quot;Gemini-3.7-Flash&quot;,&quot;GLM-5.1&quot;,&quot;GLM-5.2&quot;,&quot;GLM-5.3&quot;,&quot;gpt-5.2-Medium-Fast&quot;,&quot;GPT-5.4-Nano-Medium&quot;,&quot;GPT-5.5-Extra-High&quot;,&quot;GPT-5.6-Sol-Max-Fast&quot;,&quot;Grok-4.6-Extra-High-Fast&quot;,&quot;Hy3&quot;,&quot;Kimi-K2.5&quot;,&quot;Kimi-K2.6&quot;,&quot;Kimi-K2.7-Code&quot;,&quot;Kimi-K3&quot;,&quot;MiniMax-M2.5&quot;,&quot;MiniMax-M2.7&quot;,&quot;MiniMax-M3&quot;,&quot;Qwen3.5-Plus&quot;,&quot;Qwen3.6-Max&quot;,&quot;Qwen3.7-Max&quot;,&quot;Qwen3.8-Max&quot;,&quot;MiniMax-M2.7-highspeed&quot;,&quot;Claude-Fable-5-Thinking-Max&quot;,&quot;Claude-Opus-5-Thinking-High&quot;,&quot;Claude-Opus-4.8-Thinking-High&quot;,&quot;Claude-Opus-4.7-Thinking-Max&quot;,&quot;Claude-Opus-4.6-Thinking-High&quot;,&quot;Claude-Opus-4.5-Thinking-High&quot;,&quot;GPT-5.6-Terra-Max-Fast&quot;,&quot;GPT-5.6-Luna-Max-Fast&quot;,&quot;MiniMax-M2.5-highspeed&quot;,&quot;Grok-4.5-Extra-High-Fast&quot;,&quot;YT-puls3.1-Opus-4.8-Thinking&quot;,&quot;YT-plus3.2-Opus-5-Thinking&quot;,&quot;YT-Pro2.8-Thinking&quot;,&quot;YT-Pro2.5-Thinking&quot;,&quot;claude-fable-5-1-thinking-max&quot;,&quot;Claude-Opus-5.5-Thinking-Max&quot;,&quot;GPT-6-Astra-max&quot;,&quot;GPT-6-Sol-MAX&quot;,&quot;GPT-6-Astra&quot;,&quot;GPT-6.1-sol&quot;,&quot;GPT-5.6-Sol&quot;,&quot;GPT-6-sol&quot;,&quot;GPT-5.5&quot;,&quot;grok-4.7&quot;,&quot;gemini-4-argon&quot;,&quot;muse-wonder-1.0&quot;,&quot;gpt-5.6-sol-max&quot;,&quot;claude-fable-5-2-high&quot;,&quot;muse-spark-1.3-minimal&quot;,&quot;claude-haiku-5-5&quot;,&quot;kimi-k3-max&quot;,&quot;deepseek-v41-flash-1017&quot;]">
+                                <h3 class="sub-name">无限额度-周订阅-【单并发】</h3>
+                                  <p class="sub-subtitle">高性价比日常</p>
+                                <div class="sub-price">
+                  <span class="sub-price-cur">¥</span>
+                  <span class="sub-price-num">65</span>
+                </div>
+                <p class="sub-period">每周 · 有效 7 天</p>
+                <button type="button" class="btn-primary sub-buy" data-sub-buy="yt-plus">立即订阅</button>
+                <ul class="sub-features">
+                                                            <li>每月无限次 次调用</li>
+                                          <li>全站模型</li>
+                                          <li>不限上下文长度</li>
+                                          <li>并发1</li>
+                                                      </ul>
+                <div class="sub-quota">
+                                      <span>总次数 <b>不限</b></span>
+                                    <span>每日 <b>不限</b></span>
+                                                                          <span>并发 <b>1 路</b></span>
+                                                      <button type="button" class="sub-models-link" data-sub-models="yt-plus">
+                    查看可用模型（67）                  </button>
+                </div>
+              </div>
+                      </div>
+              </section>
+
+      <!-- 我的订阅：表格展示（由 user.js 异步填充；未订阅时整块隐藏） -->
+      <section class="panel sub-mine" id="sub-mine">
+        <div class="panel-head">
+          <h2>我的订阅</h2>
+          <span class="panel-sub">这些密钥的用量独立结算，不消耗钱包积分</span>
+                    <button type="button" class="sub-redeem-open" id="sub-redeem-open">兑换订阅</button>
+        </div>
+                <p class="empty-tip" id="sub-mine-empty">你还没有订阅。在上方选择套餐并完成付款，或点右上角「兑换订阅」输入兑换码，即可获得一把专属密钥。</p>
+                <div class="cs-sync" data-cs-sync hidden></div>
+        <div class="key-table-wrap" id="sub-mine-table" hidden>
+          <table class="key-table sub-table">
+            <thead>
+              <tr>
+                <th>套餐</th>
+                <th>状态</th>
+                <th>已用 / 总次数</th>
+                <th>每日</th>
+                <th>每 5 小时</th>
+                <th>每月</th>
+                <th>并发</th>
+                <th>到期时间</th>
+                <th>专属密钥</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="sub-mine-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>订阅说明</h2></div>
+        <ol class="notice-list">
+          <li><b>无限额度</b>：标「无限额度」的套餐在有效期内<b>不限调用次数</b>、不限上下文长度，全站模型都能用，只受并发数限制。</li>
+          <li><b>每日次数</b>：标「每日 N 次」的套餐每天最多调用 N 次，<b>北京时间每天 0 点自动清零</b>；
+            每次调用固定算 1 次，调旗舰模型还是轻量模型都一样，与上下文长度无关。</li>
+          <li><b>并发是什么</b>：套餐名里的「单并发 / 双并发 / 五并发」是这把密钥<b>同一时间最多能同时跑几个请求</b>。
+            多开窗口、多个 Agent 同时干活请选多并发；超出并发的新请求会被直接拒绝（不扣次数），等前面的请求结束再发即可。</li>
+          <li><b>与积分互不影响</b>：订阅用量走套餐，不扣钱包积分；钱包积分仍可用于自行签发的普通密钥。</li>
+          <li><b>独立密钥</b>：订阅成功后在「我的订阅」里复制专属 <code>sk-</code> 密钥，只有这把密钥享受订阅额度。</li>
+          <li><b>续费不换密钥</b>：重复购买同一套餐只会给原密钥<b>延长有效期</b>（从原到期时间往后顺延），密钥本身不变，代码里不用改。</li>
+          <li><b>可用模型按套餐而定</b>：点套餐卡片上的「查看可用模型」可看完整清单；未限定的套餐可用全部已上架模型。</li>
+          <li><b>额度、并发与有效期由套餐决定</b>，不可自行修改；如需暂停使用，可在「我的 Key」里停用这把密钥。
+            早期标有「总次数」的套餐是一次性额度，用完即止，续费会把新增次数累加上去。</li>
+          <li>付款后如长时间未开通，请<a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fsubscription&amp;msg=%E8%AE%A2%E9%98%85%E4%BB%98%E6%AC%BE%E5%90%8E%E9%95%BF%E6%97%B6%E9%97%B4%E6%9C%AA%E5%BC%80%E9%80%9A" data-kefu="" data-kefu-from="user/subscription" data-kefu-msg="订阅付款后长时间未开通" target="_blank" rel="noopener">联系在线客服</a>人工处理。</li>
+        </ol>
+      </section>
+
+      <!-- 可用模型弹窗（点卡片上的「查看可用模型」）-->
+      <dialog class="dialog dialog-wide" id="sub-models-dialog">
+        <div class="dialog-head">
+          <h3><span id="sub-models-title">可用模型</span></h3>
+          <button type="button" class="dialog-x" data-close-dialog="sub-models-dialog" aria-label="关闭">×</button>
+        </div>
+        <div class="dialog-body">
+          <div id="sub-models-hint"></div>
+          <div class="sub-models-list" id="sub-models-list" hidden></div>
+        </div>
+      </dialog>
+
+      <!-- 付款弹窗：选套餐后出码 + 回填订单号（表单自管提交，故 data-no-pjax + novalidate） -->
+      <dialog class="dialog" id="sub-pay-dialog">
+        <div class="dialog-head">
+          <h3>订阅 <span id="sub-pay-name">—</span></h3>
+          <button type="button" class="dialog-x" data-close-dialog="sub-pay-dialog" aria-label="关闭">×</button>
+        </div>
+                  <div class="dialog-body sub-epay">          <div class="epay-box" id="epay-box" data-epay-box data-create="/?ajax=epay_create" data-status="/?ajax=epay_status"
+            data-cs-create="/?ajax=consign_create" data-cs-status="/?ajax=consign_status"
+            data-csrf="fe2331a15e0e6995a74ddd026e4de9317fcac495754fd84e240bc9c9dc350e39" data-channels="{&quot;recharge:300&quot;:[&quot;epay&quot;],&quot;recharge:600&quot;:[&quot;epay&quot;],&quot;recharge:1100&quot;:[&quot;epay&quot;],&quot;recharge:2200&quot;:[],&quot;sub:ultra&quot;:[&quot;epay&quot;],&quot;sub:plan4&quot;:[&quot;epay&quot;],&quot;sub:plan5&quot;:[&quot;epay&quot;],&quot;sub:plan6&quot;:[&quot;epay&quot;],&quot;sub:yt-plus&quot;:[&quot;epay&quot;]}" hidden>
+            <div class="epay-tabs" role="tablist">
+              <button type="button" class="epay-tab" data-epay-tab="jiyuan" role="tab" aria-selected="false">支付通道 1<small>支付宝扫码 · 付完自动到账</small></button>
+              <button type="button" class="epay-tab" data-epay-tab="epay" role="tab" aria-selected="false">支付通道 2<small>支付宝在线付款 · 付完自动到账</small></button>
+              <button type="button" class="epay-tab" data-epay-tab="catfk" role="tab" aria-selected="false">支付通道 4<small>支付宝扫码 · 付完自动到账</small></button>
+            </div>
+            <div class="epay-pane" data-cs-pane hidden>
+              <p class="epay-sum">应付 <b data-cs-sum>—</b><span data-cs-desc></span></p>
+              <button type="button" class="btn-primary epay-go" data-cs-go>生成支付宝付款码</button>
+              <div class="cs-qr" data-cs-qr hidden></div>
+              <a class="btn-primary cs-open" data-cs-open href="#" rel="noopener noreferrer" hidden>打开支付宝付款</a>
+              <p class="epay-msg" data-cs-msg hidden></p>
+              <p class="epay-tip">用支付宝扫码付款，付款成功后自动到账，不用填订单号；付款码 5 分钟内有效，过期重新生成即可。遇到问题？<a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fsubscription&amp;msg=%E5%9C%A8%E7%BA%BF%E4%BB%98%E6%AC%BE%E9%81%87%E5%88%B0%E9%97%AE%E9%A2%98%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/subscription" data-kefu-msg="在线付款遇到问题：用户名 sham" target="_blank" rel="noopener">联系在线客服</a></p>
+            </div>
+            <div class="epay-pane" data-epay-pane hidden>
+              <p class="epay-sum">应付 <b data-epay-sum>—</b><span data-epay-desc></span></p>
+              <button type="button" class="btn-primary epay-go" data-epay-go>使用支付宝付款</button>
+              <a class="epay-reopen" data-epay-reopen href="#" target="_blank" rel="noopener noreferrer" hidden>付款页面没打开？点这里重新打开</a>
+              <p class="epay-msg" data-epay-msg hidden></p>
+              <p class="epay-tip">电脑会在新标签页打开支付宝付款页面，手机直接跳转支付宝；付款成功后自动到账，不用填订单号。遇到问题？<a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fsubscription&amp;msg=%E5%9C%A8%E7%BA%BF%E4%BB%98%E6%AC%BE%E9%81%87%E5%88%B0%E9%97%AE%E9%A2%98%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/subscription" data-kefu-msg="在线付款遇到问题：用户名 sham" target="_blank" rel="noopener">联系在线客服</a></p>
+            </div>
+          </div>
+        </div>
+                <form class="dialog-form" id="sub-pay-form" data-no-pjax novalidate hidden>
+          <p class="dialog-err" data-form-err hidden></p>
+          <input type="hidden" id="sub-pay-plan" value="">
+          <div class="sub-pay-body">
+            <div class="sub-pay-qr">
+              <img id="sub-pay-qr-img" alt="订阅收款码" width="200" height="200">
+              <p class="field-hint">支付宝扫码支付 <b>¥<span id="sub-pay-price">—</span></b></p>
+            </div>
+            <ol class="sub-pay-steps">
+              <li>支付宝扫左侧二维码，支付 <b>¥<span id="sub-pay-price2">—</span></b>（金额固定不可改）；</li>
+              <li>付款完成后，在支付宝「账单」中打开这笔付款，找到<b>订单号后 6 位</b>；</li>
+              <li>填入下方并点「我已付款」，约 10 秒内自动开通。</li>
+            </ol>
+          </div>
+          <label class="field">
+            <span class="field-label">支付订单号后 6 位</span>
+            <input type="text" id="sub-pay-order" inputmode="numeric" maxlength="64" data-d6 placeholder="例如 123456" autocomplete="off">
+          </label>
+          <p class="pay-status" id="sub-pay-status" hidden></p>
+          <div class="dialog-foot">
+            <button type="button" class="btn-plain" data-close-dialog="sub-pay-dialog">取消</button>
+            <button type="submit" class="btn-primary">我已付款，立即开通</button>
+          </div>
+        </form>
+      </dialog>
+
+            <dialog class="dialog" id="sub-redeem-dialog">
+        <div class="dialog-head">
+          <h3>兑换订阅</h3>
+          <button type="button" class="dialog-x" data-close-dialog="sub-redeem-dialog" aria-label="关闭">×</button>
+        </div>
+        <form class="dialog-form" id="sub-redeem-form" data-no-pjax novalidate>
+          <p class="dialog-err" data-form-err hidden></p>
+          <label class="field">
+            <span class="field-label">兑换码</span>
+            <input type="text" id="sub-redeem-code" placeholder="例如 SUB-7K3F-9QX2-M4PD" autocomplete="off" spellcheck="false">
+            <span class="field-hint">不区分大小写，可直接粘贴；一个兑换码只能使用一次。</span>
+          </label>
+          <p class="pay-status" id="sub-redeem-status" hidden></p>
+          <div class="dialog-foot">
+            <button type="button" class="btn-plain" data-close-dialog="sub-redeem-dialog">取消</button>
+            <button type="submit" class="btn-primary">立即兑换</button>
+          </div>
+        </form>
+      </dialog>
+
+            <dialog class="dialog dialog-wide" id="key-guide-dialog">
+        <div class="dialog-head">
+          <h3>指南</h3>
+          <button type="button" class="dialog-x" data-close-dialog="key-guide-dialog" aria-label="关闭">×</button>
+        </div>
+        <div class="guide-body">
+          <div class="guide-row">
+            <span class="guide-label">API Base</span>
+            <code class="guide-code" id="guide-api-base">https://v1.pvaki.com/v1</code>
+            <button type="button" class="copy-btn copy-mini" data-copy="https://v1.pvaki.com/v1">复制</button>
+          </div>
+          <div class="guide-row">
+            <span class="guide-label">API KEY</span>
+            <code class="guide-code" id="guide-api-key">—</code>
+            <button type="button" class="copy-btn copy-mini" id="guide-copy-key" data-copy="">复制</button>
+          </div>
+          <p class="guide-text">兼容 OpenAI / Claude 等常见客户端。在请求头加入：</p>
+          <pre class="guide-pre" id="guide-auth-sample">Authorization: Bearer 你的Key</pre>
+          <p class="guide-text">把原官方 Base URL 替换为上方 API Base 即可调用。各模型单价见「模型广场」。</p>
+        </div>
+        <div class="usage-foot">
+          <span></span>
+          <button type="button" class="btn-primary btn-sm" data-close-dialog="key-guide-dialog">知道了</button>
+        </div>
+      </dialog>
+
+            <dialog class="dialog dialog-wide cs-dialog" id="client-setup-dialog" data-csrf="fe2331a15e0e6995a74ddd026e4de9317fcac495754fd84e240bc9c9dc350e39">
+        <div class="dialog-head">
+          <h3>配置到客户端</h3>
+          <button type="button" class="dialog-x" data-close-dialog="client-setup-dialog" aria-label="关闭">×</button>
+        </div>
+        <div class="cs-body">
+          <p class="field-hint">把 Key「<b data-cs-key-name>—</b>」配置到常用客户端，共 <b data-cs-count>—</b> 个模型。</p>
+          <div class="cs-tabs" role="tablist">
+            <button type="button" class="cs-tab is-on" role="tab" aria-selected="true" data-cs-tab="workbuddy">WorkBuddy</button>
+            <button type="button" class="cs-tab" role="tab" aria-selected="false" data-cs-tab="codebuddy">CodeBuddy</button>
+            <button type="button" class="cs-tab" role="tab" aria-selected="false" data-cs-tab="claude">Claude Code</button>
+            <button type="button" class="cs-tab" role="tab" aria-selected="false" data-cs-tab="claude-desktop">Claude 桌面版</button>
+            <button type="button" class="cs-tab" role="tab" aria-selected="false" data-cs-tab="codex">Codex</button>
+            <button type="button" class="cs-tab" role="tab" aria-selected="false" data-cs-tab="dsh">DeepSeek Harness</button>
+            <button type="button" class="cs-tab" role="tab" aria-selected="false" data-cs-tab="trae">Trae</button>
+          </div>
+          <p class="dialog-err" data-cs-err hidden></p>
+          <p class="cs-loading" data-cs-loading hidden>正在生成命令…</p>
+
+          <div class="cs-cmd-block" data-cs-cmd-block hidden>
+            <div class="cs-os" role="group" aria-label="电脑系统">
+              <button type="button" class="cs-os-btn is-on" data-cs-os="windows">Windows</button>
+              <button type="button" class="cs-os-btn" data-cs-os="mac">macOS</button>
+            </div>
+            <pre class="cs-cmd" data-cs-cmd></pre>
+            <div class="cs-cmd-foot">
+              <span class="field-hint" data-cs-expire></span>
+              <span class="cs-cmd-actions">
+                <button type="button" class="btn-plain btn-sm" data-cs-regen>重新生成</button>
+                <button type="button" class="copy-btn" data-cs-copy data-copy="">复制命令</button>
+              </span>
+            </div>
+                        <ol class="cs-steps" data-cs-steps></ol>
+          </div>
+
+          <div class="cs-pane" data-cs-pane="workbuddy">
+            <p class="field-hint">同一条命令会自动识别本机装了 WorkBuddy 还是 CodeBuddy，装了的都会写入，原配置自动备份；你自己配的其它模型不会被改动。以后有新模型，重新生成一条运行即可同步。</p>
+          </div>
+          <div class="cs-pane" data-cs-pane="codebuddy" hidden>
+            <p class="field-hint">VS Code / JetBrains 里的「腾讯云代码助手」插件暂不支持自定义模型，请使用 CodeBuddy IDE 或命令行。</p>
+          </div>
+                    <div class="cs-pane" data-cs-pane="claude" hidden>
+            <p class="field-hint">命令会把 Claude Code 切换到本平台：地址、Key 和 Opus / Sonnet / Haiku 各档模型一次写好，之前的配置都会被覆盖，原文件自动备份。默认模型 <b data-cs-default="claude">—</b>，在 Claude Code 里输入 <code>/model</code> 可以切换，菜单里会列出全部 Claude 系模型。</p>
+          </div>
+          <div class="cs-pane" data-cs-pane="claude-desktop" hidden>
+            <p class="field-hint">命令按 Claude 官方的「第三方推理」配置方式把本平台写进去（Windows 写入 Claude 策略，运行时可能弹一次「是否允许更改」，点「是」），重新打开就直接连本平台，不用再登录 claude.ai。默认模型 <b data-cs-default="claude-desktop">—</b>，在输入框下方的模型菜单里可切换。</p>
+          </div>
+          <div class="cs-pane" data-cs-pane="codex" hidden>
+            <p class="field-hint">命令会把 Codex 切换到本平台（命令行、桌面版、VS Code 插件通用），之前的配置都会被覆盖，原文件自动备份。默认模型 <b data-cs-default="codex">—</b>。</p>
+          </div>
+          <div class="cs-pane" data-cs-pane="dsh" hidden>
+            <p class="field-hint">命令会在 DeepSeek Harness 里添加「宇天科技」并设为默认（桌面版、网页版都生效），你配过的其它服务保留，原文件自动备份。默认模型 <b data-cs-default="dsh">—</b>，在模型菜单里可以换。</p>
+          </div>
+          <div class="cs-pane" data-cs-pane="trae" hidden>
+            <p class="field-hint">Trae 的自定义模型只能在界面里添加：<b>设置 → 模型 → 添加模型 → 自定义模型</b>，按下面的内容每个模型添加一次（Trae SOLO 同样适用）。</p>
+            <div class="guide-row">
+              <span class="guide-label">API 格式</span>
+              <code class="guide-code">OpenAI Chat Completions</code>
+            </div>
+            <div class="guide-row">
+              <span class="guide-label">请求地址</span>
+              <code class="guide-code" data-cs-trae-url>—</code>
+              <button type="button" class="copy-btn copy-mini" data-cs-trae-url-copy data-copy="">复制</button>
+            </div>
+            <p class="field-hint">先打开「完整 URL」开关，再粘贴上面的地址。</p>
+            <div class="guide-row">
+              <span class="guide-label">API 密钥</span>
+              <code class="guide-code" data-cs-trae-key>—</code>
+              <button type="button" class="copy-btn copy-mini" data-cs-trae-key-copy data-copy="">复制</button>
+            </div>
+            <div class="cs-table-wrap">
+              <table class="docs-table cs-table">
+                <thead>
+                  <tr><th>模型 ID</th><th>模型系列</th><th>上下文窗口</th><th>支持图片输入</th><th></th></tr>
+                </thead>
+                <tbody data-cs-trae-rows></tbody>
+              </table>
+            </div>
+            <p class="field-hint">「模型系列」「上下文窗口」「支持图片输入」在「高级配置」里；上下文窗口写「留空」的保持默认即可。</p>
+          </div>
+        </div>
+        <div class="usage-foot">
+          <span></span>
+          <button type="button" class="btn-primary btn-sm" data-close-dialog="client-setup-dialog">完成</button>
+        </div>
+      </dialog>
+          <footer class="shell-foot">
+        <nav class="shell-foot-legal" aria-label="法律声明">
+          <a href="https://a1.yutiankejiai.com/?page=terms" target="_blank" rel="noopener">使用条款</a>
+          <a href="https://a1.yutiankejiai.com/?page=privacy" target="_blank" rel="noopener">隐私政策</a>
+          <a href="https://a1.yutiankejiai.com/?page=refund" target="_blank" rel="noopener">退款政策</a>
+          <a href="https://a1.yutiankejiai.com/?page=ip" target="_blank" rel="noopener">知识产权</a>
+        </nav>
+        <p class="shell-foot-copy">&copy; 2026 宇天科技 · Yutian Technology · 保留所有权利</p>
+      </footer>
+
+      
+
+          </main>
+  </div>
+  <script src="/assets/js/qrcode.min.js?v=65cdfeb024f6" defer></script>
+  <script src="/assets/js/epay-portal.js?v=d612a687554b" defer></script>
+  <script src="/assets/js/user.js?v=5d2dbfa8b598" defer></script>
+    <script src="https://kefu.yutiankejiai.com/widget.js" data-hint="sham" defer></script>
+</body>
+</html>

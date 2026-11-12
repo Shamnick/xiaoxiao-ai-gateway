@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>用量统计 · 小小科技</title>
+<link rel="icon" type="image/png" href="/assets/img/logo-128.png">
+<link rel="stylesheet" href="/assets/css/platform.css">
+</head>
+<body class="pf-body">
+<header class="pf-top">
+  <a class="brand" href="/"><img src="/assets/img/logo-128.png" width="26" height="26" alt="">小小科技</a>
+  <nav class="nav"><a href="/">控制台</a><a href="/playground">Playground</a><a href="/usage">用量统计</a><a href="/?page=keys">API Keys</a><a href="/?page=docs">文档</a></nav>
+  <div class="right"><span id="pfUser">—</span><a href="/api/user/logout" onclick="event.preventDefault();fetch('/api/user/logout',{method:'POST'}).then(()=>location.href='/?page=login')">退出</a></div>
+</header>
+<main class="pf-wrap">
+  <div class="pf-kpi">
+    <div class="k a"><div class="l">调用次数</div><div class="v" id="kCalls">—</div></div>
+    <div class="k b"><div class="l">消耗 tokens</div><div class="v" id="kTokens">—</div></div>
+    <div class="k c"><div class="l">累计花费（积分）</div><div class="v" id="kCost">—</div></div>
+    <div class="k"><div class="l">失败次数</div><div class="v" id="kErr">—</div></div>
+  </div>
+  <div class="pf-grid">
+    <section class="pf-card">
+      <div class="pf-card-h">按天用量 <span class="sub">近 14 天</span></div>
+      <div class="pf-card-b" style="padding:0"><div id="tblDay"></div></div>
+    </section>
+    <section class="pf-card">
+      <div class="pf-card-h">按模型 <span class="sub">花费倒序</span></div>
+      <div class="pf-card-b" style="padding:0"><div id="tblModel"></div></div>
+    </section>
+  </div>
+</main>
+<script src="/assets/js/usage.js" defer></script>
+</body>
+</html>

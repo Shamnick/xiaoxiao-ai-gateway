@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图片生成 - 宇天科技</title>
+  <meta name="description" content="AI 图片生成：文生图 / 图生图，按张计费，失败自动全额退还。">
+  <link rel="icon" type="image/png" href="/assets/img/logo-128.png?v=fce98cd7e66c">
+  <link rel="stylesheet" href="/assets/css/user.css?v=840d1db4bf23">
+  <link rel="stylesheet" href="/assets/css/image.css?v=e21fcfaca6d6">
+</head>
+<body class="ig-body" data-page="image">
+  <header class="ig-topbar">
+    <div class="ig-topbar-left">
+      <a class="ig-brand" href="/" data-no-pjax>
+        <img src="/assets/img/logo-128.png?v=fce98cd7e66c" alt="宇天科技" width="28" height="28" decoding="async">
+        <span class="ig-brand-name">宇天科技</span>
+      </a>
+    </div>
+        <div class="ig-ribbon">
+      <span class="ig-ribbon-title">AI 图片生成</span>
+              <span class="ig-ribbon-pill">低至 0.03 积分 / 张 · 失败全额退</span>
+            <a href="#pricing" class="ig-ribbon-link">查看价目 ↗</a>
+    </div>
+    <div class="ig-topbar-right">
+      <nav class="ig-topnav">
+        <a href="https://a1.yutiankejiai.com/" class="ig-nav-link" target="_blank" rel="noopener">首页</a>
+        <a href="/" class="ig-nav-link" data-no-pjax>语言大模型</a>
+        <a href="/video/" class="ig-nav-link" data-no-pjax>视频生成</a>
+                  <a href="/?page=recharge" class="ig-nav-link" data-no-pjax
+            data-open-dialog="ig-recharge-dialog">充值积分</a>
+          <span class="ig-topbal">可用 <b id="ig-balance">0</b> 积分</span>
+          <a href="/" class="ig-user-btn" data-no-pjax>控制台</a>
+              </nav>
+    </div>
+  </header>
+
+  <main class="ig-main">
+    
+    <div class="ig-shell" id="ig-shell"
+      data-enabled="1"
+      data-logged-in="1"
+      data-max-pending="8"
+      data-my-active="0"
+      data-max-prompt="2000"
+      data-models="[{&quot;id&quot;:&quot;gpt-image-2&quot;,&quot;label&quot;:&quot;GPT Image 2&quot;,&quot;vendor&quot;:&quot;OpenAI&quot;,&quot;tagline&quot;:&quot;指令遵循与文字渲染最稳，复杂排版首选&quot;,&quot;ref_uplift_per_image&quot;:0.37,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:true,&quot;max_reference_images&quot;:4},&quot;price_per_image&quot;:0.25,&quot;recommended&quot;:true,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;size&quot;,&quot;label&quot;:&quot;尺寸&quot;,&quot;default&quot;:&quot;1024x1024&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024x1024&quot;,&quot;label&quot;:&quot;1024×1024 方形&quot;},{&quot;value&quot;:&quot;1536x1024&quot;,&quot;label&quot;:&quot;1536×1024 横版&quot;,&quot;price_multiplier&quot;:1.08},{&quot;value&quot;:&quot;1024x1536&quot;,&quot;label&quot;:&quot;1024×1536 竖版&quot;,&quot;price_multiplier&quot;:1.08},{&quot;value&quot;:&quot;auto&quot;,&quot;label&quot;:&quot;自动（由模型判断）&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;quality&quot;,&quot;label&quot;:&quot;质量&quot;,&quot;hint&quot;:&quot;越高细节越丰富&quot;,&quot;default&quot;:&quot;low&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;low&quot;,&quot;label&quot;:&quot;低（最快）&quot;,&quot;prompt&quot;:&quot;clean simple rendering&quot;},{&quot;value&quot;:&quot;medium&quot;,&quot;label&quot;:&quot;中（推荐）&quot;},{&quot;value&quot;:&quot;high&quot;,&quot;label&quot;:&quot;高（最精细）&quot;,&quot;price_multiplier&quot;:1.15,&quot;prompt&quot;:&quot;extremely refined micro-detail, crisp intricate textures, polished finish&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;background&quot;,&quot;label&quot;:&quot;背景&quot;,&quot;default&quot;:&quot;auto&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;auto&quot;,&quot;label&quot;:&quot;自动&quot;},{&quot;value&quot;:&quot;opaque&quot;,&quot;label&quot;:&quot;不透明&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;output_format&quot;,&quot;label&quot;:&quot;输出格式&quot;,&quot;default&quot;:&quot;png&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;png&quot;,&quot;label&quot;:&quot;PNG&quot;},{&quot;value&quot;:&quot;jpeg&quot;,&quot;label&quot;:&quot;JPEG&quot;},{&quot;value&quot;:&quot;webp&quot;,&quot;label&quot;:&quot;WebP&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;moderation&quot;,&quot;label&quot;:&quot;内容审核&quot;,&quot;default&quot;:&quot;auto&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;auto&quot;,&quot;label&quot;:&quot;标准&quot;},{&quot;value&quot;:&quot;low&quot;,&quot;label&quot;:&quot;宽松&quot;}]}],&quot;available&quot;:true},{&quot;id&quot;:&quot;nano-banana-2&quot;,&quot;label&quot;:&quot;Nano Banana 2&quot;,&quot;vendor&quot;:&quot;Google&quot;,&quot;tagline&quot;:&quot;多模态理解强，指令遵循最稳&quot;,&quot;ref_uplift_per_image&quot;:0.53,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:true,&quot;max_reference_images&quot;:4},&quot;price_per_image&quot;:0.2,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1 方形&quot;},{&quot;value&quot;:&quot;3:4&quot;,&quot;label&quot;:&quot;3:4 竖版&quot;},{&quot;value&quot;:&quot;4:3&quot;,&quot;label&quot;:&quot;4:3 横版&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16 手机竖屏&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9 宽屏&quot;},{&quot;value&quot;:&quot;21:9&quot;,&quot;label&quot;:&quot;21:9 超宽&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;person_generation&quot;,&quot;label&quot;:&quot;人物生成&quot;,&quot;hint&quot;:&quot;官方对人物内容有分级限制&quot;,&quot;default&quot;:&quot;allow_adult&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;dont_allow&quot;,&quot;label&quot;:&quot;不生成人物&quot;,&quot;prompt&quot;:&quot;no people, no human figures in the frame&quot;},{&quot;value&quot;:&quot;allow_adult&quot;,&quot;label&quot;:&quot;允许成人&quot;},{&quot;value&quot;:&quot;allow_all&quot;,&quot;label&quot;:&quot;全部允许&quot;}]},{&quot;kind&quot;:&quot;text&quot;,&quot;id&quot;:&quot;negative_prompt&quot;,&quot;label&quot;:&quot;反向提示词&quot;,&quot;hint&quot;:&quot;不想出现的元素，如「文字, 水印, 多余手指」&quot;,&quot;placeholder&quot;:&quot;选填&quot;,&quot;max_length&quot;:400,&quot;prompt_template&quot;:&quot;avoid: {v}&quot;}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;nano-banana-pro&quot;,&quot;label&quot;:&quot;Nano Banana Pro&quot;,&quot;vendor&quot;:&quot;Google&quot;,&quot;tagline&quot;:&quot;毛孔级细节与锐利对焦，质感最强&quot;,&quot;ref_uplift_per_image&quot;:0.43,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:true,&quot;max_reference_images&quot;:4},&quot;price_per_image&quot;:0.23,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1 方形&quot;},{&quot;value&quot;:&quot;3:4&quot;,&quot;label&quot;:&quot;3:4 竖版&quot;},{&quot;value&quot;:&quot;4:3&quot;,&quot;label&quot;:&quot;4:3 横版&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16 手机竖屏&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9 宽屏&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;slider&quot;,&quot;id&quot;:&quot;character_lock&quot;,&quot;label&quot;:&quot;角色锁定&quot;,&quot;hint&quot;:&quot;越高越贴参考图里的人物身份；仅在上传参考图时生效&quot;,&quot;prompt_bands&quot;:[{&quot;above&quot;:0.85,&quot;text&quot;:&quot;strictly preserve the exact facial identity from the reference image: identical eye shape, nose bridge, jawline and skin texture, zero deviation&quot;},{&quot;above&quot;:0.4,&quot;text&quot;:&quot;keep the character&#039;s facial identity close to the reference image&quot;},{&quot;above&quot;:0,&quot;text&quot;:&quot;loosely reference the character&#039;s appearance, creative variation allowed&quot;}],&quot;min&quot;:0,&quot;max&quot;:1,&quot;step&quot;:0.05,&quot;default&quot;:0.7}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;midjourney-v8&quot;,&quot;label&quot;:&quot;Midjourney V8&quot;,&quot;vendor&quot;:&quot;Midjourney&quot;,&quot;tagline&quot;:&quot;艺术感与氛围最强，风格化可调&quot;,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:false,&quot;max_reference_images&quot;:0},&quot;price_per_image&quot;:0.08,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例 --ar&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1&quot;},{&quot;value&quot;:&quot;4:3&quot;,&quot;label&quot;:&quot;4:3&quot;},{&quot;value&quot;:&quot;3:4&quot;,&quot;label&quot;:&quot;3:4&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16&quot;},{&quot;value&quot;:&quot;21:9&quot;,&quot;label&quot;:&quot;21:9 超宽&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;slider&quot;,&quot;id&quot;:&quot;stylize&quot;,&quot;label&quot;:&quot;风格化 --s&quot;,&quot;hint&quot;:&quot;越高越有艺术味、越不贴提示词（0~1000）；超过 400 为高风格档&quot;,&quot;price_above&quot;:{&quot;value&quot;:400,&quot;multiplier&quot;:1.05},&quot;prompt_bands&quot;:[{&quot;above&quot;:700,&quot;text&quot;:&quot;highly stylized artistic interpretation, painterly dramatic aesthetics&quot;},{&quot;above&quot;:400,&quot;text&quot;:&quot;stylized artistic look with strong aesthetic flair&quot;}],&quot;min&quot;:0,&quot;max&quot;:1000,&quot;step&quot;:50,&quot;default&quot;:100},{&quot;kind&quot;:&quot;slider&quot;,&quot;id&quot;:&quot;chaos&quot;,&quot;label&quot;:&quot;多样性 --c&quot;,&quot;hint&quot;:&quot;越高构图越不拘一格（0~100）；超过 50 为高多样档&quot;,&quot;price_above&quot;:{&quot;value&quot;:50,&quot;multiplier&quot;:1.05},&quot;prompt_bands&quot;:[{&quot;above&quot;:50,&quot;text&quot;:&quot;unconventional unexpected composition, bold creative framing&quot;}],&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:5,&quot;default&quot;:0},{&quot;kind&quot;:&quot;slider&quot;,&quot;id&quot;:&quot;weird&quot;,&quot;label&quot;:&quot;怪异度 --weird&quot;,&quot;hint&quot;:&quot;追求非常规视觉时调高（0~3000）；超过 1000 为高怪异档&quot;,&quot;price_above&quot;:{&quot;value&quot;:1000,&quot;multiplier&quot;:1.05},&quot;prompt_bands&quot;:[{&quot;above&quot;:1000,&quot;text&quot;:&quot;surreal offbeat imagery, strange dreamlike details&quot;}],&quot;min&quot;:0,&quot;max&quot;:3000,&quot;step&quot;:100,&quot;default&quot;:0},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;style&quot;,&quot;label&quot;:&quot;风格模式&quot;,&quot;default&quot;:&quot;default&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;default&quot;,&quot;label&quot;:&quot;默认（审美增强）&quot;,&quot;prompt&quot;:&quot;beautiful refined aesthetic composition&quot;},{&quot;value&quot;:&quot;raw&quot;,&quot;label&quot;:&quot;Raw（更贴提示词）&quot;,&quot;prompt&quot;:&quot;natural unembellished rendering, strictly follow the description&quot;}]},{&quot;kind&quot;:&quot;text&quot;,&quot;id&quot;:&quot;no&quot;,&quot;label&quot;:&quot;排除元素 --no&quot;,&quot;hint&quot;:&quot;逗号分隔，如「text, watermark」&quot;,&quot;placeholder&quot;:&quot;选填&quot;,&quot;max_length&quot;:300,&quot;prompt_template&quot;:&quot;avoid: {v}&quot;}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;flux-2-max&quot;,&quot;label&quot;:&quot;FLUX.2 Max&quot;,&quot;vendor&quot;:&quot;Black Forest Labs&quot;,&quot;tagline&quot;:&quot;写实细节丰富，可调精度与引导强度&quot;,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:false,&quot;max_reference_images&quot;:0},&quot;price_per_image&quot;:0.08,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;21:9&quot;,&quot;label&quot;:&quot;21:9&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9&quot;},{&quot;value&quot;:&quot;4:3&quot;,&quot;label&quot;:&quot;4:3&quot;},{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1&quot;},{&quot;value&quot;:&quot;3:4&quot;,&quot;label&quot;:&quot;3:4&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;toggle&quot;,&quot;id&quot;:&quot;raw&quot;,&quot;label&quot;:&quot;Raw 模式&quot;,&quot;hint&quot;:&quot;关闭美化，输出更真实自然的质感&quot;,&quot;default&quot;:false,&quot;prompt_on&quot;:&quot;raw unretouched photographic look, natural imperfect textures, no beautification&quot;},{&quot;kind&quot;:&quot;slider&quot;,&quot;id&quot;:&quot;steps&quot;,&quot;label&quot;:&quot;细节精度&quot;,&quot;hint&quot;:&quot;越高细节越密。超过 40 为高精度档&quot;,&quot;price_above&quot;:{&quot;value&quot;:40,&quot;multiplier&quot;:1.08},&quot;prompt_bands&quot;:[{&quot;above&quot;:40,&quot;text&quot;:&quot;extremely refined micro-detail, crisp intricate textures throughout&quot;},{&quot;above&quot;:28,&quot;text&quot;:&quot;refined detail rendering&quot;}],&quot;min&quot;:8,&quot;max&quot;:50,&quot;step&quot;:1,&quot;default&quot;:28},{&quot;kind&quot;:&quot;slider&quot;,&quot;id&quot;:&quot;guidance&quot;,&quot;label&quot;:&quot;引导强度&quot;,&quot;hint&quot;:&quot;越高越贴提示词&quot;,&quot;prompt_bands&quot;:[{&quot;above&quot;:6,&quot;text&quot;:&quot;strictly adhere to every detail of the description&quot;},{&quot;above&quot;:3.5,&quot;text&quot;:&quot;closely follow the description&quot;}],&quot;min&quot;:1,&quot;max&quot;:10,&quot;step&quot;:0.5,&quot;default&quot;:3.5}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;flux-2-pro&quot;,&quot;label&quot;:&quot;FLUX.2 Pro&quot;,&quot;vendor&quot;:&quot;Black Forest Labs&quot;,&quot;tagline&quot;:&quot;通用写实主力，出图快、成本低&quot;,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:false,&quot;max_reference_images&quot;:0},&quot;price_per_image&quot;:0.08,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;21:9&quot;,&quot;label&quot;:&quot;21:9&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9&quot;},{&quot;value&quot;:&quot;4:3&quot;,&quot;label&quot;:&quot;4:3&quot;},{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1&quot;},{&quot;value&quot;:&quot;3:4&quot;,&quot;label&quot;:&quot;3:4&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;slider&quot;,&quot;id&quot;:&quot;guidance&quot;,&quot;label&quot;:&quot;引导强度&quot;,&quot;hint&quot;:&quot;越高越贴提示词&quot;,&quot;prompt_bands&quot;:[{&quot;above&quot;:6,&quot;text&quot;:&quot;strictly adhere to every detail of the description&quot;},{&quot;above&quot;:3,&quot;text&quot;:&quot;closely follow the description&quot;}],&quot;min&quot;:1,&quot;max&quot;:10,&quot;step&quot;:0.5,&quot;default&quot;:3}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;seedream-4.5&quot;,&quot;label&quot;:&quot;Seedream 4.5&quot;,&quot;vendor&quot;:&quot;字节跳动&quot;,&quot;tagline&quot;:&quot;东方审美与人像质感，构图稳&quot;,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:false,&quot;max_reference_images&quot;:0},&quot;price_per_image&quot;:0.08,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1 方形&quot;},{&quot;value&quot;:&quot;4:3&quot;,&quot;label&quot;:&quot;4:3 横版&quot;},{&quot;value&quot;:&quot;3:4&quot;,&quot;label&quot;:&quot;3:4 竖版&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9 宽屏&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16 竖屏&quot;},{&quot;value&quot;:&quot;21:9&quot;,&quot;label&quot;:&quot;21:9 超宽&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;slider&quot;,&quot;id&quot;:&quot;guidance_scale&quot;,&quot;label&quot;:&quot;提示词贴合度&quot;,&quot;hint&quot;:&quot;越高越严格照描述画&quot;,&quot;prompt_bands&quot;:[{&quot;above&quot;:6,&quot;text&quot;:&quot;strictly adhere to every detail of the description&quot;},{&quot;above&quot;:2.5,&quot;text&quot;:&quot;closely follow the description&quot;}],&quot;min&quot;:1,&quot;max&quot;:10,&quot;step&quot;:0.5,&quot;default&quot;:2.5}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;ideogram-4&quot;,&quot;label&quot;:&quot;Ideogram 4&quot;,&quot;vendor&quot;:&quot;Ideogram&quot;,&quot;tagline&quot;:&quot;排版感与设计风格，海报构图见长&quot;,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:false,&quot;max_reference_images&quot;:0},&quot;price_per_image&quot;:0.08,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16&quot;},{&quot;value&quot;:&quot;4:3&quot;,&quot;label&quot;:&quot;4:3&quot;},{&quot;value&quot;:&quot;3:4&quot;,&quot;label&quot;:&quot;3:4&quot;},{&quot;value&quot;:&quot;3:2&quot;,&quot;label&quot;:&quot;3:2&quot;},{&quot;value&quot;:&quot;2:3&quot;,&quot;label&quot;:&quot;2:3&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;rendering_speed&quot;,&quot;label&quot;:&quot;渲染档位&quot;,&quot;default&quot;:&quot;DEFAULT&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;TURBO&quot;,&quot;label&quot;:&quot;Turbo（最快）&quot;,&quot;prompt&quot;:&quot;clean simple rendering&quot;},{&quot;value&quot;:&quot;DEFAULT&quot;,&quot;label&quot;:&quot;标准&quot;},{&quot;value&quot;:&quot;QUALITY&quot;,&quot;label&quot;:&quot;Quality（最精细）&quot;,&quot;price_multiplier&quot;:1.12,&quot;prompt&quot;:&quot;extremely refined micro-detail, crisp intricate textures, polished finish&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;style_type&quot;,&quot;label&quot;:&quot;风格类型&quot;,&quot;default&quot;:&quot;AUTO&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;AUTO&quot;,&quot;label&quot;:&quot;自动&quot;},{&quot;value&quot;:&quot;GENERAL&quot;,&quot;label&quot;:&quot;通用&quot;,&quot;prompt&quot;:&quot;balanced general-purpose illustration style&quot;},{&quot;value&quot;:&quot;REALISTIC&quot;,&quot;label&quot;:&quot;写实&quot;,&quot;prompt&quot;:&quot;photorealistic rendering with lifelike materials&quot;},{&quot;value&quot;:&quot;DESIGN&quot;,&quot;label&quot;:&quot;设计感&quot;,&quot;prompt&quot;:&quot;graphic design aesthetic, clean layout, poster-like composition&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;magic_prompt&quot;,&quot;label&quot;:&quot;魔法提示词&quot;,&quot;hint&quot;:&quot;自动扩写你的描述，新手更友好&quot;,&quot;default&quot;:&quot;AUTO&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;AUTO&quot;,&quot;label&quot;:&quot;自动&quot;},{&quot;value&quot;:&quot;ON&quot;,&quot;label&quot;:&quot;开启&quot;,&quot;prompt&quot;:&quot;richly detailed scene with well-considered lighting, color palette and composition&quot;},{&quot;value&quot;:&quot;OFF&quot;,&quot;label&quot;:&quot;关闭&quot;}]},{&quot;kind&quot;:&quot;text&quot;,&quot;id&quot;:&quot;negative_prompt&quot;,&quot;label&quot;:&quot;反向提示词&quot;,&quot;hint&quot;:&quot;不想出现的元素，如「文字, 水印, 多余手指」&quot;,&quot;placeholder&quot;:&quot;选填&quot;,&quot;max_length&quot;:400,&quot;prompt_template&quot;:&quot;avoid: {v}&quot;}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;recraft-v4&quot;,&quot;label&quot;:&quot;Recraft V4&quot;,&quot;vendor&quot;:&quot;Recraft&quot;,&quot;tagline&quot;:&quot;扁平风格与图标设计，配色可指定&quot;,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:false,&quot;max_reference_images&quot;:0},&quot;price_per_image&quot;:0.08,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;style&quot;,&quot;label&quot;:&quot;风格大类&quot;,&quot;default&quot;:&quot;realistic_image&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;realistic_image&quot;,&quot;label&quot;:&quot;写实照片&quot;,&quot;prompt&quot;:&quot;photorealistic photograph, lifelike materials and lighting&quot;},{&quot;value&quot;:&quot;digital_illustration&quot;,&quot;label&quot;:&quot;数字插画&quot;,&quot;prompt&quot;:&quot;digital illustration, clean stylized artwork&quot;},{&quot;value&quot;:&quot;vector_illustration&quot;,&quot;label&quot;:&quot;矢量风插画&quot;,&quot;prompt&quot;:&quot;flat vector illustration style, bold clean shapes, solid color fills, minimal gradients&quot;},{&quot;value&quot;:&quot;icon&quot;,&quot;label&quot;:&quot;图标&quot;,&quot;prompt&quot;:&quot;simple centered icon on plain background, minimal flat design, clear silhouette&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1 方形&quot;},{&quot;value&quot;:&quot;4:3&quot;,&quot;label&quot;:&quot;4:3 横版&quot;},{&quot;value&quot;:&quot;3:4&quot;,&quot;label&quot;:&quot;3:4 竖版&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9 宽屏&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16 竖屏&quot;},{&quot;value&quot;:&quot;21:9&quot;,&quot;label&quot;:&quot;21:9 超宽&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;text&quot;,&quot;id&quot;:&quot;colors&quot;,&quot;label&quot;:&quot;指定配色&quot;,&quot;hint&quot;:&quot;十六进制色值，逗号分隔，如 #1E88E5,#FFC107&quot;,&quot;placeholder&quot;:&quot;选填&quot;,&quot;max_length&quot;:200,&quot;prompt_template&quot;:&quot;color palette: {v}&quot;}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;hidream-o1&quot;,&quot;label&quot;:&quot;HiDream-O1&quot;,&quot;vendor&quot;:&quot;HiDream&quot;,&quot;tagline&quot;:&quot;风格预设最多，精度与强度可调&quot;,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:false,&quot;max_reference_images&quot;:0},&quot;price_per_image&quot;:0.08,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16&quot;},{&quot;value&quot;:&quot;3:2&quot;,&quot;label&quot;:&quot;3:2&quot;},{&quot;value&quot;:&quot;2:3&quot;,&quot;label&quot;:&quot;2:3&quot;},{&quot;value&quot;:&quot;21:9&quot;,&quot;label&quot;:&quot;21:9&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;style_preset&quot;,&quot;label&quot;:&quot;风格预设&quot;,&quot;default&quot;:&quot;none&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;none&quot;,&quot;label&quot;:&quot;不使用&quot;},{&quot;value&quot;:&quot;photographic&quot;,&quot;label&quot;:&quot;摄影&quot;,&quot;prompt&quot;:&quot;photographic style, realistic camera capture&quot;},{&quot;value&quot;:&quot;anime&quot;,&quot;label&quot;:&quot;动漫&quot;,&quot;prompt&quot;:&quot;anime style illustration, cel shading, expressive linework&quot;},{&quot;value&quot;:&quot;digital-art&quot;,&quot;label&quot;:&quot;数字艺术&quot;,&quot;prompt&quot;:&quot;digital art, polished rendering, rich color&quot;},{&quot;value&quot;:&quot;cinematic&quot;,&quot;label&quot;:&quot;电影感&quot;,&quot;prompt&quot;:&quot;cinematic still, dramatic lighting, shallow depth of field&quot;},{&quot;value&quot;:&quot;3d-model&quot;,&quot;label&quot;:&quot;3D 模型&quot;,&quot;prompt&quot;:&quot;3D rendered model, studio lighting, physically based materials&quot;},{&quot;value&quot;:&quot;pixel-art&quot;,&quot;label&quot;:&quot;像素风&quot;,&quot;prompt&quot;:&quot;pixel art, limited palette, crisp pixel edges&quot;},{&quot;value&quot;:&quot;line-art&quot;,&quot;label&quot;:&quot;线稿&quot;,&quot;prompt&quot;:&quot;clean line art, black ink outlines on white, no shading&quot;},{&quot;value&quot;:&quot;origami&quot;,&quot;label&quot;:&quot;折纸&quot;,&quot;prompt&quot;:&quot;folded paper origami craft, visible paper creases&quot;},{&quot;value&quot;:&quot;neon-punk&quot;,&quot;label&quot;:&quot;赛博朋克&quot;,&quot;prompt&quot;:&quot;cyberpunk neon aesthetic, glowing signage, rain-slick reflections&quot;}]},{&quot;kind&quot;:&quot;slider&quot;,&quot;id&quot;:&quot;cfg_scale&quot;,&quot;label&quot;:&quot;提示词强度&quot;,&quot;hint&quot;:&quot;越高越贴提示词，过高会失真&quot;,&quot;prompt_bands&quot;:[{&quot;above&quot;:7,&quot;text&quot;:&quot;strictly adhere to every detail of the description&quot;},{&quot;above&quot;:4,&quot;text&quot;:&quot;closely follow the description&quot;}],&quot;min&quot;:1,&quot;max&quot;:10,&quot;step&quot;:0.5,&quot;default&quot;:4},{&quot;kind&quot;:&quot;slider&quot;,&quot;id&quot;:&quot;steps&quot;,&quot;label&quot;:&quot;细节精度&quot;,&quot;hint&quot;:&quot;越高细节越密。超过 45 为高精度档&quot;,&quot;price_above&quot;:{&quot;value&quot;:45,&quot;multiplier&quot;:1.08},&quot;prompt_bands&quot;:[{&quot;above&quot;:45,&quot;text&quot;:&quot;extremely refined micro-detail, crisp intricate textures throughout&quot;},{&quot;above&quot;:40,&quot;text&quot;:&quot;refined detail rendering&quot;}],&quot;min&quot;:20,&quot;max&quot;:60,&quot;step&quot;:5,&quot;default&quot;:40},{&quot;kind&quot;:&quot;text&quot;,&quot;id&quot;:&quot;negative_prompt&quot;,&quot;label&quot;:&quot;反向提示词&quot;,&quot;hint&quot;:&quot;不想出现的元素，如「文字, 水印, 多余手指」&quot;,&quot;placeholder&quot;:&quot;选填&quot;,&quot;max_length&quot;:500,&quot;prompt_template&quot;:&quot;avoid: {v}&quot;}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;yt-seedream-5-0-pro&quot;,&quot;label&quot;:&quot;YT-Seedream-5.0-Pro&quot;,&quot;vendor&quot;:&quot;宇天科技&quot;,&quot;tagline&quot;:&quot;指令理解准，复杂描述也能照做&quot;,&quot;ref_uplift_per_image&quot;:0.75,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:true,&quot;max_reference_images&quot;:4},&quot;price_per_image&quot;:0.05,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;size&quot;,&quot;label&quot;:&quot;尺寸&quot;,&quot;default&quot;:&quot;1024x1024&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024x1024&quot;,&quot;label&quot;:&quot;1024×1024 方形&quot;},{&quot;value&quot;:&quot;1536x1024&quot;,&quot;label&quot;:&quot;1536×1024 横版&quot;,&quot;price_multiplier&quot;:1.08},{&quot;value&quot;:&quot;1024x1536&quot;,&quot;label&quot;:&quot;1024×1536 竖版&quot;,&quot;price_multiplier&quot;:1.08}]},{&quot;kind&quot;:&quot;text&quot;,&quot;id&quot;:&quot;negative_prompt&quot;,&quot;label&quot;:&quot;反向提示词&quot;,&quot;hint&quot;:&quot;不想出现的元素，如「文字, 水印, 多余手指」&quot;,&quot;placeholder&quot;:&quot;选填&quot;,&quot;max_length&quot;:400,&quot;prompt_template&quot;:&quot;avoid: {v}&quot;}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;yt-image-3-0-pro&quot;,&quot;label&quot;:&quot;YT-image-3.0-pro&quot;,&quot;vendor&quot;:&quot;宇天科技&quot;,&quot;tagline&quot;:&quot;写实质感强，细节密度高&quot;,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:false,&quot;max_reference_images&quot;:0},&quot;price_per_image&quot;:0.04,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1 方形&quot;},{&quot;value&quot;:&quot;4:3&quot;,&quot;label&quot;:&quot;4:3 横版&quot;},{&quot;value&quot;:&quot;3:4&quot;,&quot;label&quot;:&quot;3:4 竖版&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9 宽屏&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16 竖屏&quot;},{&quot;value&quot;:&quot;21:9&quot;,&quot;label&quot;:&quot;21:9 超宽&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;slider&quot;,&quot;id&quot;:&quot;guidance_scale&quot;,&quot;label&quot;:&quot;提示词强度&quot;,&quot;hint&quot;:&quot;越高越严格照描述画&quot;,&quot;prompt_bands&quot;:[{&quot;above&quot;:6,&quot;text&quot;:&quot;strictly adhere to every detail of the description&quot;},{&quot;above&quot;:3.5,&quot;text&quot;:&quot;closely follow the description&quot;}],&quot;min&quot;:1,&quot;max&quot;:10,&quot;step&quot;:0.5,&quot;default&quot;:3.5},{&quot;kind&quot;:&quot;text&quot;,&quot;id&quot;:&quot;negative_prompt&quot;,&quot;label&quot;:&quot;反向提示词&quot;,&quot;hint&quot;:&quot;不想出现的元素，如「文字, 水印, 多余手指」&quot;,&quot;placeholder&quot;:&quot;选填&quot;,&quot;max_length&quot;:400,&quot;prompt_template&quot;:&quot;avoid: {v}&quot;}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;yt-3-pro-image-preview&quot;,&quot;label&quot;:&quot;YT-3-pro-image-preview&quot;,&quot;vendor&quot;:&quot;宇天科技&quot;,&quot;tagline&quot;:&quot;电影感光影，氛围渲染见长&quot;,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:false,&quot;max_reference_images&quot;:0},&quot;price_per_image&quot;:0.03,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1 方形&quot;},{&quot;value&quot;:&quot;4:3&quot;,&quot;label&quot;:&quot;4:3 横版&quot;},{&quot;value&quot;:&quot;3:4&quot;,&quot;label&quot;:&quot;3:4 竖版&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9 宽屏&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16 竖屏&quot;},{&quot;value&quot;:&quot;21:9&quot;,&quot;label&quot;:&quot;21:9 超宽&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;mood&quot;,&quot;label&quot;:&quot;氛围&quot;,&quot;default&quot;:&quot;none&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;none&quot;,&quot;label&quot;:&quot;不指定&quot;},{&quot;value&quot;:&quot;warm&quot;,&quot;label&quot;:&quot;暖调&quot;,&quot;prompt&quot;:&quot;warm golden tones, cozy inviting mood&quot;},{&quot;value&quot;:&quot;cold&quot;,&quot;label&quot;:&quot;冷调&quot;,&quot;prompt&quot;:&quot;cool blue tones, calm detached mood&quot;},{&quot;value&quot;:&quot;dark&quot;,&quot;label&quot;:&quot;暗黑&quot;,&quot;prompt&quot;:&quot;low-key lighting, deep shadows, moody darkness&quot;},{&quot;value&quot;:&quot;bright&quot;,&quot;label&quot;:&quot;明亮&quot;,&quot;prompt&quot;:&quot;high-key bright lighting, airy clean mood&quot;}]},{&quot;kind&quot;:&quot;text&quot;,&quot;id&quot;:&quot;negative_prompt&quot;,&quot;label&quot;:&quot;反向提示词&quot;,&quot;hint&quot;:&quot;不想出现的元素，如「文字, 水印, 多余手指」&quot;,&quot;placeholder&quot;:&quot;选填&quot;,&quot;max_length&quot;:400,&quot;prompt_template&quot;:&quot;avoid: {v}&quot;}],&quot;recommended&quot;:false,&quot;available&quot;:true},{&quot;id&quot;:&quot;yt-flux-lora-training&quot;,&quot;label&quot;:&quot;YT-Flux-Lora-Training&quot;,&quot;vendor&quot;:&quot;宇天科技&quot;,&quot;tagline&quot;:&quot;风格化最自由，插画与概念图首选&quot;,&quot;capabilities&quot;:{&quot;text_to_image&quot;:true,&quot;image_to_image&quot;:false,&quot;max_reference_images&quot;:0},&quot;price_per_image&quot;:0.03,&quot;enabled&quot;:true,&quot;controls&quot;:[{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;aspect_ratio&quot;,&quot;label&quot;:&quot;画面比例&quot;,&quot;default&quot;:&quot;1:1&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1:1&quot;,&quot;label&quot;:&quot;1:1 方形&quot;},{&quot;value&quot;:&quot;4:3&quot;,&quot;label&quot;:&quot;4:3 横版&quot;},{&quot;value&quot;:&quot;3:4&quot;,&quot;label&quot;:&quot;3:4 竖版&quot;},{&quot;value&quot;:&quot;16:9&quot;,&quot;label&quot;:&quot;16:9 宽屏&quot;},{&quot;value&quot;:&quot;9:16&quot;,&quot;label&quot;:&quot;9:16 竖屏&quot;},{&quot;value&quot;:&quot;21:9&quot;,&quot;label&quot;:&quot;21:9 超宽&quot;}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;resolution&quot;,&quot;label&quot;:&quot;分辨率&quot;,&quot;hint&quot;:&quot;分辨率越高细节越密、耗时越久&quot;,&quot;default&quot;:&quot;1280&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;1024&quot;,&quot;label&quot;:&quot;1K（最快）&quot;},{&quot;value&quot;:&quot;1280&quot;,&quot;label&quot;:&quot;1.3K（推荐）&quot;},{&quot;value&quot;:&quot;2048&quot;,&quot;label&quot;:&quot;2K（最精细）&quot;,&quot;price_multiplier&quot;:1.15}]},{&quot;kind&quot;:&quot;select&quot;,&quot;id&quot;:&quot;art_style&quot;,&quot;label&quot;:&quot;画风&quot;,&quot;default&quot;:&quot;none&quot;,&quot;options&quot;:[{&quot;value&quot;:&quot;none&quot;,&quot;label&quot;:&quot;不指定&quot;},{&quot;value&quot;:&quot;anime&quot;,&quot;label&quot;:&quot;动漫&quot;,&quot;prompt&quot;:&quot;anime illustration, cel shading, clean linework&quot;},{&quot;value&quot;:&quot;watercolor&quot;,&quot;label&quot;:&quot;水彩&quot;,&quot;prompt&quot;:&quot;watercolor painting, soft bleeding pigments, paper texture&quot;},{&quot;value&quot;:&quot;oil&quot;,&quot;label&quot;:&quot;油画&quot;,&quot;prompt&quot;:&quot;oil painting, visible brush strokes, rich impasto&quot;},{&quot;value&quot;:&quot;3d&quot;,&quot;label&quot;:&quot;3D 渲染&quot;,&quot;prompt&quot;:&quot;3D rendered scene, physically based materials, studio lighting&quot;},{&quot;value&quot;:&quot;pixel&quot;,&quot;label&quot;:&quot;像素风&quot;,&quot;prompt&quot;:&quot;pixel art, limited palette, crisp pixel edges&quot;},{&quot;value&quot;:&quot;sketch&quot;,&quot;label&quot;:&quot;线稿&quot;,&quot;prompt&quot;:&quot;pencil sketch, hatching, monochrome line drawing&quot;}]},{&quot;kind&quot;:&quot;text&quot;,&quot;id&quot;:&quot;negative_prompt&quot;,&quot;label&quot;:&quot;反向提示词&quot;,&quot;hint&quot;:&quot;不想出现的元素，如「文字, 水印, 多余手指」&quot;,&quot;placeholder&quot;:&quot;选填&quot;,&quot;max_length&quot;:400,&quot;prompt_template&quot;:&quot;avoid: {v}&quot;}],&quot;recommended&quot;:false,&quot;available&quot;:true}]"
+      data-styles="[{&quot;id&quot;:&quot;photo&quot;,&quot;label&quot;:&quot;摄影写实&quot;,&quot;desc&quot;:&quot;真实相机质感&quot;,&quot;medium&quot;:&quot;photography&quot;,&quot;hint&quot;:&quot;photorealistic photography, 50mm lens, natural lighting, realistic skin and material textures, subtle film grain&quot;},{&quot;id&quot;:&quot;cinematic&quot;,&quot;label&quot;:&quot;电影感&quot;,&quot;desc&quot;:&quot;电影剧照氛围&quot;,&quot;medium&quot;:&quot;photography&quot;,&quot;hint&quot;:&quot;cinematic still, anamorphic lens with shallow depth of field, teal and orange color grade, dramatic rim lighting, 2.39:1 letterbox mood&quot;},{&quot;id&quot;:&quot;portrait&quot;,&quot;label&quot;:&quot;人像大片&quot;,&quot;desc&quot;:&quot;杂志级人像&quot;,&quot;medium&quot;:&quot;photography&quot;,&quot;hint&quot;:&quot;editorial portrait photography, 85mm f\/1.8 with shallow depth of field, soft studio key light with rim light, detailed skin texture&quot;},{&quot;id&quot;:&quot;anime&quot;,&quot;label&quot;:&quot;日系动漫&quot;,&quot;desc&quot;:&quot;赛璐璐动画&quot;,&quot;medium&quot;:&quot;anime&quot;,&quot;hint&quot;:&quot;anime illustration in Japanese animation style, clean cel shading, expressive eyes, vibrant colors, detailed background art&quot;},{&quot;id&quot;:&quot;render3d&quot;,&quot;label&quot;:&quot;3D 渲染&quot;,&quot;desc&quot;:&quot;皮克斯质感&quot;,&quot;medium&quot;:&quot;render3d&quot;,&quot;hint&quot;:&quot;3D render, octane render, physically based materials, soft global illumination, subsurface scattering, stylized character design&quot;},{&quot;id&quot;:&quot;watercolor&quot;,&quot;label&quot;:&quot;水彩插画&quot;,&quot;desc&quot;:&quot;手绘晕染&quot;,&quot;medium&quot;:&quot;watercolor&quot;,&quot;hint&quot;:&quot;watercolor illustration, soft washes, visible paper texture, loose expressive brush strokes, gentle color bleeding&quot;},{&quot;id&quot;:&quot;oil&quot;,&quot;label&quot;:&quot;古典油画&quot;,&quot;desc&quot;:&quot;厚涂笔触&quot;,&quot;medium&quot;:&quot;oil&quot;,&quot;hint&quot;:&quot;classical oil painting, impasto brushwork, chiaroscuro lighting, rich pigments, canvas texture, in the manner of old masters&quot;},{&quot;id&quot;:&quot;ink&quot;,&quot;label&quot;:&quot;国风水墨&quot;,&quot;desc&quot;:&quot;留白意境&quot;,&quot;medium&quot;:&quot;ink&quot;,&quot;hint&quot;:&quot;traditional Chinese ink wash painting, expressive brush strokes, generous negative space, misty mountains aesthetic, rice paper texture&quot;},{&quot;id&quot;:&quot;cyberpunk&quot;,&quot;label&quot;:&quot;赛博朋克&quot;,&quot;desc&quot;:&quot;霓虹未来&quot;,&quot;medium&quot;:null,&quot;hint&quot;:&quot;cyberpunk aesthetic, neon signs reflecting on wet streets, holographic interfaces, dense futuristic cityscape at night, purple and cyan palette&quot;},{&quot;id&quot;:&quot;flat&quot;,&quot;label&quot;:&quot;扁平插画&quot;,&quot;desc&quot;:&quot;矢量海报风&quot;,&quot;medium&quot;:&quot;vector&quot;,&quot;hint&quot;:&quot;flat vector illustration, bold geometric shapes, limited harmonious palette, clean edges, generous white space, modern editorial style&quot;},{&quot;id&quot;:&quot;pixel&quot;,&quot;label&quot;:&quot;像素艺术&quot;,&quot;desc&quot;:&quot;复古游戏&quot;,&quot;medium&quot;:&quot;pixel&quot;,&quot;hint&quot;:&quot;pixel art, 32-bit retro game style, limited palette, crisp dithering, isometric or side view&quot;},{&quot;id&quot;:&quot;product&quot;,&quot;label&quot;:&quot;产品摄影&quot;,&quot;desc&quot;:&quot;电商主图&quot;,&quot;medium&quot;:&quot;photography&quot;,&quot;hint&quot;:&quot;professional product photography, clean seamless background, studio softbox lighting, sharp focus on product, subtle reflection on surface&quot;}]"
+      data-max-style-combo="3"
+      data-inspirations="[&quot;一只戴着圆框眼镜的橘猫趴在旧书店的收银台上，午后阳光透过橱窗洒进来，浮尘在光柱里飘&quot;,&quot;雨后的重庆洪崖洞夜景，霓虹灯倒映在湿漉漉的石板路上，一个撑伞的行人走过&quot;,&quot;一间摆满多肉植物的阳光房，藤编吊椅上放着一本翻开的书和一杯冒热气的咖啡&quot;,&quot;宇航员坐在月球环形山边缘钓鱼，鱼线垂进星空，地球在远处半悬&quot;,&quot;水墨风格的江南水乡，乌篷船划过石桥下，远山如黛，白墙黛瓦&quot;,&quot;一只机械蜂鸟悬停在发光的电子花朵前，翅膀是半透明的电路板，背景是黄昏的废土城市&quot;,&quot;北欧极简风格的客厅，落地窗外是暴风雪，壁炉的暖光映在木地板上&quot;,&quot;一块切开的夏日西瓜特写，果肉晶莹，冰块和薄荷叶散落在大理石台面上，水珠清晰可见&quot;,&quot;身穿汉服的少女在樱花树下回眸，花瓣飘落，逆光勾勒出发丝的轮廓&quot;,&quot;等距视角的迷你便利店剖面图，货架、收银台、关东煮机一应俱全，玩具模型质感&quot;]">
+
+            <section class="ig-card ig-form">
+        <div class="ig-form-row">
+
+        <div class="ig-form-col ig-col-model">
+        <div class="ig-col-inner">
+        <div class="ig-modes" id="ig-modes">
+          <button type="button" class="ig-mode is-active" data-ig-mode="t2i">文生图</button>
+          <button type="button" class="ig-mode" data-ig-mode="i2i">图生图</button>
+        </div>
+
+        <div class="ig-field ig-field-models">
+          <div class="ig-field-head">
+            <span class="ig-label">模型</span>
+            <span class="ig-hint">参数与各家官方保持一致</span>
+          </div>
+          <div class="ig-models" id="ig-models"></div>
+        </div>
+        </div>
+        </div>
+
+        <div class="ig-form-col ig-col-prompt">
+        <div class="ig-col-inner">
+        <div class="ig-field ig-field-prompt">
+          <div class="ig-field-head">
+            <label class="ig-label" for="ig-prompt">提示词</label>
+            <div class="ig-prompt-tools">
+              <button type="button" class="ig-prompt-wiz" id="ig-prompt-insp" title="随机填入一条示例，改改就能用">🎲 灵感</button>
+              <button type="button" class="ig-prompt-opt" id="ig-prompt-opt"
+                title="AI 把你的描述扩写成结构完整的专业提示词（构图 / 光线 / 质感）">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+                <span id="ig-prompt-opt-txt">一键优化</span>
+              </button>
+                            <button type="button" class="ig-prompt-desc" id="ig-prompt-desc" disabled
+                title="先在下方「参考图」上传一张图，再用它反推提示词">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+                <span id="ig-prompt-desc-txt">以图反推</span>
+              </button>
+                            <button type="button" class="ig-prompt-trans" id="ig-prompt-trans" hidden
+                title="鼠标移上来即可看中文对照">译</button>
+              <button type="button" class="ig-prompt-fav" id="ig-prompt-fav" title="收藏当前提示词与风格，以后一键取用">☆ 收藏</button>
+              <button type="button" class="ig-prompt-fav" id="ig-prompt-favs" title="打开我的提示词收藏夹">收藏夹</button>
+              <button type="button" class="ig-prompt-undo" id="ig-prompt-undo" hidden>还原</button>
+              <button type="button" class="ig-prompt-clear" id="ig-prompt-clear" hidden>清空</button>
+            </div>
+          </div>
+          <div class="ig-textarea-wrap">
+            <textarea id="ig-prompt" class="ig-textarea" maxlength="2000"
+              placeholder="描述你想生成的画面，例如：一只戴着宇航员头盔的橘猫，站在月球表面，电影级光影。没思路点「灵感」，写完点「一键优化」"></textarea>
+            <div class="ig-count"><span id="ig-prompt-count">0</span>/2000</div>
+          </div>
+          <p class="ig-opt-tip" id="ig-opt-tip" hidden></p>
+                    <div class="ig-trans-box" id="ig-trans-box" hidden>
+            <div class="ig-trans-head">中文对照<span id="ig-trans-state"></span></div>
+            <div class="ig-trans-body" id="ig-trans-body"></div>
+          </div>
+        </div>
+
+        <div class="ig-field">
+          <div class="ig-field-head">
+            <span class="ig-label">创作风格</span>
+            <span class="ig-hint">可叠加最多 3 个，先选的为主；再点一下取消</span>
+          </div>
+          <div class="ig-styles" id="ig-styles">
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="photo"
+                title="真实相机质感">摄影写实<span class="ig-style-ord"></span></button>
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="cinematic"
+                title="电影剧照氛围">电影感<span class="ig-style-ord"></span></button>
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="portrait"
+                title="杂志级人像">人像大片<span class="ig-style-ord"></span></button>
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="anime"
+                title="赛璐璐动画">日系动漫<span class="ig-style-ord"></span></button>
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="render3d"
+                title="皮克斯质感">3D 渲染<span class="ig-style-ord"></span></button>
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="watercolor"
+                title="手绘晕染">水彩插画<span class="ig-style-ord"></span></button>
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="oil"
+                title="厚涂笔触">古典油画<span class="ig-style-ord"></span></button>
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="ink"
+                title="留白意境">国风水墨<span class="ig-style-ord"></span></button>
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="cyberpunk"
+                title="霓虹未来">赛博朋克<span class="ig-style-ord"></span></button>
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="flat"
+                title="矢量海报风">扁平插画<span class="ig-style-ord"></span></button>
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="pixel"
+                title="复古游戏">像素艺术<span class="ig-style-ord"></span></button>
+                                        <button type="button" class="ig-style-chip"
+                data-ig-style="product"
+                title="电商主图">产品摄影<span class="ig-style-ord"></span></button>
+                      </div>
+          <p class="ig-style-tip" id="ig-style-tip" hidden></p>
+        </div>
+
+                <div class="ig-field" id="ig-shape-field" hidden>
+          <div class="ig-controls ig-controls-shape" id="ig-controls-shape"></div>
+                    <p class="ig-shape-req" id="ig-shape-req" hidden>请选择画面比例 / 尺寸（必选）</p>
+        </div>
+
+        <div class="ig-field ig-field-refs" id="ig-refs-field" hidden>
+          <div class="ig-field-head">
+            <span class="ig-label">参考图</span>
+            <span class="ig-hint" id="ig-refs-hint">支持 JPG / PNG / WebP，单张最大 12MB</span>
+          </div>
+          <div class="ig-refs" id="ig-refs"></div>
+          <input type="file" id="ig-ref-input" accept="image/jpeg,image/png,image/webp" hidden>
+        </div>
+        </div>
+        </div>
+
+        <div class="ig-form-col ig-col-params">
+        <div class="ig-col-inner">
+        <div class="ig-field ig-field-params">
+          <div class="ig-field-head">
+            <span class="ig-label">官方参数</span>
+            <span class="ig-hint">随所选模型切换，与官方产品一致</span>
+          </div>
+          <div class="ig-controls" id="ig-controls"></div>
+        </div>
+
+        <div class="ig-field">
+          <div class="ig-field-head">
+            <span class="ig-label">生成数量</span>
+          </div>
+          <div class="ig-seg ig-seg-count" id="ig-count">
+                          <button type="button" class="ig-seg-btn is-active"
+                data-ig-count="1">1 张</button>
+                          <button type="button" class="ig-seg-btn"
+                data-ig-count="2">2 张</button>
+                          <button type="button" class="ig-seg-btn"
+                data-ig-count="4">4 张</button>
+                      </div>
+        </div>
+
+                <div class="ig-cost-detail" id="ig-cost-detail" hidden></div>
+
+        <p class="ig-err" id="ig-err" hidden></p>
+
+        <div class="ig-action-wrap">
+                      <input type="hidden" name="csrf" value="fe2331a15e0e6995a74ddd026e4de9317fcac495754fd84e240bc9c9dc350e39">
+            <button type="button" class="ig-btn-create" id="ig-submit" disabled>
+              <span id="ig-submit-text">创建</span>
+              <span class="ig-submit-cost" id="ig-cost"></span>
+            </button>
+                  </div>
+        </div>
+        </div>
+
+        </div><!-- /.ig-form-row -->
+      </section>
+
+            <section class="ig-card ig-works-card">
+        <div class="ig-works-head">
+          <span>我的作品</span>
+          <span class="ig-hint" id="ig-queue-hint"></span>
+                      <button type="button" class="ig-more-works" id="ig-more-works">查看库（0张）</button>
+                  </div>
+        <div class="ig-works ig-works-grid" id="ig-works"></div>
+      </section>
+
+            <section class="ig-card ig-stage">
+        <div class="ig-preview-wrap">
+          <button type="button" class="ig-stage-nav" id="ig-stage-prev" aria-label="上一张" hidden>‹</button>
+          <div class="ig-preview" id="ig-preview">
+            <div class="ig-preview-empty" id="ig-preview-empty">生成结果会出现在这里</div>
+          </div>
+          <button type="button" class="ig-stage-nav" id="ig-stage-next" aria-label="下一张" hidden>›</button>
+        </div>
+      </section>
+    </div>
+
+        <div class="ig-tip-pop" id="ig-tip-pop" hidden>
+      <div class="ig-tip-pop-head" id="ig-tip-pop-head"></div>
+      <div class="ig-tip-pop-body" id="ig-tip-pop-body"></div>
+      <div class="ig-tip-pop-foot">点击「词」把它填回输入框</div>
+    </div>
+
+    <section class="ig-pricing" id="pricing">
+      <h2>图片定价</h2>
+            <p class="ig-pricing-sub">按张计费，只扣充值积分；失败或取消全额退还。</p>
+      <div class="overflow-x-auto">
+        <table class="key-table">
+          <thead>
+            <tr>
+              <th>模型</th>
+              <th>厂商</th>
+              <th>能力</th>
+              <th>起步价 / 张</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+                          <tr>
+                <td>GPT Image 2</td>
+                <td>OpenAI</td>
+                <td>文生图 / 图生图</td>
+                <td>0.25 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>Nano Banana 2</td>
+                <td>Google</td>
+                <td>文生图 / 图生图</td>
+                <td>0.2 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>Nano Banana Pro</td>
+                <td>Google</td>
+                <td>文生图 / 图生图</td>
+                <td>0.23 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>Midjourney V8</td>
+                <td>Midjourney</td>
+                <td>文生图</td>
+                <td>0.08 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>FLUX.2 Max</td>
+                <td>Black Forest Labs</td>
+                <td>文生图</td>
+                <td>0.08 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>FLUX.2 Pro</td>
+                <td>Black Forest Labs</td>
+                <td>文生图</td>
+                <td>0.08 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>Seedream 4.5</td>
+                <td>字节跳动</td>
+                <td>文生图</td>
+                <td>0.08 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>Ideogram 4</td>
+                <td>Ideogram</td>
+                <td>文生图</td>
+                <td>0.08 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>Recraft V4</td>
+                <td>Recraft</td>
+                <td>文生图</td>
+                <td>0.08 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>HiDream-O1</td>
+                <td>HiDream</td>
+                <td>文生图</td>
+                <td>0.08 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>YT-Seedream-5.0-Pro</td>
+                <td>宇天科技</td>
+                <td>文生图 / 图生图</td>
+                <td>0.05 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>YT-image-3.0-pro</td>
+                <td>宇天科技</td>
+                <td>文生图</td>
+                <td>0.04 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>YT-3-pro-image-preview</td>
+                <td>宇天科技</td>
+                <td>文生图</td>
+                <td>0.03 积分</td>
+                <td>可生成</td>
+              </tr>
+                          <tr>
+                <td>YT-Flux-Lora-Training</td>
+                <td>宇天科技</td>
+                <td>文生图</td>
+                <td>0.03 积分</td>
+                <td>可生成</td>
+              </tr>
+                                  </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="ig-footer">
+    <span>&copy; 2026 宇天科技 · 图片由所选模型生成，请遵守相关法律法规与平台规范</span>
+  </footer>
+
+  <script src="/assets/js/user.js?v=5d2dbfa8b598" defer></script>
+  <script src="/assets/js/image.js?v=27fc83aecedb" defer></script>
+  <script src="https://kefu.yutiankejiai.com/widget.js" data-from="user/image" data-hint="sham" defer></script>
+
+  <dialog class="dialog dialog-xl ig-recharge-dialog" id="ig-recharge-dialog">
+    <div class="dialog-head">
+      <h3>充值积分</h3>
+      <button type="button" class="dialog-x" data-close-dialog="ig-recharge-dialog" aria-label="关闭">×</button>
+    </div>
+                      
+          <div class="amount-grid" data-username="sham" data-kefu-from="user/image"
+            data-gate-amount="0" data-gate-yuan="0">
+                          <button type="button" class="amount-cell" data-amount="300"
+                data-points="330"
+                data-payable="1">
+                                  <span class="amount-tag">特别推荐</span>
+                ¥ 300                <small class="amount-pts">330 积分</small>
+                                  <small class="amount-bonus">多赠 10%</small>
+                                              </button>
+                          <button type="button" class="amount-cell" data-amount="600"
+                data-points="700"
+                data-payable="1">
+                ¥ 600                <small class="amount-pts">700 积分</small>
+                                  <small class="amount-bonus">多赠 17%</small>
+                                              </button>
+                          <button type="button" class="amount-cell" data-amount="1100"
+                data-points="1300"
+                data-payable="1">
+                ¥ 1100                <small class="amount-pts">1300 积分</small>
+                                  <small class="amount-bonus">多赠 18%</small>
+                                              </button>
+                          <button type="button" class="amount-cell" data-amount="2200"
+                data-points="2600"
+                data-payable="1">
+                                  <span class="amount-tag amount-tag-alt">大额首选</span>
+                ¥ 2200                <small class="amount-pts">2600 积分</small>
+                                  <small class="amount-bonus">多赠 18%</small>
+                                              </button>
+                        <button type="button" class="amount-cell amount-biz" data-biz>
+              <span class="amount-tag amount-tag-alt">商务合作</span>大额充值
+              <small class="amount-pts">联系客户经理</small>
+            </button>
+          </div>
+
+                    <div class="epay-box" id="epay-box" data-epay-box data-create="/?ajax=epay_create" data-status="/?ajax=epay_status"
+            data-cs-create="/?ajax=consign_create" data-cs-status="/?ajax=consign_status"
+            data-csrf="fe2331a15e0e6995a74ddd026e4de9317fcac495754fd84e240bc9c9dc350e39" data-channels="{&quot;recharge:300&quot;:[&quot;epay&quot;],&quot;recharge:600&quot;:[&quot;epay&quot;],&quot;recharge:1100&quot;:[&quot;epay&quot;],&quot;recharge:2200&quot;:[],&quot;sub:ultra&quot;:[&quot;epay&quot;],&quot;sub:plan4&quot;:[&quot;epay&quot;],&quot;sub:plan5&quot;:[&quot;epay&quot;],&quot;sub:plan6&quot;:[&quot;epay&quot;],&quot;sub:yt-plus&quot;:[&quot;epay&quot;]}" hidden>
+            <div class="epay-tabs" role="tablist">
+              <button type="button" class="epay-tab" data-epay-tab="jiyuan" role="tab" aria-selected="false">支付通道 1<small>支付宝扫码 · 付完自动到账</small></button>
+              <button type="button" class="epay-tab" data-epay-tab="epay" role="tab" aria-selected="false">支付通道 2<small>支付宝在线付款 · 付完自动到账</small></button>
+              <button type="button" class="epay-tab" data-epay-tab="catfk" role="tab" aria-selected="false">支付通道 4<small>支付宝扫码 · 付完自动到账</small></button>
+            </div>
+            <div class="epay-pane" data-cs-pane hidden>
+              <p class="epay-sum">应付 <b data-cs-sum>—</b><span data-cs-desc></span></p>
+              <button type="button" class="btn-primary epay-go" data-cs-go>生成支付宝付款码</button>
+              <div class="cs-qr" data-cs-qr hidden></div>
+              <a class="btn-primary cs-open" data-cs-open href="#" rel="noopener noreferrer" hidden>打开支付宝付款</a>
+              <p class="epay-msg" data-cs-msg hidden></p>
+              <p class="epay-tip">用支付宝扫码付款，付款成功后自动到账，不用填订单号；付款码 5 分钟内有效，过期重新生成即可。遇到问题？<a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fimage&amp;msg=%E5%9C%A8%E7%BA%BF%E4%BB%98%E6%AC%BE%E9%81%87%E5%88%B0%E9%97%AE%E9%A2%98%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/image" data-kefu-msg="在线付款遇到问题：用户名 sham" target="_blank" rel="noopener">联系在线客服</a></p>
+            </div>
+            <div class="epay-pane" data-epay-pane hidden>
+              <p class="epay-sum">应付 <b data-epay-sum>—</b><span data-epay-desc></span></p>
+              <button type="button" class="btn-primary epay-go" data-epay-go>使用支付宝付款</button>
+              <a class="epay-reopen" data-epay-reopen href="#" target="_blank" rel="noopener noreferrer" hidden>付款页面没打开？点这里重新打开</a>
+              <p class="epay-msg" data-epay-msg hidden></p>
+              <p class="epay-tip">电脑会在新标签页打开支付宝付款页面，手机直接跳转支付宝；付款成功后自动到账，不用填订单号。遇到问题？<a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fimage&amp;msg=%E5%9C%A8%E7%BA%BF%E4%BB%98%E6%AC%BE%E9%81%87%E5%88%B0%E9%97%AE%E9%A2%98%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/image" data-kefu-msg="在线付款遇到问题：用户名 sham" target="_blank" rel="noopener">联系在线客服</a></p>
+            </div>
+          </div>
+        
+          <!-- 在线支付面板（有码面额点选展开） -->
+          <div class="pay-panel" id="pay-panel" hidden>
+            <input type="hidden" id="pay-csrf" value="fe2331a15e0e6995a74ddd026e4de9317fcac495754fd84e240bc9c9dc350e39">
+            <div class="pay-qr-box">
+              <img id="pay-qr" src="" alt="支付宝收款码" width="190" height="190" decoding="async">
+              <span class="pay-qr-label">支付宝扫码支付 <b id="pay-amount">—</b> 元</span>
+            </div>
+            <div class="pay-steps">
+              <ol class="notice-list">
+                <li>支付宝扫左侧二维码，支付 <b id="pay-amount2">—</b> 元（金额固定不可改）；</li>
+                <li>付款完成后，在支付宝「账单」中打开这笔付款，找到<b>订单号后 6 位</b>；</li>
+                <li>填入下方并点「我已付款」，约 10 秒内自动到账 <b id="pay-points">—</b> 积分。</li>
+                                <li class="pay-gate-note" id="pay-gate-note" hidden></li>
+              </ol>
+              <div class="pay-claim-row">
+                <input type="text" id="pay-order" class="pay-order-input" inputmode="numeric" maxlength="64" data-d6
+                  placeholder="订单号后 6 位" autocomplete="off">
+                <button type="button" class="btn-primary" id="pay-claim">我已付款，立即到账</button>
+              </div>
+              <p class="pay-status" id="pay-status" hidden></p>
+              <p class="pay-fallback">遇到问题？<a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fimage&amp;msg=%E5%9C%A8%E7%BA%BF%E5%85%85%E5%80%BC%E9%81%87%E5%88%B0%E9%97%AE%E9%A2%98%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/image" data-kefu-msg="在线充值遇到问题：用户名 sham" class="pay-help-link" target="_blank" rel="noopener">联系在线客服</a> 人工处理。</p>
+            </div>
+          </div>
+
+          <!-- 客服入账面板（无码面额点选展开） -->
+          <div class="amount-cta" id="amount-cta" hidden>
+            <p>已选金额 <b id="amount-val">—</b> 元 · 到账 <b id="amount-pts-val">—</b> 积分 · 该面额暂未开通在线支付，点下方按钮联系在线客服，充值信息已为您填好，发送即可由客服入账：</p>
+            <div class="amount-copy-row">
+              <code class="amount-copy-text" id="amount-copy-text">—</code>
+              <a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fimage&amp;msg=%E5%85%85%E5%80%BC%E7%94%B3%E8%AF%B7%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/image" data-kefu-msg="充值申请：用户名 sham" class="btn-primary amount-kefu-btn" target="_blank" rel="noopener">联系在线客服入账</a>            </div>
+          </div>
+
+          <!-- 商务合作面板 -->
+          <div class="amount-cta" id="biz-panel" hidden>
+            <p>大额充值 / 商务合作，请通过在线客服「代理咨询」联系<b>客户经理</b>，享受专属充值方案与技术支持。</p>
+            <div class="amount-copy-row">
+              <a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fimage&amp;msg=%E5%95%86%E5%8A%A1%E5%90%88%E4%BD%9C%E5%92%A8%E8%AF%A2%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/image" data-kefu-msg="商务合作咨询：用户名 sham" class="btn-primary" target="_blank" rel="noopener">联系客户经理</a>            </div>
+          </div>
+                    <p class="ig-recharge-foot">到账后余额自动刷新，可直接继续创建图片。</p>
+  </dialog>
+
+    <dialog class="dialog dialog-xl ig-fav-dialog" id="ig-fav-dialog">
+    <div class="dialog-head">
+      <h3>我的提示词收藏<span class="ig-fav-sub">填入时会一并恢复当时选的风格</span></h3>
+      <button type="button" class="dialog-x" data-close-dialog="ig-fav-dialog" aria-label="关闭">×</button>
+    </div>
+    <div class="ig-fav-list" id="ig-fav-list"></div>
+  </dialog>
+
+    <dialog class="dialog ig-works-dialog" id="ig-works-dialog">
+    <div class="dialog-head">
+      <h3>图片资产库 <span class="ig-dialog-count" id="ig-works-dialog-count"></span></h3>
+      <button type="button" class="dialog-x" id="ig-works-close" aria-label="关闭">×</button>
+    </div>
+    <div class="ig-works-dialog-body">
+      <aside class="ig-library-groups">
+        <div class="ig-library-side-head">
+          <span>分组</span>
+          <button type="button" id="ig-group-create">＋ 新建</button>
+        </div>
+        <div class="ig-group-list" id="ig-group-list"></div>
+      </aside>
+      <div class="ig-library-main">
+        <div class="ig-library-filter">
+          <label>起始日期<input type="date" id="ig-library-from"></label>
+          <label>结束日期<input type="date" id="ig-library-to"></label>
+          <button type="button" id="ig-library-search">查询</button>
+          <button type="button" id="ig-library-reset">重置</button>
+        </div>
+        <div class="ig-library-toolbar">
+          <label class="ig-library-checkall">
+            <input type="checkbox" id="ig-library-checkall"> 全选当前页
+          </label>
+          <span id="ig-library-selected">已选 0 张</span>
+          <select id="ig-library-bulk-group" aria-label="批量加入分组"></select>
+          <button type="button" id="ig-library-bulk-apply" disabled>加入分组</button>
+          <button type="button" id="ig-library-export" disabled>批量下载</button>
+        </div>
+        <div class="ig-archive-grid" id="ig-archive-grid">
+          <div class="ig-archive-empty">正在加载图片库…</div>
+        </div>
+        <div class="ig-archive-pager" id="ig-archive-pager" hidden>
+          <button type="button" class="ig-pager-btn" id="ig-archive-prev">上一页</button>
+          <span class="ig-pager-info" id="ig-archive-page"></span>
+          <button type="button" class="ig-pager-btn" id="ig-archive-next">下一页</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+    <dialog class="dialog ig-viewer-dialog" id="ig-viewer-dialog">
+    <div class="dialog-head ig-viewer-head">
+      <h3 id="ig-viewer-title">作品大图</h3>
+      <div class="ig-viewer-tools">
+        <button type="button" id="ig-viewer-minus" aria-label="缩小">−</button>
+        <span id="ig-viewer-scale">100%</span>
+        <button type="button" id="ig-viewer-plus" aria-label="放大">＋</button>
+        <button type="button" id="ig-viewer-reset">复位</button>
+        <a id="ig-viewer-download" download target="_blank" rel="noopener">下载</a>
+        <button type="button" class="dialog-x" id="ig-viewer-close" aria-label="关闭">×</button>
+      </div>
+    </div>
+    <div class="ig-viewer-body">
+      <div class="ig-viewer-canvas" id="ig-viewer-canvas">
+        <img id="ig-viewer-image" alt="作品大图" draggable="false">
+      </div>
+      <div class="ig-viewer-prompt-wrap">
+        <div class="ig-viewer-prompt-head">提示词</div>
+        <div class="ig-viewer-prompt" id="ig-viewer-prompt"></div>
+      </div>
+      <div class="ig-viewer-meta">
+        <label>备注
+          <input type="text" id="ig-viewer-note" maxlength="80" placeholder="最多 80 个字">
+        </label>
+        <label>分组
+          <select id="ig-viewer-group"></select>
+        </label>
+        <button type="button" id="ig-viewer-meta-save">保存信息</button>
+        <span id="ig-viewer-meta-status" role="status"></span>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>

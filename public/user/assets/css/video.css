@@ -1,0 +1,1103 @@
+/* ══════════════════════════════════════════════════════════════
+ * 视频生成独立页（user.yutiankejiai.com/video/）—— 1:1 复刻秘塔 AI (metaso.cn/minimax-h3)
+ * 极致深色奢华质感：#0d0e12 纯暗底 + #15161c 模块卡片 + 绚丽紫/蓝发光特效
+ * 严格 CSP：无内联样式
+ * ══════════════════════════════════════════════════════════════ */
+
+.vg-body {
+  --bg: #0d0e12;
+  --card: #15161c;
+  --card2: #1c1d25;
+  --card3: #222430;
+  --line: #3a3d4d;
+  --line-light: rgba(255, 255, 255, .2);
+  --text: #ffffff;
+  --text-sub: #dedee6;
+  --dim: #7f8294;
+  --dim-dark: #525464;
+  --purple: #8b5cf6;
+  --purple-dark: #7c3aed;
+  --purple-glow: 0 0 16px rgba(139, 92, 246, .45);
+  --primary: #8b5cf6;
+  --primary2: #a78bfa;
+  --gold: #f59e0b;
+  --gold-pill: #fcd34d;
+  --ok: #34d399;
+  --danger: #f87171;
+
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  color: var(--text);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 50% -10%, rgba(124, 58, 237, .12), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 85% 15%, rgba(139, 92, 246, .08), transparent 60%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.vg-body a { color: var(--purple); text-decoration: none; }
+.vg-body a:hover { text-decoration: none; }
+.vg-body .key-table { width: 100%; border-collapse: collapse; }
+.vg-body .key-table th, .vg-body .key-table td { border-color: var(--line); }
+
+/* ── 顶栏（对标秘塔）─────────────────────────────────────── */
+.vg-topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 52px; padding: 0 24px;
+  /*
+   * ⚠ 这里**不要用 backdrop-filter**（原本是 blur(16px)，已移除）。
+   * 正常浏览时没事，但截图/录屏工具抓屏会强制 GPU 重新合成整页，
+   * 而 backdrop-filter 每次合成都要把背景纹理读回来重新模糊 ——
+   * 叠加正在播放的视频解码，足以让浏览器卡死（用户按 Alt+A 截图时崩过）。
+   * sticky 顶栏 + backdrop-filter 是 Chromium 上有记录的性能陷阱组合。
+   * 顶栏本来就把下方内容遮住，用不透明底色视觉上几乎无差别。
+   */
+  background: #0f1015;
+  border-bottom: 1px solid var(--line);
+}
+
+.vg-topbar-left { display: flex; align-items: center; gap: 12px; }
+.vg-brand { display: flex; align-items: center; gap: 8px; color: #fff; }
+.vg-brand img { border-radius: 6px; }
+.vg-brand-name { font-size: 15px; font-weight: 800; letter-spacing: .02em; color: #fff; }
+
+/* 顶部中央精美折扣胶囊条（1:1 复刻秘塔 AI 样式） */
+.vg-ribbon {
+  display: flex; align-items: center; gap: 9px;
+  padding: 3px 14px 3px 5px; border-radius: 999px;
+  background: #181611;
+  border: 1px solid #3c3218;
+}
+.vg-ribbon-img-badge {
+  height: 24px; width: auto; object-fit: contain;
+}
+.vg-ribbon-title { font-size: 12.5px; font-weight: 700; color: #fff; white-space: nowrap; }
+.vg-ribbon-pill {
+  padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+  background: #282010; border: 1px solid #574419;
+  color: var(--gold-pill); font-size: 11.5px; font-weight: 700;
+}
+.vg-ribbon-link { color: #8e887a; font-size: 11.5px; white-space: nowrap; transition: color .2s; }
+.vg-ribbon-link:hover { color: var(--gold-pill); }
+
+.vg-topbar-right { display: flex; align-items: center; }
+.vg-topnav { display: flex; align-items: center; gap: 18px; }
+.vg-nav-link { color: var(--dim); font-size: 13px; font-weight: 600; transition: color .2s; }
+.vg-nav-link:hover { color: #fff; }
+.vg-topbal { color: var(--dim); font-size: 12.5px; white-space: nowrap; }
+.vg-topbal b { color: #fff; font-weight: 700; }
+.vg-user-btn {
+  padding: 4px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 600;
+  background: var(--card2); border: 1px solid var(--line); color: #fff;
+}
+.vg-toplogin {
+  padding: 6px 18px; border-radius: 999px;
+  background: #fff; color: #000 !important; font-size: 13px; font-weight: 700;
+  transition: transform .15s, opacity .15s;
+}
+.vg-toplogin:hover { transform: translateY(-1px); opacity: .92; }
+
+/* ── 主体容器 ─────────────────────────────────────────────
+ * 宽度断点 1:1 照抄秘塔的工作台栅格：
+ *   基础  w = min(1440px, 100vw-32px)，左栏 minmax(360px,448px)，gap/padding 16px
+ *   ≥1360 gap/padding 24px
+ *   ≥1920 w = min(1680px, 76vw)   ← 宽屏要继续放大，不能死死卡在 1440
+ *   ≤1360 左栏收窄成 minmax(340px,400px)
+ * ⚠ 别给 .vg-main 再加左右 padding：宽度已由 calc(100vw-32px) 兜住，
+ *   再加 padding 会让工作台缩成中间一小条（改坏过一次）。 */
+.vg-main {
+  flex: 1; width: min(1440px, calc(100vw - 32px)); margin: 0 auto;
+  padding: 16px 0 44px; display: flex; flex-direction: column; gap: 16px;
+}
+@media (min-width: 1360px) {
+  .vg-main { padding: 24px 0 48px; gap: 24px; }
+}
+@media (min-width: 1920px) {
+  .vg-main { width: min(1680px, 76vw); }
+}
+
+.vg-alert-closed {
+  align-self: center; padding: 5px 16px; border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, .3); background: rgba(245, 158, 11, .08);
+  color: #fbbf24; font-size: 12px; text-align: center;
+}
+
+/* ── 核心工作台两栏架构（对标秘塔）──────────────────────────── */
+.vg-shell {
+  display: grid; grid-template-columns: minmax(360px, 448px) minmax(0, 1fr);
+  gap: 16px; align-items: start;
+}
+@media (min-width: 1360px) {
+  .vg-shell { gap: 24px; }
+}
+@media (max-width: 1360px) {
+  .vg-shell { grid-template-columns: minmax(340px, 400px) minmax(0, 1fr); }
+}
+@media (max-width: 1180px) {
+  .vg-shell { grid-template-columns: 1fr; }
+}
+
+.vg-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  /* 深色底上大范围阴影几乎不可见，却要参与每次合成 —— 靠 1px 边框区分层次就够 */
+}
+
+/* ── 左侧控制面板 ─────────────────────────────────────────── */
+.vg-form {
+  padding: 16px; display: flex; flex-direction: column; gap: 14px;
+}
+
+/* 模式切换 Tabs */
+.vg-modes {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+  padding: 3px; background: #1c1e28; border-radius: 10px;
+}
+.vg-mode {
+  height: 32px; border: none; border-radius: 8px;
+  background: transparent; color: #7f8294; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.vg-mode.is-active {
+  background: #2b2e3e; color: #fff;
+}
+.vg-mode:disabled { cursor: not-allowed; opacity: .45; }
+
+/* 提示词 */
+.vg-field { display: flex; flex-direction: column; gap: 6px; }
+.vg-field-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+}
+.vg-label { font-size: 12.5px; font-weight: 600; color: var(--text-sub); }
+.vg-hint { font-size: 11px; color: var(--dim); }
+
+.vg-textarea-wrap { position: relative; width: 100%; }
+.vg-textarea {
+  width: 100%; min-height: 132px; box-sizing: border-box; resize: vertical;
+  padding: 10px 12px 22px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--card2); color: #fff; font-size: 13px; line-height: 1.55;
+  font-family: inherit; transition: border-color .15s;
+}
+.vg-textarea::placeholder { color: #525464; font-size: 12.5px; }
+.vg-textarea:focus { outline: none; border-color: var(--purple); }
+.vg-count {
+  position: absolute; right: 10px; bottom: 6px;
+  color: var(--dim-dark); font-size: 11px; pointer-events: none;
+}
+
+/* 图片上传（首尾帧） */
+.vg-frames { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* 槽位是定位上下文：缩略图与「上传中」都绝对定位盖在按钮上 */
+.vg-frame-slot { position: relative; }
+.vg-frame {
+  width: 100%;
+  height: 104px; border: 1px dashed #454859; border-radius: 10px;
+  background: var(--card2); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  color: var(--dim); cursor: pointer; transition: all .15s;
+}
+.vg-frame:hover { border-color: var(--purple); background: rgba(139, 92, 246, .06); }
+.vg-frame:hover .vg-frame-ico { stroke: #a78bfa; }
+.vg-frame:hover .vg-frame-t { color: #fff; }
+.vg-frame:active { transform: scale(.985); }
+.vg-frame:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.vg-frame-ico { width: 17px; height: 17px; stroke: #6b6e82; transition: stroke .15s; }
+.vg-frame-t { font-size: 12px; font-weight: 600; color: var(--text-sub); transition: color .15s; }
+.vg-frame-d { font-size: 10px; color: var(--dim-dark); }
+
+/* 已上传：缩略图铺满槽位，右上角删除、左下角角标 */
+.vg-frame-preview {
+  position: absolute; inset: 0; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--purple); background: #000;
+}
+.vg-frame-preview[hidden] { display: none !important; }
+.vg-frame-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vg-frame-del {
+  position: absolute; top: 5px; right: 5px;
+  width: 22px; height: 22px; border-radius: 50%;
+  border: none; background: rgba(0, 0, 0, .62); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .15s;
+}
+.vg-frame-del:hover { background: #e04b5e; }
+.vg-frame-del:active { transform: scale(.9); }
+.vg-frame-del:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.vg-frame-badge {
+  position: absolute; left: 5px; bottom: 5px;
+  padding: 1px 7px; border-radius: 5px;
+  background: rgba(0, 0, 0, .62); color: #fff;
+  font-size: 10px; font-weight: 700;
+}
+
+.vg-frame-busy {
+  position: absolute; inset: 0; border-radius: 10px;
+  background: rgba(13, 14, 18, .82);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  color: var(--text-sub); font-size: 11.5px; font-weight: 600;
+}
+.vg-frame-busy[hidden] { display: none !important; }
+.vg-frame-spin {
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid rgba(139, 92, 246, .3); border-top-color: var(--purple);
+  animation: vg-opt-spin .8s linear infinite;
+}
+
+.vg-frame-tip {
+  margin-top: 6px; padding: 5px 9px; border-radius: 7px;
+  border: 1px solid rgba(240, 120, 138, .32);
+  background: rgba(240, 120, 138, .08);
+  color: #f0a5af; font-size: 11.5px; line-height: 1.5;
+}
+.vg-frame-tip[hidden] { display: none !important; }
+
+/*
+ * 分辨率 与 时长（同一行紧凑布局）。
+ * 列宽从「110px 固定」改成两列按比例分（2026-08-22）：分辨率加了 standard 档后是三档，
+ * 110px 会把三个胶囊挤到看不清；时长四档、字更短，故给它略宽一点点。
+ */
+.vg-row-res-sec {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  gap: 10px; align-items: start;
+}
+.vg-sub-field { display: flex; flex-direction: column; gap: 6px; }
+
+/*
+ * 分段胶囊容器（分辨率 / 时长共用）。
+ * ⚠ 注意 CSS 里没有 `.vg-seg` 基类，样式全挂在 `-res` / `-sec` 这些具体类上；
+ * 新增分段控件时必须把容器样式一起加，否则子按钮的 flex:1 无处生效、
+ * 整排会塌成 inline 文本（2026-08-22 加时长档位时踩过）。
+ */
+.vg-seg-res,
+.vg-seg-sec {
+  display: flex; gap: 3px; background: var(--card2);
+  border: 1px solid var(--line); border-radius: 9px; padding: 2px;
+}
+.vg-seg-btn {
+  flex: 1; height: 28px; border: none; border-radius: 7px;
+  font-size: 11.5px; font-weight: 700; color: #7f8294; background: transparent;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.vg-seg-btn.is-active {
+  background: var(--purple); color: #fff;
+  box-shadow: 0 0 10px rgba(139, 92, 246, .45);
+}
+.vg-seg-btn.is-disabled { opacity: .4; cursor: not-allowed; }
+
+/*
+ * 时长档位（离散，不是滑块）。
+ * H3 只接受「帧数 % 17 == 5」的长度，可选时长天然是几个点，
+ * 原来的连续滑块给的是假自由度（拖到 6 秒后端会吸附成 6.58 秒），2026-08-22 改成分段按钮。
+ */
+.vg-sub-field-sec { flex: 1; }
+.vg-sec-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;
+}
+.vg-sec-badge {
+  padding: 2px 9px; border-radius: 6px;
+  background: var(--purple); color: #fff; font-size: 10.5px; font-weight: 800;
+  box-shadow: 0 0 8px rgba(139, 92, 246, .4);
+}
+/* 时长每档只有 2~3 个字符，字号与分辨率一致即可，靠 flex:1 均分宽度 */
+.vg-seg-sec .vg-seg-btn { letter-spacing: .2px; }
+/* 分辨率三档里「标准」是中文，比 480P/768P 窄，给中文档一点内边距避免视觉过挤 */
+.vg-seg-res .vg-seg-btn { padding: 0 2px; }
+
+/* 画面比例 */
+.vg-chips { display: flex; gap: 4px; flex-wrap: nowrap; }
+.vg-chip {
+  flex: 1 1 0; min-width: 0; padding: 6px 0; text-align: center;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--card2);
+  color: var(--dim); font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.vg-chip:hover { color: #fff; }
+.vg-chip.is-active {
+  background: var(--purple); color: #fff;
+  box-shadow: 0 0 10px rgba(139, 92, 246, .4);
+}
+
+/* 生成数量 */
+.vg-seg-count {
+  display: flex; gap: 6px;
+}
+.vg-seg-count .vg-seg-btn {
+  flex: 1; height: 32px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--card2); color: var(--dim); font-size: 11.5px; font-weight: 700;
+}
+.vg-seg-count .vg-seg-btn:hover { color: #fff; }
+.vg-seg-count .vg-seg-btn.is-active {
+  background: var(--purple); border-color: var(--purple); color: #fff;
+  box-shadow: 0 0 10px rgba(139, 92, 246, .4);
+}
+
+.vg-err {
+  padding: 8px 10px; border-radius: 8px; font-size: 12px;
+  background: rgba(248, 113, 113, .12); border: 1px solid rgba(248, 113, 113, .3);
+  color: #fca5a5;
+}
+
+/* 创建按钮（对标秘塔） */
+.vg-action-wrap { width: 100%; margin-top: 2px; }
+.vg-btn-create {
+  width: 100%; height: 42px; border: none; border-radius: 10px;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #fff; font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 2px 10px rgba(124, 58, 237, .4);
+  cursor: pointer; transition: filter .15s, transform .15s;
+}
+.vg-btn-create:hover:not(:disabled) {
+  filter: brightness(1.12); transform: translateY(-1px);
+}
+.vg-btn-create:disabled {
+  opacity: .35; cursor: not-allowed; transform: none; filter: none; box-shadow: none;
+}
+.vg-btn-icon { width: 15px; height: 15px; }
+.vg-submit-cost { font-size: 13.5px; opacity: .9; font-weight: 700; }
+.vg-btn-create-login { text-decoration: none; }
+
+/* ── 右侧大预览区与作品栏 ───────────────────────────────────
+ * ⚠ 右栏**不套卡片**：秘塔那边视频直接就是圆角块、下面跟缩略图，
+ *   外面再包一层带边框的 .vg-card 会平白多出一圈框，观感立刻就不一样了。 */
+.vg-stage {
+  padding: 0; background: transparent; border: none; box-shadow: none;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+/* 主播放器容器：**不限高**，就按 16:9 撑满右栏（限高会把画面压扁） */
+.vg-player {
+  position: relative; width: 100%; aspect-ratio: 16 / 9;
+  border-radius: 12px; border: 1px solid var(--line);
+  background: #000; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.vg-player-canvas { width: 100%; height: 100%; display: flex; }
+.vg-video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+
+.vg-player-badge {
+  position: absolute; top: 12px; left: 12px;
+  padding: 2px 8px; border-radius: 6px;
+  background: rgba(0, 0, 0, .6); border: 1px solid rgba(255, 255, 255, .15);
+  color: #fff; font-size: 11px; font-weight: 800; pointer-events: none;
+}
+
+/* 播放器底栏控制条（对标秘塔） */
+.vg-player-controls {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 40px; padding: 0 14px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .85));
+  display: flex; align-items: center; gap: 12px;
+}
+.vg-play-btn, .vg-mute-btn, .vg-fs-btn {
+  background: transparent; border: none; color: #fff;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  padding: 4px; opacity: .88; transition: opacity .15s;
+}
+.vg-play-btn:hover, .vg-mute-btn:hover, .vg-fs-btn:hover { opacity: 1; }
+.vg-ctrl-icon { width: 16px; height: 16px; }
+.vg-time { font-size: 11.5px; color: #ccc; font-variant-numeric: tabular-nums; }
+.vg-player-seekbar {
+  flex: 1; height: 3px; background: rgba(255, 255, 255, .25);
+  border-radius: 999px; overflow: hidden; cursor: pointer;
+ position: relative; transition: box-shadow .12s, background .12s;}
+/* 初始 0%：真实进度由 JS 的 syncPlayProgress 按 currentTime/duration 设置。
+   ⚠ 别在这里写死百分比 —— 早先写的 25% 让进度条永远停在四分之一处。 */
+.vg-player-seekfill {
+  position: absolute; left: 0; top: 0; height: 100%; width: 0;
+  background: var(--purple); transition: width .15s linear;
+}
+/* 缓冲条压在播放进度之下：半透明白，弱网时能看出已经下到哪儿了 */
+.vg-player-seekbuf {
+  position: absolute; left: 0; top: 0; height: 100%; width: 0;
+  background: rgba(255, 255, 255, .28); transition: width .25s linear;
+}
+/*
+ * 拖动中的视觉反馈：**只改颜色，不改尺寸**。
+ *
+ * ⚠ 起初是把 height 从 3px 撑到 7px（带 transition），结果每次 mousemove 都触发
+ *   布局变化 + 过渡动画，等待元素稳定的自动化操作会一直等下去（实测把拖拽卡死 2 分钟）。
+ *   真人操作虽不至于卡死，但同样是每帧强制 layout 的浪费。
+ *   改成 box-shadow + 提亮，视觉上一样明确，零布局开销。
+ */
+.vg-player-seekbar.is-dragging {
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, .25);
+  background: rgba(255, 255, 255, .35);
+}
+.vg-player-seekbar.is-dragging .vg-player-seekfill {
+  transition: none;   /* 跟手，不要慢半拍 */
+  filter: brightness(1.25);
+}
+
+/* 任务生成中遮罩 */
+@keyframes vg-spin { to { transform: rotate(360deg); } }
+/* 下方 4 联缩略图栏（对标秘塔） */
+.vg-gallery-strip { display: flex; flex-direction: column; gap: 10px; }
+.vg-strip-header {
+  display: flex; align-items: center; justify-content: flex-end;
+}
+.vg-strip-queue { color: var(--dim); font-size: 11.5px; }
+
+.vg-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+}
+.vg-thumb {
+  position: relative; aspect-ratio: 16 / 9; border-radius: 8px;
+  border: 1px solid var(--line); overflow: hidden; background: #000;
+  cursor: pointer; transition: all .18s;
+}
+.vg-thumb:hover { border-color: rgba(139, 92, 246, .6); }
+.vg-thumb.is-active {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, .55);
+}
+.vg-thumb-box {
+  width: 100%; height: 100%; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  background: #0f1015; overflow: hidden;
+}
+/* 同案例卡片：竖屏素材会撑破容器，绝对定位锁死 */
+.vg-thumb-img, .vg-thumb-video {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+}
+.vg-thumb-play {
+  position: absolute; width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 11px; box-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+}
+/* 三角视觉居中 */
+.vg-thumb-play svg { margin-left: 1.5px; }
+.vg-thumb-duration {
+  position: absolute; right: 6px; bottom: 4px;
+  padding: 1px 4px; border-radius: 4px; background: rgba(0, 0, 0, .6);
+  color: #fff; font-size: 10px; font-weight: 700;
+}
+.vg-thumb-cancel {
+  position: absolute; top: 4px; right: 4px; padding: 2px 6px;
+  border-radius: 4px; background: rgba(0, 0, 0, .7);
+  color: #f87171; font-size: 10px; font-weight: 700; border: none; cursor: pointer;
+}
+.vg-thumb-cancel:hover { background: #dc2626; color: #fff; }
+
+.vg-strip-footer { text-align: center; margin-top: 2px; }
+.vg-more-link {
+  color: #8b5cf6; font-size: 12px; font-weight: 600; transition: color .2s;
+}
+.vg-more-link:hover { color: #a78bfa; }
+
+/* ── 视频定价表（对标秘塔）─────────────────────────────────── */
+.vg-pricing { padding: 24px; margin-top: 10px; }
+.vg-sec-title-wrap { margin-bottom: 16px; }
+.vg-sec-title { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.vg-sec-sub { color: var(--dim); font-size: 12.5px; line-height: 1.6; }
+
+.vg-table-title {
+  font-size: 13.5px; font-weight: 700; color: #dedee6; margin: 18px 0 10px;
+}
+.vg-price-table { width: 100%; border-collapse: collapse; }
+.vg-price-table th {
+  background: var(--card2); color: var(--dim); font-size: 12px;
+  font-weight: 600; text-align: left; padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.vg-price-table td {
+  padding: 12px 14px; font-size: 13px; color: var(--dim);
+  border-bottom: 1px solid var(--line);
+}
+.vg-price-table td b { color: #fff; }
+.vg-price-dim { color: var(--dim-dark); font-size: 11px; margin-left: 6px; }
+.vg-text-highlight { color: #a78bfa !important; }
+.vg-soon-pill {
+  display: inline-block; padding: 1px 6px; border-radius: 999px;
+  background: rgba(255, 255, 255, .08); color: var(--dim); font-size: 10px; margin-left: 6px;
+}
+.is-soon-row td { opacity: .55; }
+
+.vg-pricing-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; margin-top: 16px; flex-wrap: wrap;
+}
+.vg-price-note { color: var(--dim-dark); font-size: 12px; line-height: 1.6; max-width: 800px; }
+.vg-btn-recharge {
+  padding: 8px 20px; border-radius: 8px;
+  background: var(--purple); color: #fff !important; font-size: 13px; font-weight: 700;
+  box-shadow: 0 0 14px rgba(139, 92, 246, .4);
+}
+.vg-btn-recharge:hover { filter: brightness(1.1); }
+
+/* ── 案例画廊区 ───────────────────────────────────────────── */
+.vg-gallery { text-align: center; padding: 36px 24px 44px; margin-top: 10px; }
+.vg-gallery-kicker {
+  color: var(--purple); font-size: 11px; font-weight: 800; letter-spacing: .2em;
+}
+.vg-gallery-title { font-size: 24px; font-weight: 800; margin: 10px 0 8px; color: #fff; }
+.vg-gallery-sub { color: var(--dim); font-size: 13px; }
+
+/* 不规则瀑布流（同秘塔）：横屏/竖屏/方形混排，高度由素材原始比例决定。
+   用 CSS multi-column 而不是 grid —— grid 要预先知道每格跨几行，
+   而这里的比例来自视频元数据，加载完才知道。 */
+.vg-cases {
+  columns: 3; column-gap: 14px; margin-top: 24px; text-align: left;
+}
+@media (max-width: 1100px) { .vg-cases { columns: 2; } }
+@media (max-width: 700px) { .vg-cases { columns: 1; } }
+
+.vg-case-card {
+  break-inside: avoid; margin-bottom: 14px;
+  background: var(--card2); border: 1px solid var(--line); border-radius: 12px;
+  overflow: hidden; display: flex; flex-direction: column;
+  transition: transform .2s, border-color .2s;
+}
+.vg-case-card:hover { transform: translateY(-2px); border-color: rgba(139, 92, 246, .55); }
+/* 瀑布流里**不锁比例**：让视频按自身宽高比撑开，才有不规则效果 */
+.vg-case-img-box { position: relative; width: 100%; background: #000; line-height: 0; }
+/* 封面图撑开容器高度（瀑布流靠它定位，不能让它消失导致跳动） */
+img.vg-case-img { width: 100%; height: auto; display: block; }
+/*
+ * 悬停时插入的 video **绝对定位盖在封面图上**，不进文档流。
+ * ⚠ 之前用 `img.hidden = true` + video 追加到后面，结果 `.vg-case-img` 的
+ *   `display:block` 把 hidden 属性覆盖了（同 .vg-player-mask 踩过的坑），
+ *   封面图没隐藏、video 排在它下方 —— 卡片高度翻倍、画面上下重叠。
+ *   改成叠加后：容器高度始终由封面图决定，切换零抖动，也不再依赖 hidden 生效。
+ */
+video.vg-case-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.vg-case-tag {
+  position: absolute; top: 8px; left: 8px;
+  padding: 2px 7px; border-radius: 4px; background: rgba(0, 0, 0, .7);
+  color: #fff; font-size: 10.5px; font-weight: 700;
+}
+/* 悬停才播放：未悬停时显示一个播放提示，避免整页十几条视频同时解码 */
+.vg-case-hint {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, .28); opacity: 1; transition: opacity .2s; pointer-events: none;
+}
+.vg-case-card:hover .vg-case-hint { opacity: 0; }
+.vg-case-hint span {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(0, 0, 0, .55); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .45);
+}
+/* 三角视觉居中：几何居中会显得偏左 */
+.vg-case-hint span svg { margin-left: 2px; }
+.vg-case-info { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.vg-case-prompt {
+  color: var(--text-sub); font-size: 12px; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.vg-case-use {
+  align-self: flex-start; padding: 4px 10px; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--card); color: var(--purple);
+  font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.vg-case-use:hover { border-color: var(--purple); background: rgba(139, 92, 246, .1); }
+
+/* ── 页脚 ─────────────────────────────────────────────────── */
+.vg-footer {
+  padding: 24px; text-align: center; color: var(--dim-dark); font-size: 12px;
+  border-top: 1px solid var(--line); margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  .vg-ribbon { display: none; }
+}
+@media (max-width: 720px) {
+  .vg-topbar { height: auto; padding: 10px 14px; flex-wrap: wrap; }
+  .vg-topnav { gap: 12px; flex-wrap: wrap; }
+  .vg-main { padding: 12px 0 36px; }
+  .vg-row-res-sec { grid-template-columns: 1fr; }
+  .vg-strip { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* 静音状态的音量键：淡一点并给个提示色，让用户看出「可以点开声音」 */
+.vg-mute-btn.is-muted { opacity: .62; }
+.vg-mute-btn.is-muted:hover { opacity: 1; color: var(--primary2); }
+
+/* 首次播放的大按钮（默认不自动播 ⇒ 需要一个明确的启动入口） */
+.vg-player-start {
+  position: absolute; inset: 0; z-index: 3;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: transparent;
+  border: none; cursor: pointer; color: #fff;
+  transition: background .2s;
+}
+.vg-player-start[hidden] { display: none; }
+/* 悬停才压一层极淡的暗色，平时不遮画面 —— poster 本身就是卖点 */
+.vg-player-start:hover { background: rgba(0, 0, 0, .16); }
+/*
+ * 简约黑圆 + 白三角（同主流播放器的观感）。
+ * 三角用 border 拼而不是 SVG：更锐利，且天然带「视觉居中」偏移
+ * （几何居中的三角看起来会偏左，所以左内边距比右侧多 4px）。
+ */
+.vg-start-ico {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, .55); color: #fff;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, .45);
+  transition: transform .18s, background .18s;
+}
+.vg-player-start:hover .vg-start-ico {
+  transform: scale(1.06); background: rgba(0, 0, 0, .72);
+}
+.vg-start-ico svg { width: 22px; height: 22px; margin-left: 3px; }
+/* 文案默认不显示（用户要「简约」），悬停时才淡入说明有声音 */
+.vg-start-text {
+  font-size: 12px; font-weight: 600; letter-spacing: .02em;
+  padding: 3px 12px; border-radius: 999px; background: rgba(0, 0, 0, .55);
+  opacity: 0; transform: translateY(4px); transition: opacity .2s, transform .2s;
+}
+.vg-player-start:hover .vg-start-text { opacity: 1; transform: translateY(0); }
+
+/* 未开始播放时隐藏底部控制条：此时它没有意义，还会挡住 poster 画面 */
+.vg-player:not(.is-started) .vg-player-controls { display: none; }
+
+/* 案例卡片上的播放键（移动端无 hover，改成点按播放，需要一个可见入口） */
+.vg-case-hint { cursor: pointer; }
+body.vg-no-hover .vg-case-card:hover .vg-case-hint { opacity: 1; }
+body.vg-no-hover .vg-case-card.is-playing .vg-case-hint { opacity: 0; }
+
+/* ── 「使用提示词」按钮（白色胶囊 + 星光图标 + 右上箭头）──────
+ * 只在有真实提示词的素材上出现。缩略图里放左下角，案例卡片里浮在封面左下。 */
+.vg-use-prompt {
+  position: absolute; left: 7px; bottom: 7px; z-index: 4;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px; border: none; border-radius: 999px;
+  background: rgba(255, 255, 255, .95); color: #14151c;
+  font-size: 10.5px; font-weight: 700; line-height: 1; white-space: nowrap;
+  cursor: pointer; box-shadow: 0 2px 10px rgba(0, 0, 0, .45);
+  /* 默认隐藏、悬停才浮现：小窗本身就小，常驻会挡住画面 */
+  opacity: 0; pointer-events: none; transform: translateY(3px);
+  transition: opacity .18s, transform .18s, background .15s;
+}
+.vg-thumb:hover .vg-use-prompt,
+.vg-case-card:hover .vg-use-prompt {
+  opacity: 1; pointer-events: auto; transform: translateY(0);
+}
+.vg-use-prompt:hover { background: #fff; transform: translateY(-1px); }
+/* 触摸设备没有 hover，必须常驻否则永远点不到 */
+body.vg-no-hover .vg-use-prompt { opacity: 1; pointer-events: auto; transform: none; }
+/* 键盘可达性：Tab 聚焦到它时也要显示 */
+.vg-use-prompt:focus-visible { opacity: 1; pointer-events: auto; transform: none; outline: 2px solid var(--purple); }
+.vg-use-ico { width: 12px; height: 12px; flex: none; color: #7c3aed; }
+.vg-use-arrow { width: 10px; height: 10px; flex: none; opacity: .55; }
+
+/* 案例卡片上的那颗稍大一些（卡片本身更大，太小会显得局促） */
+.vg-use-prompt-case {
+  left: 10px; bottom: 10px; padding: 6px 12px; font-size: 11.5px; gap: 5px;
+}
+.vg-use-prompt-case .vg-use-ico { width: 14px; height: 14px; }
+.vg-use-prompt-case .vg-use-arrow { width: 11px; height: 11px; }
+
+/* 案例卡片的封面区需要能容纳绝对定位的按钮（原本 line-height:0 会压掉） */
+.vg-case-card { position: relative; }
+
+/* ── 我的作品（定价表上方，2026-08-22 从右侧演示缩略图条里拆出来）──
+ *
+ * 拆分原因见 user.js 的 render()：作品原先直接 innerHTML 覆盖 #vg-strip，
+ * 既让用户分不清哪条是自己的，又把演示轮播依赖的 DOM 节点冲掉了。
+ */
+.vg-works { padding: 24px; margin-top: 10px; }
+.vg-works-grid {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+.vg-work {
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  background: var(--card2); transition: border-color .15s;
+}
+.vg-work:hover { border-color: var(--purple); }
+/* 16:9 占位，避免视频元数据到达前整块高度跳动 */
+.vg-work-box { position: relative; aspect-ratio: 16 / 9; background: #0a0b10; }
+.vg-work-video { width: 100%; height: 100%; object-fit: cover; display: block; background: #0a0b10; }
+.vg-work-spec {
+  position: absolute; left: 8px; top: 8px; z-index: 2;
+  padding: 2px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 700;
+  color: #fff; background: rgba(10, 11, 16, .72);
+}
+/* 生成中 / 失败 的占位块 */
+.vg-work-holder {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  font-size: 12px; font-weight: 600; color: var(--dim-dark); text-align: center; padding: 0 12px;
+}
+.vg-work-holder.is-bad { color: #f0788a; }
+.vg-work-refund { font-size: 11px; color: var(--dim-dark); font-weight: 500; }
+.vg-work-spin {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2.5px solid rgba(139, 92, 246, .25); border-top-color: var(--purple);
+  animation: vg-work-spin 0.9s linear infinite;
+}
+@keyframes vg-work-spin { to { transform: rotate(360deg); } }
+.vg-work-bar {
+  width: 72%; height: 4px; border-radius: 999px; background: #2a2c3a; overflow: hidden;
+}
+.vg-work-bar i { display: block; height: 100%; background: var(--purple); transition: width .4s; }
+/* 元信息行 */
+.vg-work-meta {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; font-size: 11.5px; color: var(--dim-dark);
+}
+.vg-work-time { font-weight: 600; }
+.vg-work-cost { margin-left: auto; color: #c4b5fd; font-weight: 700; }
+.vg-work-dl, .vg-work-cancel {
+  padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  border: 1px solid var(--line); background: transparent; color: #fff;
+  cursor: pointer; text-decoration: none; transition: all .15s; white-space: nowrap;
+}
+.vg-work-dl:hover { background: var(--purple); border-color: var(--purple); }
+.vg-work-cancel:hover { border-color: #f0788a; color: #f0788a; }
+
+/* 「提示词」按钮：与下载并排，用次要样式（下载才是主动作） */
+.vg-work-prompt {
+  padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  border: 1px solid var(--line); background: transparent; color: var(--text-sub);
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.vg-work-prompt:hover { color: #fff; border-color: var(--purple); background: rgba(139, 92, 246, .12); }
+.vg-work-prompt:active { transform: scale(.94); }
+.vg-work-prompt:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+/* ── 查看提示词弹窗 ────────────────────────────────────────── */
+.vg-prompt-dialog { max-width: 620px; width: calc(100vw - 32px); }
+.vg-pd-meta {
+  display: block; margin-top: 3px;
+  font-size: 11.5px; font-weight: 500; color: var(--dim);
+}
+.vg-pd-body {
+  /* 提示词可能上千字：给固定高度可滚，别把弹窗撑到出屏 */
+  max-height: 52vh; overflow-y: auto;
+  padding: 12px 14px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--card2);
+  color: var(--text); font-size: 12.5px; line-height: 1.75;
+  white-space: pre-wrap; word-break: break-word;
+  /* 等宽字体：三字段结构化提示词对齐后更好读 */
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.vg-pd-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.vg-pd-reuse {
+  padding: 6px 14px; border-radius: 8px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--text-sub); font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.vg-pd-reuse:hover { color: #fff; border-color: var(--purple); }
+.vg-pd-reuse:active { transform: scale(.96); }
+.vg-pd-copy {
+  padding: 6px 18px; border-radius: 8px; border: none;
+  background: linear-gradient(135deg, #8b5cf6, #6d3bef); color: #fff;
+  font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.vg-pd-copy:hover { filter: brightness(1.1); }
+.vg-pd-copy:active { transform: scale(.96); }
+
+@media (max-width: 720px) {
+  .vg-works { padding: 16px; }
+  .vg-works-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+}
+
+/* ── 按钮点击态反馈（2026-08-22）──
+ * 起因：用户反馈「有时候点了没反应」，根因其实是事件委托没用 closest；
+ * 但没有任何按下反馈这件事本身也放大了困惑 —— 点下去毫无变化，
+ * 用户无法区分「没点中」和「点中了在处理」。
+ * 这里给主操作按钮补一个 96% 的按下缩放，纯 CSS、零 JS 成本。
+ */
+.vg-btn-create:not(:disabled):active { transform: scale(.97); }
+.vg-btn-create { transition: transform .08s ease, opacity .15s, box-shadow .15s; }
+/* 置灰态要一眼可辨，并且鼠标提示原因（title 由 JS 写入） */
+.vg-btn-create:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.vg-work-dl:active, .vg-work-cancel:active { transform: scale(.94); }
+.vg-work-dl, .vg-work-cancel { transition: transform .08s ease, background .15s, border-color .15s, color .15s; }
+/* 键盘可达性：Tab 聚焦时要有可见轮廓（:active 缩放不影响它） */
+.vg-btn-create:focus-visible,
+.vg-work-dl:focus-visible,
+.vg-work-cancel:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+/* ── 提示词清空按钮（2026-08-22）── */
+.vg-field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.vg-prompt-clear {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 6px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--dim-dark); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.vg-prompt-clear:hover { color: #fff; border-color: #f0788a; }
+.vg-prompt-clear:active { transform: scale(.94); }
+.vg-prompt-clear:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.vg-prompt-clear[hidden] { display: none !important; }
+
+/* ── 提示词工具条（一键优化 / 还原 / 清空）────────────────────────────── */
+.vg-prompt-tools { display: inline-flex; align-items: center; gap: 6px; }
+
+/* 一键优化：H3 三段式里缺失的 Context-IR 改写层，是画质主要来源，故给主色强调 */
+.vg-prompt-opt {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px; border-radius: 6px;
+  border: 1px solid rgba(139, 92, 246, .55);
+  background: linear-gradient(135deg, rgba(139, 92, 246, .18), rgba(139, 92, 246, .08));
+  color: #c9b6ff; font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.vg-prompt-opt:hover:not(:disabled) {
+  color: #fff; border-color: var(--purple);
+  background: linear-gradient(135deg, rgba(139, 92, 246, .34), rgba(139, 92, 246, .16));
+}
+.vg-prompt-opt:active:not(:disabled) { transform: scale(.94); }
+.vg-prompt-opt:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.vg-prompt-opt:disabled { opacity: .55; cursor: default; }
+/* 改写要 5~10 秒，图标转起来让用户知道还在跑 */
+.vg-prompt-opt.is-busy svg { animation: vg-opt-spin 1.1s linear infinite; }
+@keyframes vg-opt-spin { to { transform: rotate(360deg); } }
+
+.vg-prompt-undo {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 6px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--dim-dark); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.vg-prompt-undo:hover { color: #fff; border-color: var(--purple); }
+.vg-prompt-undo:active { transform: scale(.94); }
+.vg-prompt-undo:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.vg-prompt-undo[hidden] { display: none !important; }
+
+.vg-opt-tip {
+  margin-top: 6px; padding: 6px 9px; border-radius: 7px;
+  border: 1px solid rgba(139, 92, 246, .3);
+  background: rgba(139, 92, 246, .08);
+  color: #b9a6f0; font-size: 11.5px; line-height: 1.55;
+}
+.vg-opt-tip.is-warn {
+  border-color: rgba(240, 120, 138, .32);
+  background: rgba(240, 120, 138, .08);
+  color: #f0a5af;
+}
+.vg-opt-tip[hidden] { display: none !important; }
+
+/* ── 风格向导入口 ── */
+.vg-prompt-wiz {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px; border-radius: 6px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--text-sub); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.vg-prompt-wiz:hover { color: #fff; border-color: var(--purple); background: rgba(139, 92, 246, .1); }
+.vg-prompt-wiz:active { transform: scale(.94); }
+.vg-prompt-wiz:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+/* ── 风格向导弹窗 ──────────────────────────────────────────── */
+.vg-wizard-dialog { max-width: 720px; width: calc(100vw - 32px); }
+.vg-wiz-sub {
+  display: block; margin-top: 3px;
+  font-size: 11.5px; font-weight: 500; color: var(--dim);
+}
+
+/* 第一步：风格卡片 */
+.vg-wiz-styles {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px; padding: 4px 0 2px;
+  max-height: 62vh; overflow-y: auto;
+}
+.vg-wiz-styles[hidden] { display: none !important; }
+.vg-wiz-loading { grid-column: 1 / -1; padding: 24px 0; text-align: center; color: var(--dim); font-size: 12.5px; }
+.vg-wiz-card {
+  text-align: left; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--card2);
+  cursor: pointer; transition: all .15s;
+}
+.vg-wiz-card:hover { border-color: var(--purple); background: rgba(139, 92, 246, .08); transform: translateY(-1px); }
+.vg-wiz-card:active { transform: scale(.99); }
+.vg-wiz-card:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.vg-wiz-card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.vg-wiz-card-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.vg-wiz-card-tag {
+  padding: 1px 6px; border-radius: 4px;
+  background: rgba(139, 92, 246, .18); color: #c9b6ff;
+  font-size: 10px; font-weight: 700; white-space: nowrap;
+}
+.vg-wiz-card-sum {
+  font-size: 11.5px; line-height: 1.5; color: var(--dim);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* 第二步：对话 */
+.vg-wiz-chat { display: flex; flex-direction: column; gap: 8px; }
+.vg-wiz-chat[hidden] { display: none !important; }
+.vg-wiz-log {
+  display: flex; flex-direction: column; gap: 8px;
+  /* 固定高度而非 max-height：内容增长时不会让整个弹窗跳动 */
+  height: 46vh; min-height: 240px; overflow-y: auto;
+  padding: 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--card2);
+}
+.vg-wiz-msg {
+  max-width: 86%; padding: 7px 11px; border-radius: 10px;
+  font-size: 12.5px; line-height: 1.65; white-space: pre-wrap; word-break: break-word;
+  /*
+   * ⚠ flex 子项默认 `flex-shrink: 1`：`.vg-wiz-log` 是纵向 flex，
+   *   对话一长，后面的气泡就会被前面的挤扁 —— 成品提示词那条被压成一行，
+   *   用户报「最后出来的提示词窗口看不见」就是这个（2026-08-23）。
+   *   容器本来就能滚，消息一律不许被压缩。
+   */
+  flex: none;
+}
+.vg-wiz-msg.is-ai { align-self: flex-start; background: #22242e; color: var(--text); }
+.vg-wiz-msg.is-me { align-self: flex-end; background: var(--purple); color: #fff; }
+.vg-wiz-msg.is-tip { align-self: center; background: transparent; color: var(--dim); font-size: 11.5px; }
+/* 成品提示词：等宽字体 + 可滚动，长度动辄两三千字 */
+.vg-wiz-msg.is-prompt {
+  align-self: stretch; max-width: 100%;
+  /* 成品是这场对话的目的，给足高度；仍可滚（提示词动辄两三千字） */
+  min-height: 120px; max-height: 240px; overflow-y: auto;
+  background: rgba(139, 92, 246, .08); border: 1px solid rgba(139, 92, 246, .3);
+  color: #cbb9ff; font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.vg-wiz-typing { align-self: flex-start; display: inline-flex; gap: 3px; padding: 9px 11px; }
+.vg-wiz-typing i {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--dim);
+  animation: vg-wiz-bounce 1.2s infinite;
+}
+.vg-wiz-typing i:nth-child(2) { animation-delay: .15s; }
+.vg-wiz-typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes vg-wiz-bounce { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+
+.vg-wiz-input-row { display: flex; gap: 6px; align-items: stretch; }
+.vg-wiz-input {
+  flex: 1; resize: none; padding: 8px 10px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--card2); color: var(--text);
+  font-size: 12.5px; line-height: 1.55; font-family: inherit;
+}
+.vg-wiz-input:focus { outline: none; border-color: var(--purple); }
+.vg-wiz-send {
+  width: 42px; border-radius: 9px; border: none;
+  background: var(--purple); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .15s;
+}
+.vg-wiz-send:hover:not(:disabled) { filter: brightness(1.12); }
+.vg-wiz-send:active:not(:disabled) { transform: scale(.94); }
+.vg-wiz-send:disabled { opacity: .45; cursor: default; }
+
+.vg-wiz-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.vg-wiz-foot-right { display: flex; align-items: center; gap: 6px; }
+.vg-wiz-finish {
+  padding: 5px 12px; border-radius: 8px;
+  border: 1px solid rgba(139, 92, 246, .5); background: rgba(139, 92, 246, .1);
+  color: #c9b6ff; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.vg-wiz-finish:hover { color: #fff; border-color: var(--purple); background: rgba(139, 92, 246, .22); }
+.vg-wiz-finish:active { transform: scale(.96); }
+.vg-wiz-finish:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.vg-wiz-finish[hidden] { display: none !important; }
+.vg-wiz-back {
+  padding: 5px 12px; border-radius: 8px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--text-sub); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.vg-wiz-back:hover { color: #fff; border-color: var(--purple); }
+.vg-wiz-use {
+  padding: 6px 16px; border-radius: 8px; border: none;
+  background: linear-gradient(135deg, #8b5cf6, #6d3bef); color: #fff;
+  font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.vg-wiz-use:hover { filter: brightness(1.1); }
+.vg-wiz-use:active { transform: scale(.96); }
+.vg-wiz-use[hidden] { display: none !important; }
+
+@media (max-width: 640px) {
+  .vg-wiz-styles { grid-template-columns: 1fr; max-height: 56vh; }
+  .vg-wiz-log { height: 42vh; }
+}
+
+/* ── 执行器离线提示（GPU 按需开机，关机期间显示）── */
+.vg-offline {
+  display: flex; align-items: flex-start; gap: 7px;
+  margin-top: 8px; padding: 9px 11px; border-radius: 9px;
+  border: 1px solid rgba(240, 180, 90, .32);
+  background: rgba(240, 180, 90, .09);
+  color: #e8bd7a; font-size: 12px; line-height: 1.55;
+}
+.vg-offline svg { flex: none; margin-top: 1px; }
+.vg-offline[hidden] { display: none !important; }
+
+/* ── 错误条里的「去充值」直达按钮 ── */
+.vg-err-recharge {
+  margin-left: 6px; padding: 2px 10px; border-radius: 6px;
+  border: none; background: var(--purple); color: #fff;
+  font-size: 11px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.vg-err-recharge:hover { filter: brightness(1.12); }
+.vg-err-recharge:active { transform: scale(.94); }
+
+/* ── 充值弹窗（复用 /?page=recharge 的面板，深色变量由 .vg-body 提供）── */
+.vg-recharge-dialog { max-width: 880px; width: min(92vw, 880px); }
+.vg-recharge-dialog .amount-grid { margin-top: 4px; }
+.vg-recharge-foot {
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
+  color: var(--dim-dark); font-size: 12px; text-align: center;
+}
+
+/* preload=none 的作品卡片在点播放前是黑底，给个可点提示，别让用户以为是坏的 */
+.vg-work-box::after {
+  content: "";
+  position: absolute; inset: 0; margin: auto;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(10, 11, 16, .55) url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpolygon points='8 5 19 12 8 19'/%3E%3C/svg%3E") center/16px no-repeat;
+  pointer-events: none; opacity: .85; transition: opacity .2s;
+}
+/* 一旦开始播放（video 有 controls 且非 paused），原生控件接管，隐藏这个提示 */
+.vg-work-box:has(video:not([data-idle="1"])) { /* 占位：由 JS 打标记 */ }
+.vg-work-box.is-playing::after { opacity: 0; }
+/* 生成中/失败的占位块本身有内容，不需要播放图标 */
+.vg-work-box:has(.vg-work-holder)::after { display: none; }
+
+/* 预览缩略图带切到「用户作品」模式时的补充样式（2026-08-22）
+ * 老作品没有封面（poster_path 是后加的列），用一个深色占位块代替，
+ * 别让它塌成 0 高度把整排布局挤歪。 */
+.vg-thumb-blank {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #14161f, #1b1e2b);
+}
+
+/* ── 缩略图带：作品悬停预览 + 分页（2026-08-22）── */
+.vg-thumb-hovervid {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block; z-index: 1;
+}
+.vg-thumb-blank { position: absolute; inset: 0; background: linear-gradient(135deg, #14161f, #1b1e2b); }
+.vg-strip-pager { display: inline-flex; align-items: center; gap: 6px; margin-right: 12px; }
+.vg-pager-btn {
+  width: 22px; height: 22px; border-radius: 6px; line-height: 1;
+  border: 1px solid var(--line); background: transparent; color: var(--dim-dark);
+  font-size: 13px; cursor: pointer; transition: all .15s;
+}
+.vg-pager-btn:hover:not(:disabled) { color: #fff; border-color: var(--purple); }
+.vg-pager-btn:disabled { opacity: .35; cursor: not-allowed; }
+.vg-pager-info { color: var(--dim-dark); font-size: 11px; font-weight: 600; }
+
+/* ── 我的作品：筛选条 ── */
+.vg-works-filter { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.vg-filter-btn {
+  padding: 4px 12px; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--card2);
+  color: var(--dim-dark); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.vg-filter-btn:hover { color: #fff; }
+.vg-filter-btn.is-active { background: var(--purple); border-color: var(--purple); color: #fff; }
+.vg-filter-btn:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+.vg-filter-btn[hidden] { display: none !important; }
+.vg-filter-num { opacity: .75; margin-left: 2px; font-variant-numeric: tabular-nums; }
+.vg-works-empty {
+  color: var(--dim-dark); font-size: 12.5px; text-align: center; padding: 24px 0 8px;
+}

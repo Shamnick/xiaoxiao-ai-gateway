@@ -1,0 +1,38 @@
+/* 平台功能页（Playground / 用量） */
+.pf-body{margin:0;min-height:100vh;background:#f3f6fa;color:#1f2d3d;font:14px/1.65 system-ui,-apple-system,"PingFang SC",sans-serif}
+.pf-top{display:flex;align-items:center;gap:14px;padding:14px 24px;background:#fff;border-bottom:1px solid #e6ebf2}
+.pf-top a.brand{display:flex;align-items:center;gap:9px;color:#1f2d3d;text-decoration:none;font-weight:700}
+.pf-top .nav{display:flex;gap:16px;margin-left:18px}
+.pf-top .nav a{color:#5b6b7d;text-decoration:none;font-size:13.5px}
+.pf-top .nav a:hover{color:#0e9f8a}
+.pf-top .right{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:13px;color:#5b6b7d}
+.pf-wrap{max-width:1180px;margin:0 auto;padding:22px 18px 60px}
+.pf-grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+.pf-card{background:#fff;border:1px solid #e6ebf2;border-radius:14px;overflow:hidden}
+.pf-card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid #eef2f7;font-weight:600}
+.pf-card-h .sub{font-weight:400;font-size:12.5px;color:#8a97a6}
+.pf-card-b{padding:16px 18px}
+.pf-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;font-size:12.5px;color:#6b7c8f}
+.pf-field select,.pf-field input,.pf-field textarea{padding:9px 11px;border-radius:9px;border:1px solid #dbe3ec;font:13px/1.6 inherit;color:#1f2d3d;outline:none;background:#fff}
+.pf-field select:focus,.pf-field input:focus,.pf-field textarea:focus{border-color:#12b39b;box-shadow:0 0 0 3px rgba(18,179,155,.12)}
+.pf-btn{padding:8px 16px;border-radius:9px;border:1px solid #dbe3ec;background:#fff;color:#2c3e50;font-size:13px;cursor:pointer}
+.pf-btn.primary{background:linear-gradient(135deg,#12b39b,#0e9f8a);border-color:transparent;color:#fff;font-weight:600}
+.pf-btn:disabled{opacity:.5;cursor:not-allowed}
+.pf-out{min-height:220px;background:#0b1220;color:#cfe6ff;border-radius:12px;padding:14px;font:13px/1.75 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
+.pf-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;font-size:12.5px;color:#6b7c8f}
+.pf-meta b{color:#1f2d3d}
+.pf-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.pf-kpi .k{background:#fff;border:1px solid #e6ebf2;border-radius:12px;padding:14px 16px}
+.pf-kpi .k .l{font-size:12px;color:#8a97a6}
+.pf-kpi .k .v{font-size:24px;font-weight:700;margin-top:4px}
+.pf-kpi .k.a .v{color:#0e9f8a}
+.pf-kpi .k.b .v{color:#2f7be0}
+.pf-kpi .k.c .v{color:#c9971a}
+.pf-table{width:100%;border-collapse:collapse;font-size:13px}
+.pf-table th{text-align:left;font-size:12px;color:#8a97a6;font-weight:600;padding:10px 14px;background:#fafbfd;border-bottom:1px solid #eef2f7}
+.pf-table td{padding:10px 14px;border-bottom:1px solid #f2f5f9}
+.pf-table tr:last-child td{border-bottom:0}
+.pf-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.pf-empty{padding:26px;text-align:center;color:#8a97a6;font-size:13px}
+.pf-hint{font-size:12px;color:#8a97a6;line-height:1.8}
+@media (max-width:900px){.pf-grid{grid-template-columns:1fr}.pf-kpi{grid-template-columns:1fr 1fr}}

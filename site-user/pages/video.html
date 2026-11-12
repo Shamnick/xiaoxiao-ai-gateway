@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>视频生成 - 宇天科技</title>
+  <meta name="description" content="自建 MiniMax-H3 视频生成：画面与原生立体声一次生成，按秒计费，失败自动全额退还。">
+  <link rel="icon" type="image/png" href="/assets/img/logo-128.png?v=fce98cd7e66c">
+  <link rel="stylesheet" href="/assets/css/user.css?v=840d1db4bf23">
+  <link rel="stylesheet" href="/assets/css/video.css?v=36168d60f9b6">
+</head>
+<body class="vg-body" data-page="video">
+  <!-- 顶栏：秘塔对标 -->
+  <header class="vg-topbar">
+    <div class="vg-topbar-left">
+      <a class="vg-brand" href="/" data-no-pjax>
+        <img src="/assets/img/logo-128.png?v=fce98cd7e66c" alt="宇天科技" width="28" height="28" decoding="async">
+        <span class="vg-brand-name">宇天科技</span>
+      </a>
+    </div>
+
+    <!-- 顶部中央精美折扣胶囊条（1:1 复刻秘塔 AI 样式） -->
+    <div class="vg-ribbon">
+      <img src="/assets/img/price-badge-2-off.png?v=5cb326d1e19e" class="vg-ribbon-img-badge" alt="2折">
+      <span class="vg-ribbon-title">MiniMax 官方价 2 折</span>
+      <span class="vg-ribbon-pill">一分时代 · 低至 0.09 元/秒</span>
+      <a href="#pricing" class="vg-ribbon-link">随充随用 · 无需年会员 ↗</a>
+    </div>
+
+    <div class="vg-topbar-right">
+      <nav class="vg-topnav">
+        <a href="https://a1.yutiankejiai.com/" class="vg-nav-link" target="_blank" rel="noopener">首页</a>
+        <a href="/" class="vg-nav-link" data-no-pjax>语言大模型</a>
+        <a href="/?page=docs" class="vg-nav-link" data-no-pjax>API 文档</a>
+                            <a href="/?page=recharge" class="vg-nav-link" data-no-pjax
+            data-open-dialog="vg-recharge-dialog">充值积分</a>
+                    <span class="vg-topbal">可用 <b id="vg-balance">0</b> 积分</span>
+          <a href="/" class="vg-user-btn" data-no-pjax>控制台</a>
+              </nav>
+    </div>
+  </header>
+
+  <main class="vg-main">
+          <div class="vg-alert-closed">
+        <span>内测中，暂未对外开放。如需体验请<a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fvideo" data-kefu="" data-kefu-from="user/video" target="_blank" rel="noopener">联系在线客服</a></span>
+      </div>
+    
+    <!-- ── 核心工作台：左控制台 + 右大预览区 ── -->
+    <div class="vg-shell" id="vg-shell"
+      data-enabled="0"
+      data-logged-in="1"
+      data-max-pending="6"
+      data-my-active="0"
+            data-eta="{&quot;480p:5&quot;:106,&quot;480p:8&quot;:143,&quot;480p:10&quot;:167,&quot;480p:15&quot;:227,&quot;standard:5&quot;:150,&quot;standard:8&quot;:212,&quot;standard:10&quot;:253,&quot;standard:15&quot;:357,&quot;768p:5&quot;:218,&quot;768p:8&quot;:322,&quot;768p:10&quot;:391,&quot;768p:15&quot;:567}"
+      data-worker-online="0">
+
+      <!-- 左侧控制面板 -->
+      <section class="vg-card vg-form">
+        <!-- 模式切换：文/图生视频 & 多参考 -->
+        <div class="vg-modes" id="vg-modes">
+          <button type="button" class="vg-mode is-active" data-vg-mode="t2v">文/图生视频</button>
+          <button type="button" class="vg-mode" data-vg-mode="ref" disabled title="多参考需要 Ref2VA 模型，正在接入中">
+            多参考
+          </button>
+        </div>
+
+        <!-- 提示词 -->
+        <div class="vg-field">
+          <div class="vg-field-head">
+            <label class="vg-label" for="vg-prompt">提示词</label>
+            <div class="vg-prompt-tools">
+                            <button type="button" class="vg-prompt-opt" id="vg-prompt-opt"
+                aria-label="一键优化提示词" title="按官方结构改写，画质提升明显">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/>
+                  <path d="M18.5 14l.9 2.6L22 17.5l-2.6.9-.9 2.6-.9-2.6L15 17.5l2.6-.9.9-2.6z"/>
+                </svg>
+                <span id="vg-prompt-opt-txt">一键优化</span>
+              </button>
+                            <button type="button" class="vg-prompt-wiz" id="vg-prompt-wiz"
+                aria-label="打开风格向导" title="不知道写什么？按片子类型一问一答">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M9 18h6M10 22h4"/>
+                  <path d="M12 2a7 7 0 00-4 12.7V16h8v-1.3A7 7 0 0012 2z"/>
+                </svg>
+                <span>风格向导</span>
+              </button>
+                            <button type="button" class="vg-prompt-undo" id="vg-prompt-undo"
+                aria-label="还原优化前的描述" title="还原优化前的描述" hidden>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                  stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 10h11a4 4 0 010 8H8"/><path d="M7 6l-4 4 4 4"/>
+                </svg>
+                <span>还原</span>
+              </button>
+                            <button type="button" class="vg-prompt-clear" id="vg-prompt-clear"
+                aria-label="清空提示词" title="清空提示词" hidden>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                  stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+                <span>清空</span>
+              </button>
+            </div>
+          </div>
+          <div class="vg-textarea-wrap">
+            <textarea id="vg-prompt" class="vg-textarea" maxlength="7000"
+              placeholder="描述您想要的内容。使用 @1、@2... 引用已上传的素材"></textarea>
+            <div class="vg-count"><span id="vg-prompt-count">0</span>/7000</div>
+          </div>
+          <div class="vg-opt-tip" id="vg-opt-tip" hidden></div>
+        </div>
+
+        <!-- 图片上传（起始帧与结束帧） -->
+        <div class="vg-field">
+          <div class="vg-field-head">
+            <span class="vg-label">图片</span>
+            <span class="vg-hint">设置首帧和末帧，控制视频的开始与结束（任选其一或都传，+10% 积分）</span>
+          </div>
+          <div class="vg-frames">
+                          <div class="vg-frame-slot" data-slot="first">
+                <input type="file" class="vg-frame-input" id="vg-frame-first"
+                  accept="image/jpeg,image/png,image/webp" hidden>
+                <button type="button" class="vg-frame" data-frame-pick="first"
+                  aria-label="上传起始帧图片" title="支持 JPG / PNG / WebP，单张最大 12MB">
+                  <svg class="vg-frame-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  <span class="vg-frame-t">起始帧</span>
+                  <span class="vg-frame-d">可选</span>
+                </button>
+                                <div class="vg-frame-preview" hidden>
+                  <img alt="起始帧预览">
+                  <button type="button" class="vg-frame-del" data-frame-del="first"
+                    aria-label="移除起始帧" title="移除">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                      stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                  <span class="vg-frame-badge">起始帧</span>
+                </div>
+                <div class="vg-frame-busy" hidden><span class="vg-frame-spin"></span>上传中…</div>
+              </div>
+                          <div class="vg-frame-slot" data-slot="last">
+                <input type="file" class="vg-frame-input" id="vg-frame-last"
+                  accept="image/jpeg,image/png,image/webp" hidden>
+                <button type="button" class="vg-frame" data-frame-pick="last"
+                  aria-label="上传结束帧图片" title="支持 JPG / PNG / WebP，单张最大 12MB">
+                  <svg class="vg-frame-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  <span class="vg-frame-t">结束帧</span>
+                  <span class="vg-frame-d">可选</span>
+                </button>
+                                <div class="vg-frame-preview" hidden>
+                  <img alt="结束帧预览">
+                  <button type="button" class="vg-frame-del" data-frame-del="last"
+                    aria-label="移除结束帧" title="移除">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                      stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                  <span class="vg-frame-badge">结束帧</span>
+                </div>
+                <div class="vg-frame-busy" hidden><span class="vg-frame-spin"></span>上传中…</div>
+              </div>
+                      </div>
+          <div class="vg-frame-tip" id="vg-frame-tip" hidden></div>
+        </div>
+
+        <!-- 分辨率 与 时长（同一行紧凑并排） -->
+        <div class="vg-row-res-sec">
+          <!-- 分辨率 -->
+          <div class="vg-sub-field">
+            <span class="vg-label">分辨率</span>
+            <div class="vg-seg vg-seg-res" id="vg-res">
+                                              <button type="button" class="vg-seg-btn" data-vg-res="480p"
+                  data-price="0.0315"
+                  data-max-seconds="15"
+                  title="480P 草稿"
+                  >
+                  480P                </button>
+                                              <button type="button" class="vg-seg-btn" data-vg-res="standard"
+                  data-price="0.054"
+                  data-max-seconds="15"
+                  title="标准"
+                  >
+                  标准                </button>
+                                              <button type="button" class="vg-seg-btn is-active" data-vg-res="768p"
+                  data-price="0.09"
+                  data-max-seconds="15"
+                  title="768P 高清"
+                  >
+                  768P                </button>
+                          </div>
+          </div>
+
+          <!--
+            时长：离散档位，不是滑块。
+            H3 只接受「帧数 % 17 == 5」的长度（24fps），所以可选时长天然是几个点，
+            滑块给的连续自由度是假的 —— 拖到 6 秒后端一样会吸附到 6.58 秒。
+          -->
+          <div class="vg-sub-field vg-sub-field-sec">
+            <div class="vg-sec-head">
+              <span class="vg-label">时长</span>
+              <span class="vg-sec-badge" id="vg-sec-val">5 秒</span>
+            </div>
+            <div class="vg-seg vg-seg-sec" id="vg-sec">
+                                              <button type="button" class="vg-seg-btn is-active"
+                  data-vg-sec="5">5s</button>
+                                              <button type="button" class="vg-seg-btn"
+                  data-vg-sec="8">8s</button>
+                                              <button type="button" class="vg-seg-btn"
+                  data-vg-sec="10">10s</button>
+                                              <button type="button" class="vg-seg-btn"
+                  data-vg-sec="15">15s</button>
+                          </div>
+          </div>
+        </div>
+
+        <!-- 画面比例 -->
+        <div class="vg-field">
+          <div class="vg-field-head">
+            <span class="vg-label">画面比例</span>
+          </div>
+          <div class="vg-chips" id="vg-aspect">
+                                                      <button type="button" class="vg-chip"
+                data-vg-aspect="auto">自动</button>
+                                                      <button type="button" class="vg-chip"
+                data-vg-aspect="21:9">21:9</button>
+                                                      <button type="button" class="vg-chip is-active"
+                data-vg-aspect="16:9">16:9</button>
+                                                      <button type="button" class="vg-chip"
+                data-vg-aspect="4:3">4:3</button>
+                                                      <button type="button" class="vg-chip"
+                data-vg-aspect="1:1">1:1</button>
+                                                      <button type="button" class="vg-chip"
+                data-vg-aspect="3:4">3:4</button>
+                                                      <button type="button" class="vg-chip"
+                data-vg-aspect="9:16">9:16</button>
+                      </div>
+        </div>
+
+        <!-- 生成数量 -->
+        <div class="vg-field">
+          <div class="vg-field-head">
+            <span class="vg-label">生成数量</span>
+          </div>
+          <div class="vg-seg vg-seg-count" id="vg-count">
+                          <button type="button" class="vg-seg-btn is-active"
+                data-vg-count="1">1 个</button>
+                          <button type="button" class="vg-seg-btn"
+                data-vg-count="2">2 个</button>
+                          <button type="button" class="vg-seg-btn"
+                data-vg-count="4">4 个</button>
+                      </div>
+        </div>
+
+        <p class="vg-err" id="vg-err" hidden></p>
+                <div class="vg-offline" id="vg-offline-tip" hidden>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/>
+          </svg>
+          <span>生成服务当前离线，暂时无法创建。你可以先写好描述，稍后回来一键提交。</span>
+        </div>
+
+        <!-- 创建按钮 -->
+        <div class="vg-action-wrap">
+                      <input type="hidden" name="csrf" value="fe2331a15e0e6995a74ddd026e4de9317fcac495754fd84e240bc9c9dc350e39">
+                        <button type="button" class="vg-btn-create" id="vg-submit"
+              aria-label="创建视频" title="请先填写画面描述" disabled>
+                            <svg class="vg-btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+              <span id="vg-submit-text">创建</span>
+                            <span class="vg-submit-cost" id="vg-cost"></span>
+            </button>
+                  </div>
+      </section>
+
+      <!-- 右侧大预览区与作品栏 -->
+      <section class="vg-card vg-stage">
+        <!-- 主播放器容器 -->
+        <div class="vg-player" id="vg-player">
+          <div class="vg-player-canvas">
+                        <video id="vg-video" class="vg-video" muted playsinline preload="none"
+              poster="/assets/img/poster/03.jpg?v=107c9ca15f3d"
+              src="/assets/video/metaso/03.mp4?v=89fef5c64972"></video>
+          </div>
+
+                    <button type="button" class="vg-player-start" id="vg-player-start" aria-label="播放">
+            <span class="vg-start-ico">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            </span>
+            <span class="vg-start-text">点击播放 · 含原生立体声</span>
+          </button>
+
+          <!-- 播放器左上角清晰度标记 -->
+          <div class="vg-player-badge" id="vg-badge">768P</div>
+
+          <!-- 播放器底栏控制条 -->
+          <div class="vg-player-controls" id="vg-controls">
+            <button type="button" class="vg-play-btn" id="vg-play-toggle" aria-label="播放/暂停">
+              <svg class="vg-ctrl-icon" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+            </button>
+            <span class="vg-time" id="vg-player-time">0:00 / 0:15</span>
+            <div class="vg-player-seekbar">
+                            <div class="vg-player-seekbuf" id="vg-seek-buffer"></div>
+              <div class="vg-player-seekfill" id="vg-seek-fill"></div>
+            </div>
+            <button type="button" class="vg-mute-btn" id="vg-mute-toggle" aria-label="静音">
+              <svg class="vg-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              </svg>
+            </button>
+            <button type="button" class="vg-fs-btn" id="vg-fs-toggle" aria-label="全屏">
+              <svg class="vg-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+              </svg>
+            </button>
+          </div>
+
+                  </div>
+
+        <!-- 下方 4 联缩略图 -->
+        <div class="vg-gallery-strip">
+                    <div class="vg-strip-header">
+            <span class="vg-strip-queue" id="vg-queue">
+              队列 0 排队 / 0 生成中
+            </span>
+          </div>
+
+          <div class="vg-strip" id="vg-strip">
+                                                      <div class="vg-thumb is-active"
+                data-demo-index="0" data-demo-src="/assets/video/metaso/03.mp4?v=89fef5c64972"
+                data-demo-poster="/assets/img/poster/03.jpg?v=107c9ca15f3d">
+                <div class="vg-thumb-box">
+                                    <img class="vg-thumb-img" src="/assets/img/poster/03.jpg?v=107c9ca15f3d" alt="" loading="lazy" decoding="async">
+                  <div class="vg-thumb-play"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+                  <span class="vg-thumb-duration">15</span>
+                                                          <button type="button" class="vg-use-prompt" data-use-prompt="必须遵循以下提示词，不允许改动： 15秒，16:9，4K60帧好莱坞级暗黑奇幻游戏CG技能动画。核心角色“极冬剑皇”，全片采用冷暖结合色调（幽蓝/暗金）。全片使用FPV第一人称无人机极速运镜，极度丝滑，带有真实的物理后坐力与空间视差。强调极致的冰晶碎裂、岩浆火星粒子特效与高精度金属材质。
+[0 秒-3 秒｜低空逼近] FPV在冻结的古战场低空极速掠过，冰面上清晰倒影着暗流涌动的光芒。镜头紧贴剑皇厚重的毛皮披风后方跟拍，剑皇沉重的战靴踩碎冰层，缓步走向前方插在玄冰中的重刃巨剑。镜头随步伐产生微小的上下起伏，营造第一人称极寒压迫感。
+[3 秒-6 秒｜微距质感] FPV快速绕射至剑皇右侧前方，定格其覆满重甲的单手，稳稳拔出玄冰巨剑。拔出的瞬间，冰层猛烈炸裂，剑身内部的暗金符文如岩浆般流转点亮。此时镜头极度贴近剑身（微距特写），极寒白雾与滚烫的暗金火星在镜头前猛烈交织蒸腾，清晰展示粗犷冷冽的金属划痕与熔岩发光质感。
+[6 秒-10 秒｜后坐力挥斩] FPV迅速拉远成为中景，切入剑皇全身蓄力动作。剑皇双手握柄，重心猛地下沉，拧腰爆发出毁天灭地的横斩。镜头随强横的挥剑动作产生强烈的“物理后坐力”震颤，保持第一人称力量感。剑刃幽蓝剑气暴涨，极寒风压撕裂空气，细碎的冰晶擦过镜头边缘，产生真实的高光景深模糊。
+[10 秒-13 秒｜视效爆发] 技能释放瞬间。画面插入一小段慢动作（Slow-mo）特写剑皇挥剑至最高点，随后FPV视角瞬间爆发，直接附着于斩出的巨大半月形“冰火剑气”中心冲出。剑气贴地飙射，沿途大地被强行撕裂，两旁爆发出参差不齐的幽蓝巨大冰刺与暗金余烬轨迹，视觉冲击力与速度感拉满。
+[13 秒-15 秒｜环境收束] FPV急停并缓缓拔高，俯瞰被剑气一分为二的冰封战场。漫天钻石般的冰尘与暗金火星在半空中柔和交融，冰雾翻涌，冷月体积光（Volumetric lighting）穿透雾气直射镜头。画面边缘逐渐结起冰霜结晶，第一人称视角在极寒的白气中慢慢虚化并黑屏收束。
+[声音设计] 极寒风声底噪，沉重的铠甲金属摩擦声。拔剑时震耳欲聋的冰块炸裂声与岩浆沸腾的“滋滋”声。挥剑时配合重低音爆（Bass Drop），剑气飙射时伴随撕裂空气的高频尖啸。最后以空灵的冰晶碎裂余音收尾。
+[负面约束] 禁止穿模，禁止出现任何UI、文字、字母或水印。禁止人物五官或铠甲发生形变或融化。禁止廉价的塑料质感CG和卡通渲染。禁止出现其他无关角色或怪物。禁止平庸固定的机位，必须保持FPV动态感。禁止突然的暗转或跳切，禁止赛博朋克或霓虹灯元素。">
+                      <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                        <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                      </svg>
+                      <span>使用提示词</span>
+                      <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                        <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                      </svg>
+                    </button>
+                                  </div>
+              </div>
+                                                      <div class="vg-thumb"
+                data-demo-index="1" data-demo-src="/assets/video/metaso/seedance-077.mp4?v=89fef5c64972"
+                data-demo-poster="/assets/img/poster/seedance-077.jpg?v=069a2c81b726">
+                <div class="vg-thumb-box">
+                                    <img class="vg-thumb-img" src="/assets/img/poster/seedance-077.jpg?v=069a2c81b726" alt="" loading="lazy" decoding="async">
+                  <div class="vg-thumb-play"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+                  <span class="vg-thumb-duration">12</span>
+                                                          <button type="button" class="vg-use-prompt" data-use-prompt="12秒视频。一个可爱、丰满的红色番茄角色直接对着镜头说话。用完美的对嘴配合，用充满活力的声音说：“大家，你们要把番茄放进冰箱吗？其实，那不行！寒冷会带走甜味，请将我们存放在室温！最好在吃饭前先冷藏一下！”角色会随着歌词的节奏做出轻微跳跃的动作。高质量的3D动画风格，类似皮克斯。背景是一个略显模糊的厨房。">
+                      <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                        <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                      </svg>
+                      <span>使用提示词</span>
+                      <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                        <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                      </svg>
+                    </button>
+                                  </div>
+              </div>
+                                                      <div class="vg-thumb"
+                data-demo-index="2" data-demo-src="/assets/video/metaso/seedance-230.mp4?v=89fef5c64972"
+                data-demo-poster="/assets/img/poster/seedance-230.jpg?v=069a2c81b726">
+                <div class="vg-thumb-box">
+                                    <img class="vg-thumb-img" src="/assets/img/poster/seedance-230.jpg?v=069a2c81b726" alt="" loading="lazy" decoding="async">
+                  <div class="vg-thumb-play"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+                  <span class="vg-thumb-duration">10</span>
+                                                          <button type="button" class="vg-use-prompt" data-use-prompt="10秒视频。宽高比“16：9”广州市群像，包括古老的西关宅邸、精致的粤式点心和雄伟的广州楼（小腰），色彩丰富饱和。[动作]：镜头缓缓从茶馆升起的蒸汽中拉近，瞬间将硬切与珠江新城耀眼的灯光相匹配;古老街道上优雅地跳舞狮子，动作连贯自然，不生硬。[场景]：陈氏祠堂黎明，精致木雕纹理，丁达尔效应透过满清窗户">
+                      <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                        <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                      </svg>
+                      <span>使用提示词</span>
+                      <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                        <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                      </svg>
+                    </button>
+                                  </div>
+              </div>
+                                                      <div class="vg-thumb"
+                data-demo-index="3" data-demo-src="/assets/video/metaso/seedance-020.mp4?v=89fef5c64972"
+                data-demo-poster="/assets/img/poster/seedance-020.jpg?v=069a2c81b726">
+                <div class="vg-thumb-box">
+                                    <img class="vg-thumb-img" src="/assets/img/poster/seedance-020.jpg?v=069a2c81b726" alt="" loading="lazy" decoding="async">
+                  <div class="vg-thumb-play"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+                  <span class="vg-thumb-duration">15</span>
+                                                          <button type="button" class="vg-use-prompt" data-use-prompt="15秒视频。在一个猫取代人类的未来世界里，这些猫科动物利用智能和先进技术建立了新的社会。在这个世界里，敌对的猫派系爆发了激烈的冲突，这些派系拥有尖端机器人武器、高超音速无人机和智能纳米技术。随着镜头穿梭这场史诗般的战斗，每只猫的动作和策略都被捕捉下来，不仅展现了争夺主导权的战斗，更展现了一场由情感、领导力和未来抱负驱动的斗争。整个故事配有宏大的配乐，让观众沉浸在一场由猫咪主导的科技战争的生动电影体验中。">
+                      <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                        <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                      </svg>
+                      <span>使用提示词</span>
+                      <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                        <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                      </svg>
+                    </button>
+                                  </div>
+              </div>
+                      </div>
+
+          <div class="vg-strip-footer">
+            <a href="#gallery" class="vg-more-link">探索更多同款 →</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!--
+      ── 我的作品 ──
+      单独成块放在定价表上方（2026-08-22）。此前作品是直接 innerHTML 冲掉右侧那条
+      演示缩略图的，两个后果：① 用户分不清哪个是自己生成的；
+      ② 演示轮播抓的 DOM 节点被冲掉，有作品之后案例轮播就哑了。
+      现在两者彻底分开：上面那条只放演示素材，作品一律进这里。
+      未登录 / 无作品时整块隐藏（由 JS 控制 hidden）。
+    -->
+    <section class="vg-card vg-works" id="vg-works" hidden>
+      <div class="vg-sec-title-wrap">
+        <h2 class="vg-sec-title">我的作品</h2>
+        <span class="vg-sec-sub">
+          作品保留 <b>30 天</b>，请及时下载保存；生成中的任务会自动刷新进度。
+        </span>
+      </div>
+            <div class="vg-works-filter" id="vg-works-filter">
+        <button type="button" class="vg-filter-btn is-active" data-work-filter="all">
+          全部 <span class="vg-filter-num">0</span>
+        </button>
+        <button type="button" class="vg-filter-btn" data-work-filter="succeeded">
+          已完成 <span class="vg-filter-num">0</span>
+        </button>
+        <button type="button" class="vg-filter-btn" data-work-filter="failed" hidden>
+          未成功 <span class="vg-filter-num">0</span>
+        </button>
+      </div>
+      <div class="vg-works-grid" id="vg-works-grid"></div>
+      <p class="vg-works-empty" id="vg-works-empty" hidden>该筛选下暂无作品。</p>
+    </section>
+
+    <!-- ── 视频定价（对标秘塔下方定价表）── -->
+    <section class="vg-card vg-pricing" id="pricing">
+      <div class="vg-sec-title-wrap">
+        <h2 class="vg-sec-title">视频定价</h2>
+        <span class="vg-sec-sub">MiniMax H3 同规格享 2 折特惠！按生成时长与素材计费，768P 画质已开放，随充随用，无需绑定年会员。</span>
+      </div>
+
+      <h3 class="vg-table-title">输出价格</h3>
+      <div class="key-table-wrap">
+        <table class="key-table vg-price-table">
+          <thead>
+            <tr><th>服务 / 模型</th><th>我们的价格</th><th>4 秒</th><th>10 秒</th><th>15 秒</th></tr>
+          </thead>
+          <tbody>
+                                        <tr>
+                <td>
+                  <b>480P 草稿</b>
+                  <span class="vg-price-dim">864×480</span>
+                                  </td>
+                <td><b class="vg-text-highlight">0.0315</b> 积分/秒</td>
+                                  <td>0.126 积分</td>
+                                  <td>0.315 积分</td>
+                                  <td>0.4725 积分</td>
+                              </tr>
+                                        <tr>
+                <td>
+                  <b>标准</b>
+                  <span class="vg-price-dim">1120×640</span>
+                                  </td>
+                <td><b class="vg-text-highlight">0.054</b> 积分/秒</td>
+                                  <td>0.216 积分</td>
+                                  <td>0.54 积分</td>
+                                  <td>0.81 积分</td>
+                              </tr>
+                                        <tr>
+                <td>
+                  <b>768P 高清</b>
+                  <span class="vg-price-dim">1344×768</span>
+                                  </td>
+                <td><b class="vg-text-highlight">0.09</b> 积分/秒</td>
+                                  <td>0.36 积分</td>
+                                  <td>0.9 积分</td>
+                                  <td>1.35 积分</td>
+                              </tr>
+                      </tbody>
+        </table>
+      </div>
+
+      <h3 class="vg-table-title">视频生成输入素材</h3>
+      <div class="key-table-wrap">
+        <table class="key-table vg-price-table">
+          <thead><tr><th>服务 / 模型</th><th>我们的价格</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><b>提示词</b></td><td><b class="vg-text-highlight">免费</b></td><td>最多 7000 字，支持完整分镜脚本</td></tr>
+            <tr><td><b>音频</b></td><td><b class="vg-text-highlight">免费</b></td><td>H3 原生生成同步立体声，无需另付</td></tr>
+            <tr><td><b>首帧 / 尾帧图片</b></td><td><b class="vg-text-highlight">+10%</b></td><td>指定开始与结束画面，任选其一或两张都传</td></tr>
+            <tr class="is-soon-row"><td><b>参考视频 / 多参考</b></td><td>—</td><td>需要 Ref2VA 模型，正在接入</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="vg-pricing-bottom">
+        <p class="vg-price-note">
+          说明：积分与充值口径 1:1 一致。计费只看生成时长与清晰度，画面比例与数量不影响单价；生成失败或排队取消<b>全额退还</b>到钱包。
+        </p>
+        <a class="vg-btn-recharge" href="/?page=recharge" data-no-pjax
+          data-open-dialog="vg-recharge-dialog">
+          立即充值积分        </a>
+      </div>
+    </section>
+
+    <!-- ── 案例画廊区 ── -->
+    <section class="vg-card vg-gallery" id="gallery">
+      <p class="vg-gallery-kicker">PROMPT TO VIDEO</p>
+      <h2 class="vg-gallery-title">从一句话开始，生成你的下一条视频。</h2>
+      <p class="vg-gallery-sub">浏览创作案例，找到灵感后直接使用同款提示词。</p>
+            <div class="vg-cases" id="vg-cases">
+                                      <div class="vg-case-card" data-case-video data-case-src="/assets/video/metaso/seedance-014.mp4?v=89fef5c64972">
+            <div class="vg-case-img-box">
+                            <img class="vg-case-img" src="/assets/img/poster/seedance-014.jpg?v=069a2c81b726"
+                width="1344" height="768" alt="" loading="lazy" decoding="async">
+              <span class="vg-case-tag">768P</span>
+              <div class="vg-case-hint">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+              </div>
+            </div>
+                                      <button type="button" class="vg-use-prompt vg-use-prompt-case" data-use-prompt="10秒视频。超写实电影级第一人称视角飞行，穿越古伦敦，疾驰于泰晤士河与中世纪桥梁之上，俯冲穿过设防城门，穿梭于木筋墙房屋、哥特式大教堂、熙攘集市、马车与皇家庭院之间，随后盘旋于高耸石堡与城墙之上。快节奏、黄金时刻光影、丰富纹理、空中薄雾、史诗级规模、4K美学">
+                <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                  <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                </svg>
+                <span>使用提示词</span>
+                <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                </svg>
+              </button>
+                        <div class="vg-case-info">
+              <p class="vg-case-prompt">第一人称飞越古伦敦：疾驰泰晤士河与中世纪桥梁，穿过设防城门</p>
+            </div>
+          </div>
+                                      <div class="vg-case-card" data-case-video data-case-src="/assets/video/metaso/seedance2-019.mp4?v=89fef5c64972">
+            <div class="vg-case-img-box">
+                            <img class="vg-case-img" src="/assets/img/poster/seedance2-019.jpg?v=069a2c81b726"
+                width="768" height="1344" alt="" loading="lazy" decoding="async">
+              <span class="vg-case-tag">768P</span>
+              <div class="vg-case-hint">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+              </div>
+            </div>
+                                      <button type="button" class="vg-use-prompt vg-use-prompt-case" data-use-prompt="超写实电影级赛博朋克视频，竖屏9:16，总时长15秒。红黑霓虹色调，湿漉漉的反光街道，暴雨，烟雾氛围，胶片颗粒，高端VFX写实感。角色为22岁真人女性，自然面部比例，真实皮肤纹理，淡妆，运动型身材。无动漫或风格化。未来霓虹城市，地下车库“G3 CLUB”，全息标牌，发光赛博细节。0–3秒 | 车库开场 宽银幕电影级镜头，位于黑暗工业风赛博朋克车库内。女人在一辆哑光黑色未来摩托车旁冷静地戴上黑色战术手套，摩托车带有红色LED发光装饰。旁边头盔散发微弱HUD光芒。红色霓虹“G3 CLUB”标牌在飘散的烟雾中闪烁。湿漉漉的地面反射灯光。3–6秒 | 准备特写 中近景。她精准地拉紧手套，侧目凝视，眼神冷静而强烈。写实面部细节，柔和电影级阴影，红色边缘光。摩托车虚化在背景中。6–8秒 | 头盔与点火 极近特写，她举起并戴上未来头盔。透明面罩下露出真实双眼，反射霓虹HUD图形。快速切换：摩托车启动，红色能量线脉动。8–11秒 | 冲出与极速爆发 动态动作快切。她驾驶摩托车冲出地下车库，驶入雨夜霓虹街道。水花猛烈飞溅，轮胎紧抓湿滑沥青，红色霓虹拖尾飞驰。11–13秒 | 高速动作 追踪镜头拍摄激进高速过弯。她大幅压弯，火花与水雾慢动作飞溅。红蓝全息图的赛博朋克摩天楼在背景中虚化。13–15秒 | 最终英雄退场 超广角电影级镜头。她骑向广阔霓虹高速公路，消失在雾雨之中。红色光轨渐行渐远。史诗级科幻结尾画面。音频方向 赛博朋克嘻哈配乐：沉重808低音，激进陷阱鼓点，霓虹合成器音层。快速BPM。主要低音爆发同步于8–11秒（冲出爆发+高速动作高潮）。环境雨声+引擎轰鸣+霓虹电流嗡鸣。">
+                <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                  <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                </svg>
+                <span>使用提示词</span>
+                <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                </svg>
+              </button>
+                        <div class="vg-case-info">
+              <p class="vg-case-prompt">赛博朋克机车：从霓虹车库戴手套点火，冲进雨夜街道高速压弯</p>
+            </div>
+          </div>
+                                      <div class="vg-case-card" data-case-video data-case-src="/assets/video/metaso/seedance-006.mp4?v=89fef5c64972">
+            <div class="vg-case-img-box">
+                            <img class="vg-case-img" src="/assets/img/poster/seedance-006.jpg?v=069a2c81b726"
+                width="1344" height="768" alt="" loading="lazy" decoding="async">
+              <span class="vg-case-tag">768P</span>
+              <div class="vg-case-hint">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+              </div>
+            </div>
+                                      <button type="button" class="vg-use-prompt vg-use-prompt-case" data-use-prompt="11秒视频。&#039;镜头&#039;: &#039;构图&#039;: &#039;第一人称视角时间冻结，双手在静止环境中移动&#039;, &#039;镜头类型&#039;: &#039;超广角电影镜头，带轻微畸变&#039;, &#039;相机运动&#039;: &#039;缓慢行走，精准手部动作，突然时间释放爆发&#039;, &#039;主体&#039;: &#039;描述&#039;: &#039;人物移动，而其他一切处于动作冻结状态&#039;, &#039;服装&#039;: &#039;可见双手&#039;, &#039;道具&#039;: &#039;冻结的人群、悬空的物体、悬浮的碎片&#039;, &#039;场景&#039;: &#039;地点&#039;: &#039;繁忙的城市街道&#039;, &#039;时间&#039;: &#039;白天&#039;, &#039;环境&#039;: &#039;人群动作冻结，物体悬浮空中&#039;, &#039;视觉细节&#039;: &#039;动作&#039;: &#039;穿过冻结的人群，移动物体，时间突然爆发性恢复&#039;, &#039;特效&#039;: &#039;时间冻结粒子，动作瞬间释放&#039;, &#039;头发与衣物动态&#039;: &#039;布料静止，随后随时间恢复而猛然甩动&#039;, &#039;摄影&#039;: &#039;灯光&#039;: &#039;清晰的日光，带有锐利阴影&#039;, &#039;色调&#039;: &#039;自然色调，对比鲜明&#039;, &#039;氛围&#039;: &#039;令人费解，电影感&#039;, &#039;音频&#039;: &#039;音乐&#039;: &#039;缓慢的环境音，随后爆发性重音&#039;, &#039;环境音&#039;: &#039;寂静，然后突然混乱&#039;, &#039;音效&#039;: &#039;时间断裂声，物体移动声&#039;, &#039;混音层次&#039;: &#039;对比寂静与爆发&#039;">
+                <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                  <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                </svg>
+                <span>使用提示词</span>
+                <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                </svg>
+              </button>
+                        <div class="vg-case-info">
+              <p class="vg-case-prompt">时间冻结：人群与悬浮碎片静止不动，唯一行动者穿行其间，随后时间爆发性恢复</p>
+            </div>
+          </div>
+                                      <div class="vg-case-card" data-case-video data-case-src="/assets/video/metaso/seedance2-061.mp4?v=89fef5c64972">
+            <div class="vg-case-img-box">
+                            <img class="vg-case-img" src="/assets/img/poster/seedance2-061.jpg?v=069a2c81b726"
+                width="768" height="1344" alt="" loading="lazy" decoding="async">
+              <span class="vg-case-tag">768P</span>
+              <div class="vg-case-hint">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+              </div>
+            </div>
+                                      <button type="button" class="vg-use-prompt vg-use-prompt-case" data-use-prompt="整体风格：第一人称手机实拍感，真实电梯内视角，生活化短视频，轻微手持抖动，普通室内白色顶灯，像随手拍到的电梯偶遇。主角使用上传参考图中的女性，保持她的脸、发型、五官、身材比例和气质一致。
+
+核心剧情：
+
+拍摄者站在电梯里面拿手机拍摄。电梯门正在慢慢关闭，门缝越来越窄。透过门缝看到走廊里有一位漂亮女生正朝电梯走来。拍摄者突然紧张起来，急忙把镜头转向电梯按钮面板，连续多次按下“开门键”。这个按钮不是文字按钮，而是两个箭头向左右分开的电梯开门图标。电梯门重新打开，女生走进电梯。
+
+镜头 1（0-2 秒）
+
+主体：电梯门正在缓慢关闭，门缝外出现参考图中的女性。
+
+动作：
+
+0-1 秒：第一人称站在电梯内，手机竖屏拍摄电梯门口。电梯门从两侧慢慢向中间合拢。
+
+1-2 秒：门缝中看到参考图女性从走廊远处走来或小跑过来，拍摄者明显注意到她。
+
+环境：现代公寓/办公楼电梯间，灰色瓷砖地面，白色墙面，走廊顶灯，电梯金属门框。
+
+镜头：手机在电梯内向外拍，门框和逐渐变窄的门缝形成压迫感。
+
+风格：真实手机随手拍，轻微手抖，带一点“差点错过”的紧张感。
+
+约束：必须看出电梯门正在关闭，女主在门缝外出现。
+
+镜头 2（2-4 秒）
+
+主体：拍摄者的手和电梯按钮面板。
+
+动作：
+
+2-2.5 秒：镜头突然慌忙转向电梯按钮面板，画面快速晃动。
+
+2.5-4 秒：拍摄者用手指连续快速按下电梯开门按钮 3-5 次，动作急促。按钮是“两个箭头向左右分开的”开门图标，按钮亮起绿色光圈。
+
+环境：电梯内部金属墙，圆形楼层按钮，扶手，按钮面板反光。
+
+镜头：近距离手持拍摄按钮，快速推近，手指连点按钮。
+
+风格：紧张、急忙、真实反应，不是从容摆拍。
+
+约束：按钮上不能写“开”、不能写“开门”、不能写文字；必须是两个箭头向两边分开的图标。
+
+镜头 3（4-7 秒）
+
+主体：电梯门重新打开，参考图女性走进来。
+
+动作：
+
+4-5 秒：镜头转回电梯门口，门从快要合拢的状态重新向两侧打开。
+
+5-7 秒：参考图女性走到门口，看向镜头，进入电梯。
+
+环境：走廊、电梯门、电梯内金属墙同时可见。
+
+镜头：第一人称站在电梯内拍摄，女主从门外靠近镜头。
+
+风格：真实电梯偶遇短视频，轻微运动模糊。
+
+约束：女主必须是参考图女性。
+
+镜头 4（7-11 秒）
+
+主体：参考图女性站在电梯内。
+
+动作：
+
+7-9 秒：她进入电梯后靠近金属墙边站定，微微整理姿态。
+
+9-11 秒：她看向镜头，轻轻微笑或自然转头，画面结束。
+
+环境：电梯内部深色金属墙，按钮面板，扶手，安全提示牌。
+
+镜头：手机竖屏中近景，拍摄者稍微后退调整角度。
+
+风格：生活化手机实拍，轻微美颜感，但不要过度磨皮。
+
+约束：全程只有一个女主，保持参考图人物身份一致。
+
+负面提示词：
+
+按钮写着“开”，按钮写着“开门”，按钮出现中文文字，按钮出现英文 open，按错关门键，按钮图标错误，电梯门一直开着，电梯门没有关闭过程，没有紧张感，没有连续按按钮，镜头太稳定，女主凭空出现，女主不进电梯，换脸失败，脸部漂移，五官变化，发型变化，身材比例变化，多余手指，手指融合，电梯空间变形，按钮乱码，随机文字，字幕，logo，水印，动漫风，CG 动画感，过度电影化">
+                <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                  <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                </svg>
+                <span>使用提示词</span>
+                <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                </svg>
+              </button>
+                        <div class="vg-case-info">
+              <p class="vg-case-prompt">手机实拍电梯偶遇：门快合上时看见有人走来，慌忙连按开门键</p>
+            </div>
+          </div>
+                                      <div class="vg-case-card" data-case-video data-case-src="/assets/video/metaso/seedance-027.mp4?v=89fef5c64972">
+            <div class="vg-case-img-box">
+                            <img class="vg-case-img" src="/assets/img/poster/seedance-027.jpg?v=069a2c81b726"
+                width="1344" height="768" alt="" loading="lazy" decoding="async">
+              <span class="vg-case-tag">768P</span>
+              <div class="vg-case-hint">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+              </div>
+            </div>
+                                      <button type="button" class="vg-use-prompt vg-use-prompt-case" data-use-prompt="15秒视频。这是一段电影般的生活片段蒙太奇，展示了不同人类情感在同一家咖啡馆中跨越时间线展开。
+
+0–3：清晨阳光下的温馨咖啡馆。蒸汽从意式咖啡机中升起。柔和爵士乐响起。一位咖啡师打开门，阳光洒在空荡荡的木桌上。
+
+3–6：快速蒙太奇开始——一名学生戴着耳机专注学习，一位因电话压力的商人，一位盯着空白页的作家，一对情侣边喝咖啡边笑。同一个空间，不同的情感。
+
+6点至9点：中午高峰。店铺变得生机勃勃——快速剪辑人们进出，咖啡端上，交谈声交织，玻璃窗中映出城市的流动。
+
+9–12岁：情绪转变——一个人孤独地坐在窗边看外面的雨，而房间另一边则有泪水和欢笑的重逢。咖啡馆成为悲伤与喜悦的无声见证。
+
+12–15秒：最后一个电影镜头。夜幕降临。店里现在很安静，几乎空无一人。咖啡师擦拭柜台，灯光温暖地照亮。镜头拉远，展示同一空间，这一天曾承载数百个未被讲述的故事。
+
+风格：极具电影感的写实感，温暖舒适的美学，柔和的自然光，浅景深，情感丰富的日常生活叙事，流畅的延时剪辑，胶片级的色彩调色，柔和的氛围音乐氛围。">
+                <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                  <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                </svg>
+                <span>使用提示词</span>
+                <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                </svg>
+              </button>
+                        <div class="vg-case-info">
+              <p class="vg-case-prompt">同一家咖啡馆的一整天：清晨空椅、正午人潮、雨天独坐到深夜收档</p>
+            </div>
+          </div>
+                                      <div class="vg-case-card" data-case-video data-case-src="/assets/video/metaso/seedance2-032.mp4?v=89fef5c64972">
+            <div class="vg-case-img-box">
+                            <img class="vg-case-img" src="/assets/img/poster/seedance2-032.jpg?v=069a2c81b726"
+                width="768" height="1344" alt="" loading="lazy" decoding="async">
+              <span class="vg-case-tag">768P</span>
+              <div class="vg-case-hint">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+              </div>
+            </div>
+                                      <button type="button" class="vg-use-prompt vg-use-prompt-case" data-use-prompt="13秒视频。视频类型：垂直电影视频，9：16宽高比，超写实，4K，24帧每秒
+
+观点：
+严格的第一人称视角，来自一位骑着飞天扫帚的日本年轻女性
+相机=她的视线高度
+没有第三人称镜头，没有外部摄像机
+
+特征（仅可见元素）：
+双手清晰可见，紧握着一根木扫帚（左右手自然间距）
+双手位于摄像机前方，位置较低的中央
+双腿在扫帚后方可见，穿着短牛仔裤（短裤），大腿裸露
+运动鞋穿上脚
+短发末梢在风中微微可见
+
+骑乘姿势：
+身体微微前倾（像经典的女巫风格骑扫帚）
+扫帚杆对齐在两腿之间
+稳定但充满活力的姿势
+
+框架（非常重要）：
+垂直结构（9：16）
+手和扫帚柄始终保持在画面的下30%
+画面上方70%的画面以正视为主导
+不能偏离视角
+
+场景设定：
+明亮的白天，晴朗的天空，鲜艳饱和的色彩
+日本旅游景点
+
+摄像机运动：
+快进式
+自然上下运动（扫帚漂浮效应）
+风带来轻微震动
+转弯时的细微倾斜
+
+[0.0秒 - 1.2秒 |起飞]
+摄像机略微向下倾斜
+双手紧握扫帚清晰可见
+脚平稳地离地
+风起初轻盈
+
+[1.2秒 - 3.0秒 |加速]
+速度提升
+风力变强
+双手稍微收紧了握力
+腿部对气流有微妙反应
+
+[3.0秒 - 6.0秒 |涩谷航班]
+低空飞越涩谷横交道
+下方人物抬头看（运动模糊）
+建筑迅速消失
+保持稳定的前视角
+
+[6.0秒 - 8.5秒 |神庙通道]
+过渡到仙总寺地区
+飞得靠近灯笼和大门
+稍微放慢节奏以增强电影感
+
+[8.5秒 - 11.0秒 |托里跑]
+红色鸟居小径进入
+高速直线穿越多个登机门
+侧面强烈的运动模糊
+
+[11.0秒 - 13.0秒 |最终攀登]
+稍微向上倾斜
+增高
+天空填满上层画面
+手还紧握着扫帚清晰可见
+
+影响：
+风影响手、腿和发梢
+边缘的运动模糊
+景深：中心锐利，侧面略显模糊
+
+灯光：
+明亮的自然阳光，柔和的阴影，高对比度
+
+色彩分级：
+生动、电影感、略带温暖的氛围，适合旅行体验
+
+情绪：
+令人兴奋的、神奇的、沉浸式的旅行体验
+自由与速度感
+
+风格：
+超现实视角，奇幻+旅游融合，沉浸式体验">
+                <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                  <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                </svg>
+                <span>使用提示词</span>
+                <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                </svg>
+              </button>
+                        <div class="vg-case-info">
+              <p class="vg-case-prompt">第一人称骑飞天扫帚穿越东京：涩谷路口、神社长廊到红色鸟居</p>
+            </div>
+          </div>
+                                      <div class="vg-case-card" data-case-video data-case-src="/assets/video/metaso/seedance-079.mp4?v=89fef5c64972">
+            <div class="vg-case-img-box">
+                            <img class="vg-case-img" src="/assets/img/poster/seedance-079.jpg?v=069a2c81b726"
+                width="1344" height="768" alt="" loading="lazy" decoding="async">
+              <span class="vg-case-tag">768P</span>
+              <div class="vg-case-hint">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+              </div>
+            </div>
+                                      <button type="button" class="vg-use-prompt vg-use-prompt-case" data-use-prompt="10秒视频。一片宁静的环境突然被一场巨大的变形所打破。场景中的物体开始移动并组装成一个巨大的机械生物。镜头拉远，展现出其庞大的规模。尘土、碎片和冲击波随之扩散。">
+                <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                  <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                </svg>
+                <span>使用提示词</span>
+                <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                </svg>
+              </button>
+                        <div class="vg-case-info">
+              <p class="vg-case-prompt">宁静场景被打破，散落物体自行移动、组装成巨型机械生物，冲击波扩散</p>
+            </div>
+          </div>
+                                      <div class="vg-case-card" data-case-video data-case-src="/assets/video/metaso/seedance-230.mp4?v=89fef5c64972">
+            <div class="vg-case-img-box">
+                            <img class="vg-case-img" src="/assets/img/poster/seedance-230.jpg?v=069a2c81b726"
+                width="1344" height="768" alt="" loading="lazy" decoding="async">
+              <span class="vg-case-tag">768P</span>
+              <div class="vg-case-hint">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+              </div>
+            </div>
+                                      <button type="button" class="vg-use-prompt vg-use-prompt-case" data-use-prompt="10秒视频。宽高比“16：9”广州市群像，包括古老的西关宅邸、精致的粤式点心和雄伟的广州楼（小腰），色彩丰富饱和。[动作]：镜头缓缓从茶馆升起的蒸汽中拉近，瞬间将硬切与珠江新城耀眼的灯光相匹配;古老街道上优雅地跳舞狮子，动作连贯自然，不生硬。[场景]：陈氏祠堂黎明，精致木雕纹理，丁达尔效应透过满清窗户">
+                <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                  <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                </svg>
+                <span>使用提示词</span>
+                <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                </svg>
+              </button>
+                        <div class="vg-case-info">
+              <p class="vg-case-prompt">古风堂屋圆桌摆满菜肴，热气升腾，逆光从雕花窗棂洒落</p>
+            </div>
+          </div>
+                                      <div class="vg-case-card" data-case-video data-case-src="/assets/video/metaso/05.mp4?v=89fef5c64972">
+            <div class="vg-case-img-box">
+                            <img class="vg-case-img" src="/assets/img/poster/05.jpg?v=107c9ca15f3d"
+                width="1344" height="768" alt="" loading="lazy" decoding="async">
+              <span class="vg-case-tag">768P</span>
+              <div class="vg-case-hint">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+              </div>
+            </div>
+                                      <button type="button" class="vg-use-prompt vg-use-prompt-case" data-use-prompt="必须遵循以下提示词，不允许改动：
+15秒4K24帧顶级科幻电影画面，好莱坞IMAX 70mm胶片质感。深邃宇宙、强烈漆黑光影与太阳直射发光对比。极具真实感的宇航服细节、金色镀膜面罩反射与微重力漂浮物理。画面动作、宇航员无线电对白与音效极度精准卡点同步。
+[核心视觉与人物设定]
+宇航员：身穿白金色高精度重型舱外宇航服，带有微型推进器背包与使命胸章。头盔金色镀膜面罩上清晰折射着前方璀璨的星系与虫洞。
+画面质感：真实太空冷冽感、镜头耀斑（Lens Flare）与微弱的太空粒子漂浮。
+[0-3秒｜深空漂浮与面罩倒影]
+镜头极近距离特写宇航员头盔面罩。浩瀚的蓝色星云与发光虫洞在金色面罩上清晰折射。面罩内是宇航员坚毅的眼神。无线电传来清晰的粗重呼吸声与电流杂音，宇航员冷静念出对白：“Control, I have reached the perimeter...” (指挥中心，我已到达星系边缘……)。
+[3-6秒｜风暴袭来与紧急推进]
+警报红光突然在面罩上闪烁！远处爆发耀眼的太阳高能粒子风暴，碎片极速掠过。宇航员启动背包推进器，镜头跟随他在太空站巨型金属构架间翻滚躲避。无线电急促鸣响，宇航员紧张喊出对白：“Warning! Solar storm incoming! Initiating emergency thrusters!” (警告！太阳风暴袭来！启动紧急推进器！)。
+[6-10秒｜决绝一跃与虫洞张开]
+极速推近镜头（Crash Zoom）。宇航员张开双手，纵身跃向前方轰然张开的巨型金色虫洞光环。时空在宇航服周围发生引力扭曲与光线弯曲。重低音爆（Bass Drop）炸响，宇航员决绝念出对白：“Crossing the point of no return... For humanity.” (越过绝望之界……为了人类。)。
+[10-13秒｜时空折叠与新家园]
+FPV视角穿过虫洞。周围的星光拉伸成璀璨的光流，前方显现出一颗散发着宜居蓝光的神秘新行星。光芒穿透面罩照射在宇航员脸上。无线电杂音化为空灵的电子音，宇航员深情念出对白：“A new home awaits us in the stars...” (新家园，在星海深处呼唤……)。
+[13-15秒｜宇宙全景与标题定格]
+镜头急速拉远，宇航员缩小为浩瀚星海中的一颗光点。3D电影感金属发光标题“PROJECT HORIZON”（地平线计划）在虚空中重音定格。无线电发出清脆的电波闭合声，宇航员最后的低语收尾：“Project Horizon... online.” (地平线计划……开启。)。
+[背景音乐与音效设计]
+全片贯穿汉斯·季默风格的管风琴与现代科幻重低音BGM。0-3秒为寂静太空中的心跳与呼吸声；3-6秒加入刺耳的机械警报与推进器喷气声；6-10秒爆发磅礴的管风琴高潮与引力撕裂音效；13-15秒以一声震撼的电影重音（Cinematic Impact）定格，余音化为空灵电波收尾。
+[负面约束]
+绝对禁止出现廉价2D特效、游戏动画感或不真实的物理漂浮。禁止宇航服结构破损穿模。禁止标题拼写错误。无线电对白与音效必须严格与画面卡点同步。">
+                <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                  <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                </svg>
+                <span>使用提示词</span>
+                <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                </svg>
+              </button>
+                        <div class="vg-case-info">
+              <p class="vg-case-prompt">地平线计划：宇航员穿越太阳风暴纵身跃入虫洞，抵达宜居新星</p>
+            </div>
+          </div>
+                                      <div class="vg-case-card" data-case-video data-case-src="/assets/video/metaso/seedance2-136.mp4?v=e887c6925462">
+            <div class="vg-case-img-box">
+                            <img class="vg-case-img" src="/assets/img/poster/seedance2-136.jpg?v=41ddad8ff44a"
+                width="1344" height="768" alt="" loading="lazy" decoding="async">
+              <span class="vg-case-tag">768P</span>
+              <div class="vg-case-hint">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+              </div>
+            </div>
+                                      <button type="button" class="vg-use-prompt vg-use-prompt-case" data-use-prompt="10秒视频。【风格】
+诗意仙侠冷面反转喜剧，真实电影高清质感，采用古典中国建筑式空间构图、克制表演、清冷山雾、傍晚暖色轮廓光、低饱和玉绿色与象牙白色调、细腻胶片颗粒；通过“铺垫—误导—画外回马枪”的声音叙事完成反转，针对 Seedance 2.0 的参考图锁定、多镜头连续生成和同步空间音效进行设计，全片只出现两名可见角色，建立纯古代中国世界，不出现任何现代元素。
+
+【角色】
+角色 A 使用 @图片 1 严格锁定：同一个 25–30 岁的东亚剑仙师姐，椭圆脸，白皙肤色，深色杏眼，黑色长发半挽，以白玉簪固定，身材高挑纤细，穿白色刺绣真丝汉服、分层半透明宽袖、银色腰封、玉佩和白色布靴。
+角色 B 使用 @图片 2 严格锁定：同一个 20–25 岁的东亚小师妹，圆润灵动的脸，黑发编辫，身形娇小，穿青绿色亚麻汉服、深色布腰带、木簪和黑色布鞋。
+
+【镜头 1｜0–3s｜低角度全景横向跟拍】
+云海之上的安静宗门石台，石栏、古老回音壁、九只悬挂青铜铃、盘曲古松、随风飘动的祈福布条和远处瓦顶殿宇共同建立清楚稳定的空间关系。同一个穿白色刺绣真丝汉服的剑仙师姐站在同一个青衣小师妹身旁，谨慎环顾四周，露出准备分享秘密的自信神情；山风轻轻带动两人的头发、衣袖、布条和薄雾。
+
+【镜头 2｜3–6s｜双人中景】
+同一个剑仙师姐抬起两指，在嘴边结出一个小型传音法印，压低声音说道：“告诉你一个秘密，师父昨夜偷吃了三块桂花糕。”一道纤细的淡蓝色声波精准飞向同一个小师妹的耳边；她瞬间瞪大眼睛，抬手捂住嘴，努力忍住笑。
+
+【镜头 3｜6–10s｜近景跟随揭晓转极近特写】
+同一道声波没有及时停下，越过小师妹撞上同一面古老回音壁，随后依次反弹穿过同样九只青铜铃，把刚才的悄悄话以巨大回声传遍整座山谷：“师父昨夜偷吃了三块桂花糕——”九只青铜铃按顺序震动，远处殿宇屋顶上的鸟群受惊飞散。主殿方向传来一位不可见老者的一声轻咳，随后平静问道：“第四块，是谁吃的？”同一个剑仙师姐和同一个小师妹同时僵住。极近特写：剑仙师姐举起的两根手指缓慢蜷缩，一侧眉毛轻轻抽动，默默转眼看向小师妹；小师妹的两边脸颊明显鼓起。最后以一声极轻、充满心虚感的吞咽声结束。
+
+【技术要求】
+严格总时长 10 秒，16:9 横屏，三个清楚镜头，原生普通话对白，口型准确，悄悄话具有明确方向移动，青铜铃回声层次清晰，人物面部和服装稳定，运动方向连贯，山雾、真丝衣料、头发、铜铃、布条与声波运动自然，不生成字幕，不增加其他可见人物。
+
+【负面词】
+blurry, bad quality, low quality, low resolution, noisy, jpeg artifacts, watermark, text, error; deformed, mutated, bad anatomy, poorly drawn hands, bad composition, out of frame, disfigured; inconsistent character, changing clothes, face morphing, background shift, glitching cuts, disappearing props">
+                <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                  <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                </svg>
+                <span>使用提示词</span>
+                <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                </svg>
+              </button>
+                        <div class="vg-case-info">
+              <p class="vg-case-prompt">仙侠冷面喜剧：师姐传音说秘密，声波撞上回音壁传遍整座山谷</p>
+            </div>
+          </div>
+                                      <div class="vg-case-card" data-case-video data-case-src="/assets/video/metaso/seedance-020.mp4?v=89fef5c64972">
+            <div class="vg-case-img-box">
+                            <img class="vg-case-img" src="/assets/img/poster/seedance-020.jpg?v=069a2c81b726"
+                width="1344" height="768" alt="" loading="lazy" decoding="async">
+              <span class="vg-case-tag">768P</span>
+              <div class="vg-case-hint">
+                <span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+              </div>
+            </div>
+                                      <button type="button" class="vg-use-prompt vg-use-prompt-case" data-use-prompt="15秒视频。在一个猫取代人类的未来世界里，这些猫科动物利用智能和先进技术建立了新的社会。在这个世界里，敌对的猫派系爆发了激烈的冲突，这些派系拥有尖端机器人武器、高超音速无人机和智能纳米技术。随着镜头穿梭这场史诗般的战斗，每只猫的动作和策略都被捕捉下来，不仅展现了争夺主导权的战斗，更展现了一场由情感、领导力和未来抱负驱动的斗争。整个故事配有宏大的配乐，让观众沉浸在一场由猫咪主导的科技战争的生动电影体验中。">
+                <svg class="vg-use-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l1.9 5.2L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.8z"/>
+                  <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+                </svg>
+                <span>使用提示词</span>
+                <svg class="vg-use-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H9M17 7v8"/>
+                </svg>
+              </button>
+                        <div class="vg-case-info">
+              <p class="vg-case-prompt">橘白猫的极近特写，逆光下胡须与瞳孔纹理纤毫可见，缓慢眨眼</p>
+            </div>
+          </div>
+              </div>
+    </section>
+  </main>
+
+  <footer class="vg-footer">
+    <span>&copy; 2026 宇天科技 · 视频由 MiniMax-H3 模型生成，请遵守相关法律法规与平台规范</span>
+  </footer>
+
+  <script src="/assets/js/user.js?v=5d2dbfa8b598" defer></script>
+  <script src="https://kefu.yutiankejiai.com/widget.js" data-from="user/video" data-hint="sham" defer></script>
+
+    <dialog class="dialog dialog-xl vg-recharge-dialog" id="vg-recharge-dialog">
+    <div class="dialog-head">
+      <h3>充值积分</h3>
+      <button type="button" class="dialog-x" data-close-dialog="vg-recharge-dialog" aria-label="关闭">×</button>
+    </div>
+                      
+          <div class="amount-grid" data-username="sham" data-kefu-from="user/video"
+            data-gate-amount="0" data-gate-yuan="0">
+                          <button type="button" class="amount-cell" data-amount="300"
+                data-points="330"
+                data-payable="1">
+                                  <span class="amount-tag">特别推荐</span>
+                ¥ 300                <small class="amount-pts">330 积分</small>
+                                  <small class="amount-bonus">多赠 10%</small>
+                                              </button>
+                          <button type="button" class="amount-cell" data-amount="600"
+                data-points="700"
+                data-payable="1">
+                ¥ 600                <small class="amount-pts">700 积分</small>
+                                  <small class="amount-bonus">多赠 17%</small>
+                                              </button>
+                          <button type="button" class="amount-cell" data-amount="1100"
+                data-points="1300"
+                data-payable="1">
+                ¥ 1100                <small class="amount-pts">1300 积分</small>
+                                  <small class="amount-bonus">多赠 18%</small>
+                                              </button>
+                          <button type="button" class="amount-cell" data-amount="2200"
+                data-points="2600"
+                data-payable="1">
+                                  <span class="amount-tag amount-tag-alt">大额首选</span>
+                ¥ 2200                <small class="amount-pts">2600 积分</small>
+                                  <small class="amount-bonus">多赠 18%</small>
+                                              </button>
+                        <button type="button" class="amount-cell amount-biz" data-biz>
+              <span class="amount-tag amount-tag-alt">商务合作</span>大额充值
+              <small class="amount-pts">联系客户经理</small>
+            </button>
+          </div>
+
+                    <div class="epay-box" id="epay-box" data-epay-box data-create="/?ajax=epay_create" data-status="/?ajax=epay_status"
+            data-cs-create="/?ajax=consign_create" data-cs-status="/?ajax=consign_status"
+            data-csrf="fe2331a15e0e6995a74ddd026e4de9317fcac495754fd84e240bc9c9dc350e39" data-channels="{&quot;recharge:300&quot;:[&quot;epay&quot;],&quot;recharge:600&quot;:[&quot;epay&quot;],&quot;recharge:1100&quot;:[&quot;epay&quot;],&quot;recharge:2200&quot;:[],&quot;sub:ultra&quot;:[&quot;epay&quot;],&quot;sub:plan4&quot;:[&quot;epay&quot;],&quot;sub:plan5&quot;:[&quot;epay&quot;],&quot;sub:plan6&quot;:[&quot;epay&quot;],&quot;sub:yt-plus&quot;:[&quot;epay&quot;]}" hidden>
+            <div class="epay-tabs" role="tablist">
+              <button type="button" class="epay-tab" data-epay-tab="jiyuan" role="tab" aria-selected="false">支付通道 1<small>支付宝扫码 · 付完自动到账</small></button>
+              <button type="button" class="epay-tab" data-epay-tab="epay" role="tab" aria-selected="false">支付通道 2<small>支付宝在线付款 · 付完自动到账</small></button>
+              <button type="button" class="epay-tab" data-epay-tab="catfk" role="tab" aria-selected="false">支付通道 4<small>支付宝扫码 · 付完自动到账</small></button>
+            </div>
+            <div class="epay-pane" data-cs-pane hidden>
+              <p class="epay-sum">应付 <b data-cs-sum>—</b><span data-cs-desc></span></p>
+              <button type="button" class="btn-primary epay-go" data-cs-go>生成支付宝付款码</button>
+              <div class="cs-qr" data-cs-qr hidden></div>
+              <a class="btn-primary cs-open" data-cs-open href="#" rel="noopener noreferrer" hidden>打开支付宝付款</a>
+              <p class="epay-msg" data-cs-msg hidden></p>
+              <p class="epay-tip">用支付宝扫码付款，付款成功后自动到账，不用填订单号；付款码 5 分钟内有效，过期重新生成即可。遇到问题？<a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fvideo&amp;msg=%E5%9C%A8%E7%BA%BF%E4%BB%98%E6%AC%BE%E9%81%87%E5%88%B0%E9%97%AE%E9%A2%98%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/video" data-kefu-msg="在线付款遇到问题：用户名 sham" target="_blank" rel="noopener">联系在线客服</a></p>
+            </div>
+            <div class="epay-pane" data-epay-pane hidden>
+              <p class="epay-sum">应付 <b data-epay-sum>—</b><span data-epay-desc></span></p>
+              <button type="button" class="btn-primary epay-go" data-epay-go>使用支付宝付款</button>
+              <a class="epay-reopen" data-epay-reopen href="#" target="_blank" rel="noopener noreferrer" hidden>付款页面没打开？点这里重新打开</a>
+              <p class="epay-msg" data-epay-msg hidden></p>
+              <p class="epay-tip">电脑会在新标签页打开支付宝付款页面，手机直接跳转支付宝；付款成功后自动到账，不用填订单号。遇到问题？<a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fvideo&amp;msg=%E5%9C%A8%E7%BA%BF%E4%BB%98%E6%AC%BE%E9%81%87%E5%88%B0%E9%97%AE%E9%A2%98%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/video" data-kefu-msg="在线付款遇到问题：用户名 sham" target="_blank" rel="noopener">联系在线客服</a></p>
+            </div>
+          </div>
+        
+          <!-- 在线支付面板（有码面额点选展开） -->
+          <div class="pay-panel" id="pay-panel" hidden>
+            <input type="hidden" id="pay-csrf" value="fe2331a15e0e6995a74ddd026e4de9317fcac495754fd84e240bc9c9dc350e39">
+            <div class="pay-qr-box">
+              <img id="pay-qr" src="" alt="支付宝收款码" width="190" height="190" decoding="async">
+              <span class="pay-qr-label">支付宝扫码支付 <b id="pay-amount">—</b> 元</span>
+            </div>
+            <div class="pay-steps">
+              <ol class="notice-list">
+                <li>支付宝扫左侧二维码，支付 <b id="pay-amount2">—</b> 元（金额固定不可改）；</li>
+                <li>付款完成后，在支付宝「账单」中打开这笔付款，找到<b>订单号后 6 位</b>；</li>
+                <li>填入下方并点「我已付款」，约 10 秒内自动到账 <b id="pay-points">—</b> 积分。</li>
+                                <li class="pay-gate-note" id="pay-gate-note" hidden></li>
+              </ol>
+              <div class="pay-claim-row">
+                <input type="text" id="pay-order" class="pay-order-input" inputmode="numeric" maxlength="64" data-d6
+                  placeholder="订单号后 6 位" autocomplete="off">
+                <button type="button" class="btn-primary" id="pay-claim">我已付款，立即到账</button>
+              </div>
+              <p class="pay-status" id="pay-status" hidden></p>
+              <p class="pay-fallback">遇到问题？<a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fvideo&amp;msg=%E5%9C%A8%E7%BA%BF%E5%85%85%E5%80%BC%E9%81%87%E5%88%B0%E9%97%AE%E9%A2%98%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/video" data-kefu-msg="在线充值遇到问题：用户名 sham" class="pay-help-link" target="_blank" rel="noopener">联系在线客服</a> 人工处理。</p>
+            </div>
+          </div>
+
+          <!-- 客服入账面板（无码面额点选展开） -->
+          <div class="amount-cta" id="amount-cta" hidden>
+            <p>已选金额 <b id="amount-val">—</b> 元 · 到账 <b id="amount-pts-val">—</b> 积分 · 该面额暂未开通在线支付，点下方按钮联系在线客服，充值信息已为您填好，发送即可由客服入账：</p>
+            <div class="amount-copy-row">
+              <code class="amount-copy-text" id="amount-copy-text">—</code>
+              <a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fvideo&amp;msg=%E5%85%85%E5%80%BC%E7%94%B3%E8%AF%B7%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/video" data-kefu-msg="充值申请：用户名 sham" class="btn-primary amount-kefu-btn" target="_blank" rel="noopener">联系在线客服入账</a>            </div>
+          </div>
+
+          <!-- 商务合作面板 -->
+          <div class="amount-cta" id="biz-panel" hidden>
+            <p>大额充值 / 商务合作，请通过在线客服「代理咨询」联系<b>客户经理</b>，享受专属充值方案与技术支持。</p>
+            <div class="amount-copy-row">
+              <a href="https://kefu.yutiankejiai.com/chat/?from=user%2Fvideo&amp;msg=%E5%95%86%E5%8A%A1%E5%90%88%E4%BD%9C%E5%92%A8%E8%AF%A2%EF%BC%9A%E7%94%A8%E6%88%B7%E5%90%8D%20sham" data-kefu="" data-kefu-from="user/video" data-kefu-msg="商务合作咨询：用户名 sham" class="btn-primary" target="_blank" rel="noopener">联系客户经理</a>            </div>
+          </div>
+                    <p class="vg-recharge-foot">到账后余额自动刷新，可直接继续创建视频。</p>
+  </dialog>
+
+      <dialog class="dialog vg-prompt-dialog" id="vg-prompt-dialog">
+    <div class="dialog-head">
+      <h3>创作提示词<span class="vg-pd-meta" id="vg-prompt-dialog-meta"></span></h3>
+      <button type="button" class="dialog-x" data-close-dialog="vg-prompt-dialog" aria-label="关闭">×</button>
+    </div>
+    <div class="vg-pd-body" id="vg-prompt-dialog-text"></div>
+    <div class="vg-pd-foot">
+      <button type="button" class="vg-pd-reuse" id="vg-prompt-dialog-reuse" data-vg-reuse="">
+        填入创作框再来一条
+      </button>
+            <button type="button" class="copy-btn vg-pd-copy" id="vg-prompt-dialog-copy" data-copy="">
+        复制
+      </button>
+    </div>
+  </dialog>
+
+  <dialog class="dialog dialog-xl vg-wizard-dialog" id="vg-wizard-dialog">
+    <div class="dialog-head">
+      <h3>风格向导<span class="vg-wiz-sub" id="vg-wiz-sub">选一种片子类型，我来问你几个问题</span></h3>
+      <button type="button" class="dialog-x" data-close-dialog="vg-wizard-dialog" aria-label="关闭">×</button>
+    </div>
+
+        <div class="vg-wiz-styles" id="vg-wiz-styles">
+      <div class="vg-wiz-loading">正在加载风格…</div>
+    </div>
+
+        <div class="vg-wiz-chat" id="vg-wiz-chat" hidden>
+      <div class="vg-wiz-log" id="vg-wiz-log"></div>
+      <div class="vg-wiz-input-row">
+        <textarea id="vg-wiz-input" class="vg-wiz-input" rows="2" maxlength="1000"
+          placeholder="回答上面的问题，或直接说「你决定」"></textarea>
+        <button type="button" class="vg-wiz-send" id="vg-wiz-send" aria-label="发送">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+            <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="vg-wiz-foot">
+        <button type="button" class="vg-wiz-back" id="vg-wiz-back">换个风格</button>
+        <div class="vg-wiz-foot-right">
+                    <button type="button" class="vg-wiz-finish" id="vg-wiz-finish" hidden>
+            够了，直接生成
+          </button>
+          <button type="button" class="vg-wiz-use" id="vg-wiz-use" hidden>
+            填入创作框并关闭
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+</body>
+</html>
