@@ -264,7 +264,7 @@ async function handleUserApi(req, res, url) {
     const k = platform.listKeys(me.id).find(x => x.id === keyRe[1]);
     if (!k) return sendJson(res, 404, { ok: false, error: 'Key 不存在' });
     if (method === 'PUT') {
-      ['name', 'enabled', 'quota'].forEach(f => { if (body[f] != null) k[f] = body[f]; });
+      ['name', 'enabled', 'quota', 'limit_rpm', 'limit_tpm'].forEach(f => { if (body[f] != null) k[f] = body[f]; });
       if (Array.isArray(body.models)) k.models = body.models;
       store.save();
       return sendJson(res, 200, { ok: true, key: k });
@@ -281,7 +281,7 @@ async function handleUserApi(req, res, url) {
     const items = platform.listLogs({
       user_id: me.id, key_id: url.searchParams.get('key_id') || undefined,
       since: url.searchParams.get('from') || undefined,
-    }).slice(0, 200);
+    }).slice(0, Math.min(1000, Number(url.searchParams.get('limit')) || 200));
     return sendJson(res, 200, { ok: true, items, total: items.length });
   }
 
@@ -1224,6 +1224,174 @@ const api = async (req, res, url) => {
       store.save();
       return sendJson(res, 200, { ok: true, thread: t });
     }
+  }
+
+  /* ---- 用户分组与倍率 ---- */
+  if (p === '/api/admin/groups' && method === 'GET') {
+    const groups = platform.ensureGroups();
+    const counts = {};
+    (db.users || []).forEach(u => { const g = u.group || 'default'; counts[g] = (counts[g] || 0) + 1; });
+    return sendJson(res, 200, { items: groups.map(g => Object.assign({}, g, { users: counts[g.id] || 0 })) });
+  }
+  if (p === '/api/admin/groups' && method === 'POST') {
+    const groups = platform.ensureGroups();
+    const id = String(body.id || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (!id) return sendJson(res, 400, { error: '分组标识不能为空' });
+    if (groups.some(g => g.id === id)) return sendJson(res, 400, { error: '分组已存在' });
+    const g = { id, name: body.name || id, ratio: Number(body.ratio) || 1, description: body.description || '' };
+    groups.push(g);
+    store.audit(admin.username, 'group-create', id, '新增分组 ' + g.name);
+    store.save();
+    return sendJson(res, 200, { ok: true, group: g });
+  }
+  const groupRe = /^\/api\/admin\/groups\/([\w-]+)$/.exec(p);
+  if (groupRe) {
+    const groups = platform.ensureGroups();
+    const g = groups.find(x => x.id === groupRe[1]);
+    if (!g) return sendJson(res, 404, { error: '分组不存在' });
+    if (method === 'PUT') {
+      if (body.name != null) g.name = String(body.name);
+      if (body.ratio != null) g.ratio = Number(body.ratio);
+      if (body.description != null) g.description = String(body.description);
+      store.audit(admin.username, 'group-update', g.id, '更新分组 ' + g.name + ' 倍率 ' + g.ratio);
+      store.save();
+      return sendJson(res, 200, { ok: true, group: g });
+    }
+    if (method === 'DELETE') {
+      if (g.id === 'default') return sendJson(res, 400, { error: '默认分组不可删除' });
+      const used = (db.users || []).filter(u => u.group === g.id).length;
+      if (used) return sendJson(res, 400, { error: '该分组下还有 ' + used + ' 个用户' });
+      const d = store.load();
+      d.platform.groups = d.platform.groups.filter(x => x.id !== g.id);
+      store.save();
+      return sendJson(res, 200, { ok: true });
+    }
+  }
+
+  /* ---- 用户分组调整 ---- */
+  const ugRe = /^\/api\/admin\/users\/([\w-]+)\/group$/.exec(p);
+  if (ugRe && method === 'PUT') {
+    const u = (db.users || []).find(x => x.id === ugRe[1]);
+    if (!u) return sendJson(res, 404, { error: '用户不存在' });
+    u.group = String(body.group || 'default');
+    store.audit(admin.username, 'user-group', u.username, '调整分组 → ' + u.group);
+    store.save();
+    return sendJson(res, 200, { ok: true, user: { id: u.id, group: u.group } });
+  }
+
+  /* ---- 全站令牌管理 ---- */
+  if (p === '/api/admin/tokens' && method === 'GET') {
+    const q = url.searchParams.get('q') || '';
+    const status = url.searchParams.get('status') || '';
+    const users = {};
+    (db.users || []).forEach(u => { users[u.id] = u.username; });
+    let list = ((db.platform && db.platform.keys) || []).map(k => ({
+      id: k.id, name: k.name, key: k.key, masked: platform.maskKey(k.key),
+      user_id: k.user_id, username: users[k.user_id] || k.user_id,
+      enabled: k.enabled, quota: k.quota, used: k.used, models: k.models,
+      created_at: k.created_at, last_used_at: k.last_used_at, expires_at: k.expires_at,
+    }));
+    if (status === 'on') list = list.filter(x => x.enabled);
+    if (status === 'off') list = list.filter(x => !x.enabled);
+    if (q) list = list.filter(x => textMatch(x, q, ['name', 'username', 'key']));
+    list.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+    return sendJson(res, 200, paginate(list, url, 20));
+  }
+  const tkRe = /^\/api\/admin\/tokens\/([\w-]+)$/.exec(p);
+  if (tkRe) {
+    const d = store.load();
+    const k = ((d.platform && d.platform.keys) || []).find(x => x.id === tkRe[1]);
+    if (!k) return sendJson(res, 404, { error: '令牌不存在' });
+    if (method === 'PUT') {
+      if (body.enabled != null) k.enabled = !!body.enabled;
+      if (body.quota != null) k.quota = Number(body.quota) || 0;
+      if (body.name != null) k.name = String(body.name);
+      if (Array.isArray(body.models)) k.models = body.models;
+      store.audit(admin.username, 'token-update', k.name, '更新令牌 ' + k.name);
+      store.save();
+      return sendJson(res, 200, { ok: true, token: k });
+    }
+    if (method === 'DELETE') {
+      d.platform.keys = d.platform.keys.filter(x => x.id !== k.id);
+      store.save();
+      return sendJson(res, 200, { ok: true });
+    }
+  }
+
+  /* ---- 日志导出 CSV ---- */
+  if (p === '/api/admin/logs/export' && method === 'GET') {
+    const d = store.load();
+    const users = {};
+    (d.users || []).forEach(u => { users[u.id] = u.username; });
+    const rows = [['时间', '用户', '模型', '输入token', '输出token', '扣费', '耗时ms', '状态', '错误']];
+    ((d.platform && d.platform.logs) || []).forEach(l => {
+      rows.push([l.at, users[l.user_id] || l.user_id, l.model, l.prompt_tokens || 0, l.completion_tokens || 0,
+        l.cost || 0, l.ms || 0, l.status, (l.error || '').replace(/[,\n]/g, ' ')]);
+    });
+    const csv = '\ufeff' + rows.map(r => r.join(',')).join('\n');
+    res.writeHead(200, {
+      'content-type': 'text/csv; charset=utf-8',
+      'content-disposition': 'attachment; filename="logs-' + new Date().toISOString().slice(0, 10) + '.csv"',
+    });
+    return res.end(csv);
+  }
+
+  /* ---- 备份与恢复 ---- */
+  if (p === '/api/admin/backups' && method === 'GET') {
+    return sendJson(res, 200, { items: platform.listBackups() });
+  }
+  if (p === '/api/admin/backups' && method === 'POST') {
+    const b = platform.createBackup('manual');
+    store.audit(admin.username, 'backup-create', b.name, '手动备份 ' + b.name);
+    return sendJson(res, 200, { ok: true, backup: b });
+  }
+  const bkRe = /^\/api\/admin\/backups\/([\w.\-]+)(\/restore)?$/.exec(p);
+  if (bkRe) {
+    if (method === 'DELETE') {
+      const fs2 = require('fs');
+      const f = path.join(ROOT, 'backups', bkRe[1].replace(/[\/\\]/g, ''));
+      if (!fs2.existsSync(f)) return sendJson(res, 404, { error: '备份不存在' });
+      fs2.unlinkSync(f);
+      return sendJson(res, 200, { ok: true });
+    }
+    if (bkRe[2] && method === 'POST') {
+      const r = platform.restoreBackup(bkRe[1]);
+      if (r.error) return sendJson(res, 400, { error: r.error });
+      store.audit(admin.username, 'backup-restore', bkRe[1], '恢复备份 ' + bkRe[1]);
+      return sendJson(res, 200, { ok: true });
+    }
+  }
+
+  /* ---- 渠道批量检测 ---- */
+  if (p === '/api/admin/channels/check-all' && method === 'POST') {
+    const d = store.load();
+    const list = ((d.platform && d.platform.channels) || []).filter(c => c.enabled !== false);
+    const results = [];
+    for (const c of list) {
+      const r = await platform.checkChannel(c);
+      results.push({ id: c.id, name: c.name, ok: r.ok, error: r.error || '', latency: r.latency || 0 });
+    }
+    store.save();
+    return sendJson(res, 200, { ok: true, results });
+  }
+
+  /* ---- 平台设置 ---- */
+  if (p === '/api/admin/settings/platform' && method === 'GET') {
+    const d = store.load();
+    const s2 = d.settings && d.settings.platform ? d.settings.platform : {};
+    return sendJson(res, 200, Object.assign({
+      register_enabled: true, invite_bonus: 5, new_user_points: 0,
+      default_rpm: 60, default_tpm: 200000, free_trial_points: 0,
+      announcement: '', maintenance_notice: '',
+    }, s2));
+  }
+  if (p === '/api/admin/settings/platform' && method === 'PUT') {
+    const d = store.load();
+    d.settings = d.settings || {};
+    d.settings.platform = Object.assign({}, d.settings.platform || {}, body);
+    store.audit(admin.username, 'platform-settings', '平台设置', '更新平台参数');
+    store.save();
+    return sendJson(res, 200, { ok: true, settings: d.settings.platform });
   }
 
   /* ---- 系统状态 ---- */

@@ -141,7 +141,8 @@ class CDP {
     });
 
     const menus = ['models', 'brands', 'notice', 'pages', 'ucPlans', 'ucPages', 'ucRedeem', 'ucProfile',
-      'users', 'orders', 'tickets', 'leads', 'settings', 'security', 'audit'];
+      'channels', 'tokens', 'groups', 'logs', 'support',
+      'users', 'orders', 'tickets', 'leads', 'settings', 'backups', 'security', 'audit'];
     for (const m of menus) {
       await step('菜单 ' + m, async () => {
         await cdp.eval(`(() => { location.hash = '#/${m}'; return true; })()`);

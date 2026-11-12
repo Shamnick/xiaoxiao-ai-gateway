@@ -144,6 +144,8 @@
     {
       group: '中转运营', items: [
         { id: 'channels', label: '上游渠道', icon: '⇄' },
+        { id: 'tokens', label: '令牌管理', icon: '⌗' },
+        { id: 'groups', label: '分组倍率', icon: '◑' },
         { id: 'logs', label: '调用日志', icon: '≡' },
         { id: 'support', label: '在线客服', icon: '✆' },
       ]
@@ -159,6 +161,7 @@
     {
       group: '系统', items: [
         { id: 'settings', label: '站点设置', icon: '⚙' },
+        { id: 'backups', label: '备份与恢复', icon: '⛁' },
         { id: 'security', label: '账号与安全', icon: '⚿' },
         { id: 'audit', label: '操作日志', icon: '⟲' },
       ]
@@ -631,6 +634,76 @@
     },
   };
 
+  /* ---------------- 中转运营：令牌管理 ---------------- */
+  VIEWS.tokens = {
+    id: 'tokens',
+    title: '令牌管理',
+    async render() {
+      const s = vs('tokens');
+      const d = await api('/tokens?' + new URLSearchParams({ page: s.page, size: s.size, q: s.q || '', status: s.status || '' }));
+      const rows = (d.items || []).map(t =>
+        '<tr><td class="mono cell-sub">' + esc(t.id) + '</td>' +
+        '<td><div class="cell-main">' + esc(t.name) + '</div><div class="cell-sub mono">' + esc(t.masked) + '</div></td>' +
+        '<td>' + esc(t.username) + '</td>' +
+        '<td class="num">' + (t.quota > 0 ? t.quota : '按余额') + '</td>' +
+        '<td class="num">' + t.used + '</td>' +
+        '<td>' + (t.enabled ? '<span class="badge on">启用</span>' : '<span class="badge off">停用</span>') + '</td>' +
+        '<td class="mono cell-sub">' + fmtDate(t.created_at) + '</td>' +
+        '<td><div class="acts"><button class="link-btn" data-act="token-toggle" data-id="' + t.id + '">' + (t.enabled ? '停用' : '启用') + '</button>' +
+        '<button class="link-btn" data-act="token-quota" data-id="' + t.id + '">改额度</button>' +
+        '<button class="link-btn danger" data-act="token-del" data-id="' + t.id + '">删除</button></div></td></tr>').join('');
+      return '<div class="card"><div class="card-head"><h3>全站令牌</h3><span class="sub">共 ' + d.total + ' 把 · 管理员可停用/改额度/删除</span></div><div class="card-pad">' +
+        '<div class="toolbar"><input class="inp search-inp" id="tkQ2" placeholder="搜索名称 / 用户 / 密钥" value="' + esc(s.q || '') + '">' +
+        '<select class="sel" id="tkStatus2"><option value="">全部状态</option>' +
+        [['on', '启用'], ['off', '停用']].map(x => '<option value="' + x[0] + '"' + (s.status === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') +
+        '</select><button class="btn btn-sm" data-act="token-query">查询</button></div>' +
+        '<div class="table-wrap"><table class="tbl"><thead><tr><th>ID</th><th>令牌</th><th>用户</th><th class="num">额度</th><th class="num">已用</th><th>状态</th><th>创建时间</th><th style="width:180px">操作</th></tr></thead>' +
+        '<tbody>' + (rows || '<tr><td colspan="8">' + emptyHTML('还没有令牌') + '</td></tr>') + '</tbody></table></div>' +
+        pagerHTML(d) + '</div></div>';
+    },
+  };
+
+  /* ---------------- 中转运营：分组倍率 ---------------- */
+  VIEWS.groups = {
+    id: 'groups',
+    title: '分组倍率',
+    async render() {
+      const d = await api('/groups');
+      const rows = (d.items || []).map(g =>
+        '<tr><td class="mono">' + esc(g.id) + '</td><td class="cell-main">' + esc(g.name) + '</td>' +
+        '<td class="num"><b>' + esc(g.ratio) + '×</b></td>' +
+        '<td class="cell-sub">' + esc(g.description || '') + '</td>' +
+        '<td class="num">' + (g.users || 0) + '</td>' +
+        '<td><div class="acts"><button class="link-btn" data-act="group-edit" data-id="' + esc(g.id) + '">编辑</button>' +
+        (g.id === 'default' ? '' : '<button class="link-btn danger" data-act="group-del" data-id="' + esc(g.id) + '">删除</button>') + '</div></td></tr>').join('');
+      return '<div class="card"><div class="card-head"><h3>用户分组与倍率</h3><span class="sub">实际扣费 = 基础价 × 分组倍率；0 倍率表示免费</span>' +
+        '<div class="right"><button class="btn btn-sm btn-primary" data-act="group-new">+ 新增分组</button></div></div>' +
+        '<div class="table-wrap"><table class="tbl"><thead><tr><th>标识</th><th>名称</th><th class="num">倍率</th><th>说明</th><th class="num">用户数</th><th style="width:130px">操作</th></tr></thead>' +
+        '<tbody>' + (rows || '<tr><td colspan="6">' + emptyHTML('还没有分组') + '</td></tr>') + '</tbody></table></div>' +
+        '<div class="card-pad help">示例：分组倍率 0.85 表示该组用户调用 100 积分按 85 积分扣；内部测试组设为 0 则不计费。用户分组在「用户管理 → 编辑」里调整。</div></div>';
+    },
+  };
+
+  /* ---------------- 系统：备份与恢复 ---------------- */
+  VIEWS.backups = {
+    id: 'backups',
+    title: '备份与恢复',
+    async render() {
+      const d = await api('/backups');
+      const rows = (d.items || []).map(b =>
+        '<tr><td class="mono">' + esc(b.name) + '</td>' +
+        '<td class="num">' + (b.size / 1048576).toFixed(2) + ' MB</td>' +
+        '<td class="mono cell-sub">' + fmtDate(b.mtime) + '</td>' +
+        '<td><div class="acts"><button class="link-btn" data-act="bk-restore" data-id="' + esc(b.name) + '">恢复</button>' +
+        '<button class="link-btn danger" data-act="bk-del" data-id="' + esc(b.name) + '">删除</button></div></td></tr>').join('');
+      return '<div class="card"><div class="card-head"><h3>数据备份</h3><span class="sub">共 ' + (d.items || []).length + ' 份 · 恢复前会自动备份当前数据</span>' +
+        '<div class="right"><button class="btn btn-sm btn-primary" data-act="bk-new">立即备份</button></div></div>' +
+        '<div class="table-wrap"><table class="tbl"><thead><tr><th>文件名</th><th class="num">大小</th><th>时间</th><th style="width:140px">操作</th></tr></thead>' +
+        '<tbody>' + (rows || '<tr><td colspan="4">' + emptyHTML('还没有备份', '点右上角「立即备份」创建第一份') + '</td></tr>') + '</tbody></table></div>' +
+        '<div class="card-pad help">备份文件位于 <code>backups/</code>，最多保留 30 份；恢复会覆盖当前数据库并自动生成一份 <code>pre-restore</code> 快照以便回滚。</div></div>';
+    },
+  };
+
   /* ---------------- 中转运营：上游渠道 ---------------- */
   VIEWS.channels = {
     id: 'channels',
@@ -654,7 +727,8 @@
         '<button class="link-btn" data-act="ch-toggle" data-id="' + esc(c.id) + '">' + (c.enabled === false ? '启用' : '停用') + '</button>' +
         '<button class="link-btn danger" data-act="ch-del" data-id="' + esc(c.id) + '">删除</button></div></td></tr>').join('');
       return '<div class="card"><div class="card-head"><h3>上游渠道</h3><span class="sub">调用 /v1/chat/completions 时按模型匹配渠道转发；未匹配则走内置演示渠道</span>' +
-        '<div class="right"><button class="btn btn-sm btn-primary" data-act="ch-new">+ 新增渠道</button></div></div>' +
+        '<div class="right"><button class="btn btn-sm" data-act="ch-check-all">全部检测</button>' +
+        '<button class="btn btn-sm btn-primary" data-act="ch-new">+ 新增渠道</button></div></div>' +
         '<div class="table-wrap"><table class="tbl"><thead><tr><th>渠道</th><th>类型</th><th>上游地址</th><th>模型</th><th class="num">权重</th><th>状态</th><th style="width:180px">操作</th></tr></thead>' +
         '<tbody>' + (rows || '<tr><td colspan="7">' + emptyHTML('还没有渠道') + '</td></tr>') + '</tbody></table></div>' +
         '<div class="card-pad help">支持填 OpenAI 兼容上游（如 New API / one-api 的 /v1 地址），模型填 <code>*</code> 表示该渠道承接全部模型。</div></div>';
@@ -681,7 +755,8 @@
         '<div class="toolbar"><input class="inp search-inp" id="logQ" placeholder="搜索模型 / 用户 / 错误" value="' + esc(s.q || '') + '">' +
         '<select class="sel" id="logStatus"><option value="">全部状态</option>' +
         [['success', '成功'], ['error', '失败']].map(x => '<option value="' + x[0] + '"' + (s.status === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') +
-        '</select><button class="btn btn-sm" data-act="log-query">查询</button></div>' +
+        '</select><button class="btn btn-sm" data-act="log-query">查询</button>' +
+        '<a class="btn btn-sm" href="/api/admin/logs/export" target="_blank" rel="noopener">导出 CSV</a></div>' +
         '<div class="table-wrap"><table class="tbl"><thead><tr><th>时间</th><th>用户</th><th>模型</th><th class="num">输入/输出 token</th><th class="num">扣费</th><th class="num">耗时</th><th>状态</th><th>备注</th></tr></thead>' +
         '<tbody>' + (rows || '<tr><td colspan="8">' + emptyHTML('还没有调用记录') + '</td></tr>') + '</tbody></table></div>' +
         pagerHTML(d) + '</div></div>';
@@ -1009,6 +1084,13 @@
         '<div class="field"><label class="fl">用户中心地址</label><input class="inp" id="sUser" style="width:100%" value="' + esc(s.user_center || '') + '"></div>' +
         '<div class="field"><label class="switch"><input type="checkbox" id="sNotice"' + (s.notice_enabled !== false ? ' checked' : '') + '><i></i>前台展示公告弹窗</label></div>' +
         '<div class="field"><label class="switch"><input type="checkbox" id="sMaint"' + (s.maintenance ? ' checked' : '') + '><i></i>维护模式（子页面 503）</label></div>' +
+        '<div class="divider"></div>' +
+        '<div class="field row2"><div><label class="fl">新用户赠送积分</label><input class="inp" id="pfNewPoints" type="number" style="width:100%" value="' + esc((s.platform && s.platform.new_user_points) || 0) + '"></div>' +
+        '<div><label class="fl">邀请奖励积分</label><input class="inp" id="pfInvite" type="number" style="width:100%" value="' + esc((s.platform && s.platform.invite_bonus) || 5) + '"></div></div>' +
+        '<div class="field row2"><div><label class="fl">默认 RPM 限制（0 = 不限）</label><input class="inp" id="pfRpm" type="number" style="width:100%" value="' + esc((s.platform && s.platform.default_rpm) || 60) + '"></div>' +
+        '<div><label class="fl">默认 TPM 限制</label><input class="inp" id="pfTpm" type="number" style="width:100%" value="' + esc((s.platform && s.platform.default_tpm) || 200000) + '"></div></div>' +
+        '<div class="field"><label class="switch"><input type="checkbox" id="pfRegister"' + (!s.platform || s.platform.register_enabled !== false ? ' checked' : '') + '><i></i>开放注册</label></div>' +
+        '<div class="field"><label class="fl">站内公告（显示在用户中心顶部，可留空）</label><textarea class="inp" id="pfAnn" style="width:100%;min-height:64px">' + esc((s.platform && s.platform.announcement) || '') + '</textarea></div>' +
         '<div class="warn-box">修改外链会全局替换前台页面中的旧地址（客服 / 续杯 / 用户中心）。</div>' +
         '<div class="toolbar" style="margin-top:14px"><button class="btn btn-primary" data-act="settings-save">保存设置</button>' +
         '<a class="btn" href="/" target="_blank" rel="noopener">打开前台</a></div>' +
@@ -1355,6 +1437,113 @@
         return;
       }
 
+      /* ----- 令牌管理 ----- */
+      if (act === 'token-query') {
+        const s = vs('tokens');
+        s.q = $('#tkQ2').value.trim(); s.status = $('#tkStatus2').value; s.page = 1;
+        return route();
+      }
+      if (act === 'token-toggle') {
+        const d = await api('/tokens?size=200');
+        const t = (d.items || []).find(x => x.id === id);
+        if (!t) return;
+        try { await api('/tokens/' + id, { method: 'PUT', body: { enabled: !t.enabled } }); toast('已切换'); route(); }
+        catch (err) { toast(err.message, 'err'); }
+        return;
+      }
+      if (act === 'token-quota') {
+        const d = await api('/tokens?size=200');
+        const t = (d.items || []).find(x => x.id === id);
+        if (!t) return;
+        openModal({
+          title: '设置额度 · ' + t.name,
+          body: '<div class="field"><label class="fl">额度（0 = 按账户余额计费）</label><input class="inp" id="tqVal" type="number" min="0" style="width:100%" value="' + t.quota + '"></div>',
+          footer: '<button class="btn" data-act="modal-close">取消</button><button class="btn btn-primary" id="tqSave">保存</button>',
+          onMount() {
+            $('#tqSave').addEventListener('click', async () => {
+              try {
+                await api('/tokens/' + t.id, { method: 'PUT', body: { quota: Number($('#tqVal').value) || 0 } });
+                closeModal(); toast('已更新'); route();
+              } catch (err) { toast(err.message, 'err'); }
+            });
+          },
+        });
+        return;
+      }
+      if (act === 'token-del') {
+        const ok = await askConfirm('删除后该令牌立即失效，确认删除？', '删除令牌', '删除');
+        if (!ok) return;
+        try { await api('/tokens/' + id, { method: 'DELETE' }); toast('已删除'); route(); }
+        catch (err) { toast(err.message, 'err'); }
+        return;
+      }
+
+      /* ----- 分组倍率 ----- */
+      if (act === 'group-new' || act === 'group-edit') {
+        const d = await api('/groups');
+        const g = act === 'group-edit' ? (d.items || []).find(x => x.id === id) : null;
+        openModal({
+          title: g ? '编辑分组 · ' + g.name : '新增分组',
+          body: (g ? '' : '<div class="field"><label class="fl">分组标识 *（英文）</label><input class="inp" id="gId" style="width:100%" placeholder="例如 vip"></div>') +
+            '<div class="field"><label class="fl">名称 *</label><input class="inp" id="gName" style="width:100%" value="' + esc(g ? g.name : '') + '"></div>' +
+            '<div class="field"><label class="fl">倍率（1 = 原价，0.85 = 85 折，0 = 免费）</label><input class="inp" id="gRatio" type="number" step="0.01" style="width:100%" value="' + esc(g ? g.ratio : 1) + '"></div>' +
+            '<div class="field"><label class="fl">说明</label><input class="inp" id="gDesc" style="width:100%" value="' + esc(g ? g.description || '' : '') + '"></div>',
+          footer: '<button class="btn" data-act="modal-close">取消</button><button class="btn btn-primary" id="gSave">保存</button>',
+          onMount() {
+            $('#gSave').addEventListener('click', async () => {
+              const payload = { name: $('#gName').value.trim(), ratio: Number($('#gRatio').value), description: $('#gDesc').value };
+              if (!payload.name) return toast('请填写名称', 'err');
+              try {
+                if (g) await api('/groups/' + g.id, { method: 'PUT', body: payload });
+                else await api('/groups', { method: 'POST', body: Object.assign({ id: $('#gId').value.trim() }, payload) });
+                closeModal(); toast('已保存'); route();
+              } catch (err) { toast(err.message, 'err'); }
+            });
+          },
+        });
+        return;
+      }
+      if (act === 'group-del') {
+        const ok = await askConfirm('删除分组前请确认该组下没有用户。', '删除分组', '删除');
+        if (!ok) return;
+        try { await api('/groups/' + id, { method: 'DELETE' }); toast('已删除'); route(); }
+        catch (err) { toast(err.message, 'err'); }
+        return;
+      }
+
+      /* ----- 备份 ----- */
+      if (act === 'bk-new') {
+        try { const d = await api('/backups', { method: 'POST' }); toast('已备份：' + d.backup.name); route(); }
+        catch (err) { toast(err.message, 'err'); }
+        return;
+      }
+      if (act === 'bk-restore') {
+        const ok = await askConfirm('恢复会用「' + id + '」覆盖当前数据库，确认继续？（会自动保存当前数据）', '恢复备份', '恢复');
+        if (!ok) return;
+        try { await api('/backups/' + encodeURIComponent(id) + '/restore', { method: 'POST' }); toast('已恢复，请刷新页面'); setTimeout(() => location.reload(), 800); }
+        catch (err) { toast(err.message, 'err'); }
+        return;
+      }
+      if (act === 'bk-del') {
+        const ok = await askConfirm('删除备份文件 ' + id + '？', '删除备份', '删除');
+        if (!ok) return;
+        try { await api('/backups/' + encodeURIComponent(id), { method: 'DELETE' }); toast('已删除'); route(); }
+        catch (err) { toast(err.message, 'err'); }
+        return;
+      }
+
+      /* ----- 渠道批量检测 ----- */
+      if (act === 'ch-check-all') {
+        toast('正在检测全部渠道…');
+        try {
+          const d = await api('/channels/check-all', { method: 'POST' });
+          const bad = (d.results || []).filter(r => !r.ok);
+          toast(bad.length ? (bad.length + ' 个渠道异常') : '全部渠道正常', bad.length ? 'err' : '');
+          route();
+        } catch (err) { toast(err.message, 'err'); }
+        return;
+      }
+
       /* ----- 中转运营：渠道 ----- */
       if (act === 'ch-new' || act === 'ch-edit') {
         const d = await api('/channels');
@@ -1675,6 +1864,14 @@
               analytics: $('#sAnalytics').value, kefu_base: $('#sKefu').value,
               refill_url: $('#sRefill').value, user_center: $('#sUser').value,
               notice_enabled: $('#sNotice').checked, maintenance: $('#sMaint').checked,
+              platform: {
+                register_enabled: $('#pfRegister').checked,
+                new_user_points: Number($('#pfNewPoints').value) || 0,
+                invite_bonus: Number($('#pfInvite').value) || 0,
+                default_rpm: Number($('#pfRpm').value) || 0,
+                default_tpm: Number($('#pfTpm').value) || 0,
+                announcement: $('#pfAnn').value,
+              },
             }
           });
           toast('设置已保存并生效');

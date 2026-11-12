@@ -359,11 +359,22 @@ function computeCost(model, usage) {
 function modelPrice(model) { return Number(modelPricing(model).request) || 0.01; }
 
 /* ------------------------------ 日志 ------------------------------ */
+let SAVE_TIMER = null;
+/** 合并写盘：200ms 内的多次变更只落盘一次，兼顾吞吐与持久化 */
+function scheduleSave() {
+  if (SAVE_TIMER) return;
+  SAVE_TIMER = setTimeout(() => {
+    SAVE_TIMER = null;
+    try { store.save(); } catch (e) { /* ignore */ }
+  }, 200);
+  if (SAVE_TIMER.unref) SAVE_TIMER.unref();
+}
+
 function addLog(row) {
   const { p } = data();
   p.logs.unshift(Object.assign({ id: nextId(p, 'l'), at: now() }, row));
   if (p.logs.length > 5000) p.logs.length = 5000;
-  store.save();
+  scheduleSave();
 }
 
 function listLogs(filter) {
@@ -434,7 +445,8 @@ async function relayChat(secret, body) {
   const balance = Number(user.balance) || 0;
   const frozen = Number(user.frozen) || 0;
   const estTokens = Math.ceil(JSON.stringify(body.messages || '').length / 3);
-  const estCost = Number(((Number(pr.request) || 0) + estTokens / 1e6 * (Number(pr.prompt) || 0)).toFixed(6));
+  const groupR = groupRatio(user);
+  const estCost = Number((((Number(pr.request) || 0) + estTokens / 1e6 * (Number(pr.prompt) || 0)) * (groupR || 1)).toFixed(6));
   const limit = rateLimit(key, estTokens);
   if (!limit.ok) {
     addLog({ user_id: user.id, key_id: key.id, model, status: 'error', cost: 0, ms: Date.now() - started, error: limit.error });
@@ -492,7 +504,9 @@ async function relayChat(secret, body) {
 
   const pt = Number(usage && usage.prompt_tokens) || 0;
   const ct = Number(usage && usage.completion_tokens) || 0;
-  const cost = computeCost(model, usage);
+  const baseCost = computeCost(model, usage);
+  const ratio = groupRatio(user);
+  const cost = Number((baseCost * (ratio || 0)).toFixed(6));
 
   if (key.quota > 0) key.used += 1;
   else {
@@ -508,7 +522,7 @@ async function relayChat(secret, body) {
     channel: usedChannel ? usedChannel.name : 'unknown',
     stream: !!stream,
   });
-  store.save();
+  scheduleSave();
   return { ok: true, data: payload, stream, usage, cost, channel: usedChannel ? usedChannel.name : '' };
 }
 
@@ -516,6 +530,7 @@ async function relayChat(secret, body) {
 function usageStats(userId, days) {
   const d = Math.min(90, Number(days) || 14);
   const logs = listLogs({ user_id: userId }).filter(l => {
+    if (l.model === '充值' || l.kind === 'recharge') return false;
     const t = new Date(l.at).getTime();
     return Date.now() - t <= d * 864e5;
   });
@@ -584,7 +599,7 @@ async function relayEmbeddings(secret, body) {
   user.balance = Number((balance - cost).toFixed(6));
   key.last_used_at = now();
   addLog({ user_id: user.id, key_id: key.id, model, status: 'success', cost, ms: Date.now() - started, prompt_tokens: tokens, completion_tokens: 0, kind: 'embeddings' });
-  store.save();
+  scheduleSave();
   return { ok: true, data: { object: 'list', data: data2, model, usage: { prompt_tokens: tokens, total_tokens: tokens } } };
 }
 
@@ -618,7 +633,7 @@ async function relayImages(secret, body) {
   user.balance = Number((balance - cost).toFixed(6));
   key.last_used_at = now();
   addLog({ user_id: user.id, key_id: key.id, model, status: 'success', cost, ms: Date.now() - started, prompt_tokens: 0, completion_tokens: 0, kind: 'images', images: n });
-  store.save();
+  scheduleSave();
   return { ok: true, data: { created: Math.floor(Date.now() / 1000), data: data2 } };
 }
 
@@ -638,7 +653,73 @@ function leaderboard(days) {
   return Object.values(map).sort((a, b) => b.calls - a.calls).slice(0, 20);
 }
 
+/* ------------------------------ 用户分组与倍率 ------------------------------ */
+function ensureGroups() {
+  const { db, p } = data();
+  if (!p.groups) {
+    p.groups = [
+      { id: 'default', name: '默认分组', ratio: 1, description: '标准倍率，适用于大多数用户' },
+      { id: 'svip', name: '高级分组', ratio: 0.85, description: '85 折倍率，适合长期高消耗客户' },
+      { id: 'internal', name: '内部测试', ratio: 0, description: '内部账号免计费' },
+    ];
+    store.save();
+  }
+  return p.groups;
+}
+
+function groupRatio(user) {
+  const groups = ensureGroups();
+  const g = groups.find(x => x.id === (user && user.group)) || groups.find(x => x.id === 'default');
+  return g ? Number(g.ratio) || 0 : 1;
+}
+
+/* ------------------------------ 备份 ------------------------------ */
+const BACKUP_DIR = require('path').join(__dirname, '..', 'backups');
+
+function listBackups() {
+  const fs = require('fs');
+  const path = require('path');
+  try {
+    if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    return fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.endsWith('.json'))
+      .map(f => {
+        const st = fs.statSync(path.join(BACKUP_DIR, f));
+        return { name: f, size: st.size, mtime: st.mtime.toISOString() };
+      })
+      .sort((a, b) => b.mtime.localeCompare(a.mtime));
+  } catch (e) { return []; }
+}
+
+function createBackup(tag) {
+  const fs = require('fs');
+  const path = require('path');
+  if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const name = 'db-' + stamp + (tag ? '-' + tag : '') + '.json';
+  fs.copyFileSync(store.DB_FILE, path.join(BACKUP_DIR, name));
+  // 只保留最近 30 份
+  const all = listBackups();
+  if (all.length > 30) {
+    all.slice(30).forEach(b => { try { fs.unlinkSync(path.join(BACKUP_DIR, b.name)); } catch (e) {} });
+  }
+  return { name, size: fs.statSync(path.join(BACKUP_DIR, name)).size, mtime: new Date().toISOString() };
+}
+
+function restoreBackup(name) {
+  const fs = require('fs');
+  const path = require('path');
+  const safe = String(name || '').replace(/[\/\\]/g, '');
+  const file = path.join(BACKUP_DIR, safe);
+  if (!fs.existsSync(file)) return { error: '备份不存在' };
+  createBackup('pre-restore');
+  fs.copyFileSync(file, store.DB_FILE);
+  store.reload();
+  return { ok: true };
+}
+
 module.exports = {
+  scheduleSave, ensureGroups, groupRatio, listBackups, createBackup, restoreBackup,
   rechargePlans, createOrder, findOrder, markPaid, checkChannel, healthTick, HEALTH, POINT_PER_YUAN,
   relayEmbeddings, relayImages, leaderboard,
   modelPricing, computeCost, routeCandidates, rateLimit, usageStats,
