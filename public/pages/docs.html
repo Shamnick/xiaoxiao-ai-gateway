@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API 文档 · 小小科技</title>
+<link rel="icon" type="image/png" href="/assets/img/logo.png">
+<link rel="stylesheet" href="/assets/css/site-dark.css">
+</head>
+<body>
+<header class="dk-top">
+  <a class="brand" href="/"><img src="/assets/img/logo.png" width="30" height="30" alt="">小小科技</a>
+  <nav class="dk-nav">
+    <a href="/">首页</a><a href="/?page=models">模型广场</a><a href="/pricing">价格</a>
+    <a href="/docs" class="on">API 文档</a><a href="/playground">Playground</a>
+  </nav>
+  <div class="right"><a href="/?page=login">控制台 →</a></div>
+</header>
+<main class="dk-wrap">
+  <div class="dk-head" style="margin-bottom:24px">
+    <h1>API 文档</h1>
+    <p>OpenAI 兼容接口，改一行 base_url 即可接入；支持流式输出、多上游自动路由与失败回退。</p>
+  </div>
+  <div class="dk-doc">
+    <aside class="dk-side">
+      <a href="#quick">快速开始</a>
+      <a href="#auth">认证</a>
+      <a href="#chat">对话补全</a>
+      <a href="#stream">流式输出</a>
+      <a href="#models">模型列表</a>
+      <a href="#errors">错误码</a>
+      <a href="#billing">计费规则</a>
+    </aside>
+    <div>
+      <h2 id="quick">快速开始</h2>
+      <p>注册后到控制台「我的 Key」签发一把密钥，然后：</p>
+      <div class="dk-code">curl <span id="dHost">http://127.0.0.1:8848</span>/v1/chat/completions \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "model": "<span id="dModel">GPT-6-Astra-max</span>",
+    "messages": [{"role":"user","content":"你好"}]
+  }'</div>
+      <p class="dk-muted">Python / Node 直接用官方 OpenAI SDK，把 <code>base_url</code> 指向本平台即可。</p>
+      <div class="dk-code">from openai import OpenAI
+
+client = OpenAI(
+    base_url="<span id="dHost2">http://127.0.0.1:8848</span>/v1",
+    api_key="sk-yt-...",
+)
+print(client.chat.completions.create(
+    model="<span id="dModel2">GPT-6-Astra-max</span>",
+    messages=[{"role": "user", "content": "你好"}],
+).choices[0].message.content)</div>
+
+      <h2 id="auth">认证</h2>
+      <p>所有请求使用 Bearer Token：</p>
+      <div class="dk-code">Authorization: Bearer sk-yt-xxxxxxxxxxxxxxxx</div>
+      <p class="dk-muted">密钥仅在创建时完整显示一次，请妥善保存；泄露后可在控制台停用并重新签发。</p>
+
+      <h2 id="chat">对话补全</h2>
+      <div class="dk-code">POST /v1/chat/completions</div>
+      <table class="dk-tbl" style="margin-top:12px">
+        <thead><tr><th>参数</th><th>类型</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>model</code></td><td>string</td><td>模型 ID，见 <a href="/?page=models">模型广场</a> 或 <code>GET /v1/models</code></td></tr>
+          <tr><td><code>messages</code></td><td>array</td><td><code>[{role, content}]</code>，角色支持 system / user / assistant</td></tr>
+          <tr><td><code>stream</code></td><td>bool</td><td>true 时以 SSE 逐块返回</td></tr>
+          <tr><td><code>temperature</code> / <code>top_p</code> / <code>max_tokens</code></td><td>number</td><td>透传给上游模型</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="stream">流式输出</h2>
+      <div class="dk-code">curl -N <span id="dHost3">http://127.0.0.1:8848</span>/v1/chat/completions \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"model":"<span id="dModel3">GPT-6-Astra-max</span>","stream":true,
+       "messages":[{"role":"user","content":"写一句 slogan"}]}'</div>
+
+      <h2 id="models">模型列表</h2>
+      <div class="dk-code">GET /v1/models</div>
+      <p class="dk-muted">返回 OpenRouter 风格字段：<code>context_length</code>、<code>architecture</code>、<code>pricing</code>、<code>top_provider</code>。</p>
+
+      <h2 id="errors">错误码</h2>
+      <table class="dk-tbl">
+        <thead><tr><th>HTTP</th><th>type</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>401</td><td><code>invalid_api_key</code></td><td>密钥无效</td></tr>
+          <tr><td>402</td><td><code>insufficient_quota</code></td><td>余额不足</td></tr>
+          <tr><td>402</td><td><code>quota_exceeded</code></td><td>Key 额度用尽</td></tr>
+          <tr><td>403</td><td><code>key_disabled</code> / <code>key_expired</code></td><td>密钥停用或过期</td></tr>
+          <tr><td>403</td><td><code>model_forbidden</code></td><td>该 Key 未授权使用此模型</td></tr>
+          <tr><td>429</td><td><code>rate_limited</code></td><td>超出 RPM / TPM 限制</td></tr>
+          <tr><td>502</td><td><code>upstream_error</code></td><td>所有上游均失败</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="billing">计费规则</h2>
+      <p>每次调用扣费 = 固定请求费 + 输入 token × 输入单价 + 输出 token × 输出单价，单价见 <a href="/pricing">价格</a>。</p>
+      <p class="dk-muted">余额不足时返回 402 且不产生调用；每次调用记录可在控制台「用量统计」查看。</p>
+    </div>
+  </div>
+</main>
+<script src="/assets/js/docs.js" defer></script>
+</body>
+</html>

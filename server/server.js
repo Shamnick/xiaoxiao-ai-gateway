@@ -466,9 +466,11 @@ function nginx404(res) {
 /* ------------------------------ 后台 API ------------------------------ */
 function requireAuth(req, res) {
   const s = currentSession(req);
-  if (!s) { sendJson(res, 401, { error: '未登录或会话已过期' }); return null; }
+  if (!s) { sendJson(res, 200, { admin: null, error: '未登录' }); return null; }
   return s;
 }
+
+function isMeProbe(url) { return url.pathname === '/api/admin/me'; }
 
 function paginate(list, url, defaultSize) {
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
@@ -523,6 +525,9 @@ const api = async (req, res, url) => {
     return sendJson(res, 200, { ok: true });
   }
 
+  if (isMeProbe(url) && method === 'GET' && !currentSession(req)) {
+    return sendJson(res, 200, { admin: null });
+  }
   const sess = requireAuth(req, res);
   if (!sess) return;
   const admin = (db.admins || []).find(a => a.id === sess.adminId);
@@ -1195,6 +1200,30 @@ async function handler(req, res) {
   const p = url.pathname;
   const host = String(req.headers.host || '').toLowerCase();
   const localPort = req.socket && req.socket.localPort;
+  if (p === '/api/public/models' && req.method === 'GET') {
+    const db = store.load();
+    const brands = {};
+    (db.brands || []).forEach(b => { brands[b.id] = b.label; });
+    const items = (db.models || []).filter(m => m.enabled !== false).map(m => {
+      const pr = m.pricing || {};
+      return {
+        id: m.name, brand: m.brand, brand_label: brands[m.brand] || m.brand,
+        desc: String(m.desc || '').replace(/<[^>]+>/g, ''),
+        tags: (m.tags || []).map(t => t.text),
+        context_length: m.context_length || 128000,
+        modalities: m.modalities || ['text'],
+        pricing: { prompt: pr.prompt || 0, completion: pr.completion || 0, request: pr.request || 0, unit: pr.unit || 'points/1M_tokens' },
+        is_new: !!m.is_new,
+      };
+    });
+    return sendJson(res, 200, { ok: true, total: items.length, items });
+  }
+
+  if (p === '/pricing' || p === '/docs') {
+    const file = path.join(PUBLIC, 'pages', p === '/pricing' ? 'pricing.html' : 'docs.html');
+    return serveFile(req, res, file, true);
+  }
+
   if (p === '/playground' || p === '/usage') {
     const u = platform.sessionUser(req);
     if (!u) { res.writeHead(302, { location: '/?page=login' }); return res.end(); }

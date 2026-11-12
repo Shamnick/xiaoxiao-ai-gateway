@@ -41,6 +41,18 @@ const TEXT_REWRITE = [
   ['<b>SCROLL</b> 滚动驱动神经中枢旋转', '<b>SCROLL</b> 滚动驱动神经中枢旋转'],
 ];
 
+/** 中转站导航：去掉纯品牌叙事的「能力/安全」一级入口，补上价格/文档/Playground */
+const NEW_NAV = `<nav class="links" id="navLinks">
+    <a href="/">首页</a>
+    <a href="/?page=models">模型广场</a>
+    <a href="/pricing">价格</a>
+    <a href="/docs">API 文档</a>
+    <a href="/playground">Playground</a>
+    <a href="/#about">关于</a>
+    <a href="/#contact">联系</a>
+    <a href="/?page=login" class="cta">控制台</a>
+  </nav>`;
+
 function transform(html, opts) {
   const o = opts || {};
   const userBase = o.userBase || '';
@@ -55,6 +67,19 @@ function transform(html, opts) {
 
   // 3) 文案改写
   TEXT_REWRITE.forEach(([a, b]) => { out = out.split(a).join(b); });
+
+  // 3.5) 导航重构
+  out = out.replace(/<nav class="links" id="navLinks">[\s\S]*?<\/nav>/, NEW_NAV);
+
+  // 3.6) 首页 hero 增补「查看价格」入口
+  out = out.replace(
+    '<a href="#contact" class="btn btn-ghost">联系我们</a>',
+    '<a href="/pricing" class="btn btn-ghost">查看价格</a>')
+
+  // 3.7) 模型广场：原续杯横条位置换成计价说明
+  out = out.replace(
+    '<section class="hero container hero-sub">',
+    '<a class="refill-strip container" href="/pricing">\n      <span class="rs-text"><b>按 token 计费</b>：单价、上下文与请求费见完整价格表</span>\n      <span class="rs-go">去价格页<i aria-hidden="true">→</i></span>\n    </a>\n    <section class="hero container hero-sub">')
 
   // 4) 链接本地化：原站用户中心 / 续杯工具 → 本地
   if (userBase) {

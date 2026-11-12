@@ -930,7 +930,7 @@
   },
   {
    "id": "YT-BDBS",
-   "label": "宇天本地部署模型",
+   "label": "小小本地部署模型",
    "order": 16,
    "enabled": true,
    "logo": "assets/img/brands/YT-BDBS.svg"
@@ -1077,7 +1077,7 @@
      "text": "代码生成"
     }
    ],
-   "desc": "Claude Opus 5.5 是 Anthropic 于 2026 年 9 月 22 日发布的模型，面向长期软件工程、自主 Agent 和专业知识工作。在宇天AI 上使用的模型 ID 为 claude-opus-5.5-Thinking-Max。该模型结合 1M Token 上下文窗口与始终开启的自适应思考能力。",
+   "desc": "Claude Opus 5.5 是 Anthropic 于 2026 年 9 月 22 日发布的模型，面向长期软件工程、自主 Agent 和专业知识工作。在小小AI 上使用的模型 ID 为 claude-opus-5.5-Thinking-Max。该模型结合 1M Token 上下文窗口与始终开启的自适应思考能力。",
    "has_refill": true,
    "vendor": "Anthropic",
    "price_attrs": " title=\"¥0.191/次\"",
@@ -3991,7 +3991,7 @@
     },
     {
      "cls": "",
-     "text": "宇天科技本地大型服务器部署"
+     "text": "小小科技本地大型服务器部署"
     },
     {
      "cls": "",
@@ -4024,7 +4024,7 @@
     },
     {
      "cls": "",
-     "text": "宇天科技本地大型服务器部署"
+     "text": "小小科技本地大型服务器部署"
     },
     {
      "cls": "",
@@ -4057,7 +4057,7 @@
     },
     {
      "cls": "",
-     "text": "宇天科技本地大型服务器部署"
+     "text": "小小科技本地大型服务器部署"
     },
     {
      "cls": "",
@@ -4094,7 +4094,7 @@
     },
     {
      "cls": "",
-     "text": "宇天科技本地大型服务器部署"
+     "text": "小小科技本地大型服务器部署"
     },
     {
      "cls": "",

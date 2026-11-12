@@ -27,7 +27,7 @@ function check(name, cond, extra) {
 
 (async () => {
   let r = await call('/me');
-  check('未登录访问 /me 返回 401', r.status === 401, r);
+  check('未登录访问 /me 返回空身份', r.status === 200 && r.data.admin === null, r);
 
   r = await call('/login', { method: 'POST', body: { username: 'admin', password: 'wrong' } });
   check('错误密码被拒绝', r.status === 401, r);
@@ -171,7 +171,7 @@ function check(name, cond, extra) {
   check('登出', r.status === 200);
   cookie = '';
   r = await call('/me');
-  check('登出后回到未授权', r.status === 401);
+  check('登出后回到未授权', r.status === 200 && r.data.admin === null, r);
 
   console.log(log.join('\n'));
   console.log('\n通过 %d / 失败 %d', pass, fail);

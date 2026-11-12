@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>价格 · 小小科技</title>
+<link rel="icon" type="image/png" href="/assets/img/logo.png">
+<link rel="stylesheet" href="/assets/css/site-dark.css">
+</head>
+<body>
+<header class="dk-top">
+  <a class="brand" href="/"><img src="/assets/img/logo.png" width="30" height="30" alt="">小小科技</a>
+  <nav class="dk-nav">
+    <a href="/">首页</a><a href="/?page=models">模型广场</a><a href="/pricing" class="on">价格</a>
+    <a href="/docs">API 文档</a><a href="/playground">Playground</a>
+  </nav>
+  <div class="right"><a href="/?page=login">控制台 →</a></div>
+</header>
+<main class="dk-wrap">
+  <div class="dk-head">
+    <h1>模型价格</h1>
+    <p>按 token 计费，用多少扣多少。计价单位「积分」，1 积分 = 1 元；充值后即可调用，无月费、无最低消费。</p>
+  </div>
+  <div class="dk-tools">
+    <input id="pQ" placeholder="搜索模型 / 品牌 / 标签">
+    <select id="pBrand"><option value="">全部品牌</option></select>
+    <select id="pSort">
+      <option value="price_asc">按输入价从低到高</option>
+      <option value="price_desc">按输入价从高到低</option>
+      <option value="ctx">按上下文长度</option>
+      <option value="name">按名称</option>
+    </select>
+    <span class="dk-muted" id="pCount">加载中…</span>
+  </div>
+  <div id="pTable"></div>
+  <p class="dk-muted" style="margin-top:16px">说明：<b>输入价 / 输出价</b> 为每 100 万 token 的积分价格；<b>请求费</b> 为每次调用的固定扣费。实际扣费 = 请求费 + 输入 token×输入价 + 输出 token×输出价。价格以调用时点为准，调整会在后台即时生效。</p>
+</main>
+<script src="/assets/js/pricing.js" defer></script>
+</body>
+</html>
