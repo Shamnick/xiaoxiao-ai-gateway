@@ -798,8 +798,16 @@ const api = async (req, res, url) => {
   }
   const orderRe = /^\/api\/admin\/orders\/([\w-]+)$/.exec(p);
   if (orderRe && method === 'PUT') {
-    const o = (db.orders || []).find(x => x.id === orderRe[1]);
+    const legacy = (db.orders || []).find(x => x.id === orderRe[1]);
+    const platOrder = ((db.platform && db.platform.orders) || []).find(x => x.id === orderRe[1]);
+    const o = legacy || platOrder;
     if (!o) return sendJson(res, 404, { error: '订单不存在' });
+    if (platOrder) {
+      if (body.status === 'paid') platform.markPaid(platOrder.id, 'ADMIN' + Date.now());
+      else if (body.status === 'refunded' || body.status === 'closed') { platOrder.status = 'closed'; store.save(); }
+      store.audit(admin.username, 'order-update', platOrder.id, '平台订单 → ' + body.status);
+      return sendJson(res, 200, { ok: true, order: platOrder });
+    }
     if (body.status) o.status = body.status;
     if (body.status === 'refunded') o.refunded_at = nowIso();
     if (body.note != null) o.note = body.note;
