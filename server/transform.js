@@ -42,16 +42,19 @@ const TEXT_REWRITE = [
 ];
 
 /** 中转站导航：去掉纯品牌叙事的「能力/安全」一级入口，补上价格/文档/Playground */
-const NEW_NAV = `<nav class="links" id="navLinks">
+function buildNav(userBase) {
+  const ub = userBase || '';
+  return `<nav class="links" id="navLinks">
     <a href="/">首页</a>
     <a href="/?page=models">模型广场</a>
     <a href="/pricing">价格</a>
     <a href="/docs">API 文档</a>
-    <a href="/playground">Playground</a>
+    <a href="${ub}/playground">Playground</a>
     <a href="/#about">关于</a>
     <a href="/#contact">联系</a>
-    <a href="/?page=login" class="cta">控制台</a>
+    <a href="${ub}/?page=login" class="cta">控制台</a>
   </nav>`;
+}
 
 function transform(html, opts) {
   const o = opts || {};
@@ -69,7 +72,7 @@ function transform(html, opts) {
   TEXT_REWRITE.forEach(([a, b]) => { out = out.split(a).join(b); });
 
   // 3.5) 导航重构
-  out = out.replace(/<nav class="links" id="navLinks">[\s\S]*?<\/nav>/, NEW_NAV);
+  out = out.replace(/<nav class="links" id="navLinks">[\s\S]*?<\/nav>/, buildNav(userBase));
 
   // 3.6) 首页 hero 增补「查看价格」入口
   out = out.replace(

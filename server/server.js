@@ -424,8 +424,15 @@ function userBaseFor(req) {
   return 'http://' + host + ':' + USER_PORT;
 }
 
+const USER_ONLY_PAGES = ['login', 'register', 'keys', 'billing', 'recharge', 'invite', 'settings', 'docs', 'subscription', 'image', 'video'];
+
 function servePage(req, res, url) {
-  const page = PAGE_ALIAS[url.searchParams.get('page')] || 'home';
+  const reqPage = url.searchParams.get('page');
+  if (reqPage && USER_ONLY_PAGES.indexOf(reqPage) !== -1) {
+    res.writeHead(302, { location: userBaseFor(req) + '/?page=' + reqPage });
+    return res.end();
+  }
+  const page = PAGE_ALIAS[reqPage] || 'home';
   const db = store.load();
   const html = render.pageHtml(page, db, { userBase: userBaseFor(req) });
   hitPage(url.searchParams.get('page') || '/');
@@ -1310,7 +1317,7 @@ async function handler(req, res) {
 
   if (p === '/playground' || p === '/usage') {
     const u = platform.sessionUser(req);
-    if (!u) { res.writeHead(302, { location: '/?page=login' }); return res.end(); }
+    if (!u) { res.writeHead(302, { location: userBaseFor(req) + '/?page=login' }); return res.end(); }
     const file = path.join(PUBLIC, 'pages', p === '/playground' ? 'playground.html' : 'usage.html');
     return serveFile(req, res, file, true);
   }
