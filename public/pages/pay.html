@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>收银台 · 小小科技</title>
+<link rel="icon" type="image/png" href="/assets/img/logo-128.png">
+<link rel="stylesheet" href="/assets/css/platform.css">
+</head>
+<body class="pf-body">
+<header class="pf-top">
+  <a class="brand" href="/"><img src="/assets/img/logo-128.png" width="26" height="26" alt="">小小科技</a>
+  <div class="right"><span class="pf-hint">本地演示收银台</span></div>
+</header>
+<main class="pf-wrap" style="max-width:640px">
+  <div class="pf-card">
+    <div class="pf-card-h">订单支付 <span class="sub" id="payOrderId"></span></div>
+    <div class="pf-card-b">
+      <div class="pf-kpi" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+        <div class="k a"><div class="l">支付金额</div><div class="v" id="payAmount">—</div></div>
+        <div class="k b"><div class="l">到账积分</div><div class="v" id="payPoints">—</div></div>
+      </div>
+      <p class="pf-hint" id="payTip">这是本地模拟收银台：点击下方按钮即视为支付成功（接入真实易支付后会自动跳转收银台并用异步通知到账）。</p>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="pf-btn primary" id="payGo">模拟支付成功</button>
+        <a class="pf-btn" href="/?page=recharge">返回充值页</a>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+(function(){
+  var id = location.pathname.split('/').pop();
+  document.getElementById('payOrderId').textContent = id;
+  fetch('/api/user/orders').then(function(r){return r.json();}).then(function(d){
+    var o=(d.items||[]).find(function(x){return x.id===id;});
+    if(!o){document.getElementById('payTip').textContent='订单不存在或已过期';document.getElementById('payGo').disabled=true;return;}
+    document.getElementById('payAmount').textContent='¥'+o.amount;
+    document.getElementById('payPoints').textContent=o.points;
+    if(o.status==='paid'){document.getElementById('payTip').textContent='该订单已支付完成';document.getElementById('payGo').disabled=true;}
+  });
+  document.getElementById('payGo').addEventListener('click',function(){
+    fetch('/api/pay/mock/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+      if(d.ok){document.getElementById('payTip').textContent='支付成功，正在返回…';setTimeout(function(){location.href='/?page=recharge';},900);}
+      else{document.getElementById('payTip').textContent=d.error||'支付失败';}
+    });
+  });
+})();
+</script>
+</body>
+</html>

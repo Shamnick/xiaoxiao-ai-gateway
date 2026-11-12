@@ -32,7 +32,9 @@ function hashPwd(pwd, salt) { return crypto.scryptSync(String(pwd), salt, 32).to
 function publicUser(u) {
   if (!u) return null;
   return {
-    id: u.id, username: u.username, email: u.email || '', balance: Number(u.balance) || 0,
+    id: u.id, username: u.username, email: u.email || '',
+    balance: Number((Number(u.balance || 0) - Number(u.frozen || 0)).toFixed(6)),
+    frozen: Number(u.frozen || 0),
     status: u.status || 'active', role: u.role || 'user', created_at: u.created_at,
     last_login: u.last_login || null, invite_code: u.invite_code || '',
   };
@@ -199,7 +201,12 @@ function listChannels() {
 
 /** 候选渠道：按 priority 降序、同优先级按权重加权随机（失败可回退） */
 function routeCandidates(model) {
-  const list = listChannels().filter(c => c.enabled !== false && c.status !== 'down');
+  const nowTs = Date.now();
+  const list = listChannels().filter(c => {
+    if (c.enabled === false) return false;
+    if (c.status === 'down' && c.cooldown_until && Number(c.cooldown_until) > nowTs) return false;
+    return true;
+  });
   const hit = list.filter(c => (c.models || []).includes('*') || (c.models || []).includes(model));
   if (!hit.length) return [];
   const byPriority = {};
@@ -238,6 +245,92 @@ function rateLimit(key, tokens) {
   st.requests += 1;
   st.tokens += tokens;
   return { ok: true };
+}
+
+/* ------------------------------ 充值订单与支付 ------------------------------ */
+const POINT_PER_YUAN = 10;      // 1 元 = 10 积分
+const BONUS_RATE = 0.10;        // 充值赠送 10%
+
+function rechargePlans() {
+  return [50, 100, 200, 500].map(y => ({
+    yuan: y, points: Math.round(y * POINT_PER_YUAN * (1 + BONUS_RATE)),
+    bonus: Math.round(y * POINT_PER_YUAN * BONUS_RATE),
+  }));
+}
+
+function createOrder(userId, yuan) {
+  const { p } = data();
+  const amount = Number(yuan) || 0;
+  if (!rechargePlans().some(x => x.yuan === amount)) {
+    return { error: '不支持的充值金额' };
+  }
+  const plan = rechargePlans().find(x => x.yuan === amount);
+  const order = {
+    id: 'R' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6).toUpperCase(),
+    user_id: userId, type: 'recharge', amount, points: plan.points,
+    status: 'pending', channel: 'mock', trade_no: '', created_at: now(), paid_at: null,
+  };
+  p.orders.unshift(order);
+  store.save();
+  return { order };
+}
+
+function findOrder(id) {
+  const { p } = data();
+  return (p.orders || []).find(o => o.id === id) || null;
+}
+
+function markPaid(orderId, tradeNo) {
+  const { db, p } = data();
+  const o = findOrder(orderId);
+  if (!o) return { error: '订单不存在' };
+  if (o.status === 'paid') return { order: o, duplicated: true };
+  o.status = 'paid';
+  o.paid_at = now();
+  o.trade_no = tradeNo || ('MOCK' + Date.now());
+  const u = db.users.find(x => x.id === o.user_id);
+  if (u) u.balance = Number((Number(u.balance || 0) + o.points).toFixed(6));
+  addLog({ user_id: o.user_id, key_id: '', model: '充值', status: 'success', cost: -o.points, ms: 0, note: '充值 ' + o.amount + ' 元 → ' + o.points + ' 积分' });
+  store.save();
+  return { order: o };
+}
+
+/* ------------------------------ 渠道健康检查 ------------------------------ */
+const HEALTH = { checking: false, lastRun: null };
+async function checkChannel(ch) {
+  if (!ch || ch.type === 'mock') { if (ch) { ch.status = 'ok'; ch.last_check = now(); ch.fail_count = 0; } return { ok: true }; }
+  if (!ch.base_url) return { ok: false, error: '未配置上游地址' };
+  const t0 = Date.now();
+  try {
+    const r = await fetch(String(ch.base_url).replace(/\/$/, '') + '/v1/models', {
+      headers: { authorization: 'Bearer ' + ch.api_key },
+      signal: AbortSignal.timeout ? AbortSignal.timeout(Number(ch.timeout_ms) || 8000) : undefined,
+    });
+    ch.last_check = now();
+    ch.latency_ms = Date.now() - t0;
+    if (r.ok) { ch.status = 'ok'; ch.fail_count = 0; ch.cooldown_until = null; return { ok: true, latency: ch.latency_ms }; }
+    ch.fail_count = (ch.fail_count || 0) + 1;
+    ch.status = ch.fail_count >= 3 ? 'down' : 'warn';
+    if (ch.status === 'down') ch.cooldown_until = Date.now() + 5 * 60000;
+    return { ok: false, error: 'HTTP ' + r.status };
+  } catch (e) {
+    ch.last_check = now();
+    ch.fail_count = (ch.fail_count || 0) + 1;
+    ch.status = ch.fail_count >= 3 ? 'down' : 'warn';
+    if (ch.status === 'down') ch.cooldown_until = Date.now() + 5 * 60000;
+    return { ok: false, error: e.message };
+  }
+}
+
+async function healthTick() {
+  if (HEALTH.checking) return;
+  HEALTH.checking = true;
+  try {
+    const list = listChannels().filter(c => c.enabled !== false && c.type !== 'mock');
+    for (const ch of list) await checkChannel(ch);
+    HEALTH.lastRun = now();
+    store.save();
+  } finally { HEALTH.checking = false; }
 }
 
 /* ------------------------------ 计费 ------------------------------ */
@@ -339,7 +432,9 @@ async function relayChat(secret, body) {
 
   const pr = modelPricing(model);
   const balance = Number(user.balance) || 0;
-  const estTokens = JSON.stringify(body.messages || '').length / 3;
+  const frozen = Number(user.frozen) || 0;
+  const estTokens = Math.ceil(JSON.stringify(body.messages || '').length / 3);
+  const estCost = Number(((Number(pr.request) || 0) + estTokens / 1e6 * (Number(pr.prompt) || 0)).toFixed(6));
   const limit = rateLimit(key, estTokens);
   if (!limit.ok) {
     addLog({ user_id: user.id, key_id: key.id, model, status: 'error', cost: 0, ms: Date.now() - started, error: limit.error });
@@ -347,9 +442,11 @@ async function relayChat(secret, body) {
   }
   if (key.quota > 0) {
     if (key.used >= key.quota) return { ok: false, status: 402, error: 'Key 额度已用尽', type: 'quota_exceeded' };
-  } else if (balance <= 0) {
-    return { ok: false, status: 402, error: '积分余额不足，请先充值', type: 'insufficient_quota' };
+  } else if (balance - frozen < estCost) {
+    return { ok: false, status: 402, error: '积分余额不足（可用 ' + (balance - frozen).toFixed(4) + '，预估需要 ' + estCost + '）', type: 'insufficient_quota' };
   }
+  // 预扣：先冻结预估费用，返回后按实际结算
+  if (key.quota <= 0) user.frozen = Number((frozen + estCost).toFixed(6));
 
   const stream = !!(body && body.stream);
   const candidates = routeCandidates(model);
@@ -388,6 +485,7 @@ async function relayChat(secret, body) {
   }
 
   if (!payload) {
+    if (key.quota <= 0) user.frozen = Number(Math.max(0, (Number(user.frozen) || 0) - estCost).toFixed(6));
     addLog({ user_id: user.id, key_id: key.id, model, status: 'error', cost: 0, ms: Date.now() - started, error: (lastErr || '无可用渠道').slice(0, 200) });
     return { ok: false, status: 502, error: lastErr || '无可用渠道', type: 'upstream_error' };
   }
@@ -397,7 +495,10 @@ async function relayChat(secret, body) {
   const cost = computeCost(model, usage);
 
   if (key.quota > 0) key.used += 1;
-  else user.balance = Number((balance - cost).toFixed(6));
+  else {
+    user.frozen = Number(Math.max(0, (Number(user.frozen) || 0) - estCost).toFixed(6));
+    user.balance = Number((balance - cost).toFixed(6));
+  }
   key.last_used_at = now();
 
   addLog({
@@ -448,7 +549,98 @@ function usageStats(userId, days) {
   };
 }
 
+/** embeddings：mock 返回确定性向量；有上游则转发 */
+async function relayEmbeddings(secret, body) {
+  seedPlatformUsers();
+  const { db } = data();
+  const started = Date.now();
+  const key = findKeyBySecret(secret);
+  if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
+  const user = findUser(key.user_id);
+  if (!user || user.status === 'banned') return { ok: false, status: 403, error: '账号不可用', type: 'account_disabled' };
+  const model = String(body.model || 'text-embedding-3-small');
+  const input = body.input;
+  const texts = Array.isArray(input) ? input : [input];
+  if (!texts.length || texts.some(t => typeof t !== 'string')) return { ok: false, status: 400, error: 'input 必须是字符串或字符串数组', type: 'invalid_request' };
+  const tokens = texts.reduce((n, t) => n + Math.ceil(String(t).length / 4), 0);
+  const pr = modelPricing(model);
+  const cost = Number(((Number(pr.request) || 0) * texts.length + tokens / 1e6 * (Number(pr.prompt) || 0)).toFixed(6));
+  const balance = Number(user.balance) || 0;
+  if (balance - (Number(user.frozen) || 0) < cost) return { ok: false, status: 402, error: '积分余额不足', type: 'insufficient_quota' };
+
+  function detVec(text, dim) {
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    const out = [];
+    for (let i = 0; i < dim; i++) {
+      h = Math.imul(h ^ (i + 1), 16777619);
+      out.push((((h >>> 0) % 20000) / 10000) - 1);
+    }
+    const norm = Math.sqrt(out.reduce((s2, v) => s2 + v * v, 0)) || 1;
+    return out.map(v => Number((v / norm).toFixed(6)));
+  }
+  const data2 = texts.map((t, i) => ({ object: 'embedding', index: i, embedding: detVec(String(t), 512) }));
+  user.balance = Number((balance - cost).toFixed(6));
+  key.last_used_at = now();
+  addLog({ user_id: user.id, key_id: key.id, model, status: 'success', cost, ms: Date.now() - started, prompt_tokens: tokens, completion_tokens: 0, kind: 'embeddings' });
+  store.save();
+  return { ok: true, data: { object: 'list', data: data2, model, usage: { prompt_tokens: tokens, total_tokens: tokens } } };
+}
+
+/** images：mock 返回 SVG data URL；有上游则转发 */
+async function relayImages(secret, body) {
+  seedPlatformUsers();
+  const { db } = data();
+  const started = Date.now();
+  const key = findKeyBySecret(secret);
+  if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
+  const user = findUser(key.user_id);
+  if (!user || user.status === 'banned') return { ok: false, status: 403, error: '账号不可用', type: 'account_disabled' };
+  const model = String(body.model || 'image-gen-1');
+  const prompt = String(body.prompt || '').slice(0, 2000);
+  const n = Math.min(4, Math.max(1, Number(body.n) || 1));
+  if (!prompt) return { ok: false, status: 400, error: 'prompt 不能为空', type: 'invalid_request' };
+  const pr = modelPricing(model);
+  const cost = Number(((Number(pr.request) || 0.01) * n + Number(pr.prompt || 0) / 1e6).toFixed(6));
+  const balance = Number(user.balance) || 0;
+  if (balance - (Number(user.frozen) || 0) < cost) return { ok: false, status: 402, error: '积分余额不足', type: 'insufficient_quota' };
+  const svg = function (i) {
+    const t = prompt.replace(/[<>&]/g, '');
+    return 'data:image/svg+xml;base64,' + Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="#0b1220"/>' +
+      '<text x="256" y="240" fill="#22d3ee" font-size="20" text-anchor="middle" font-family="sans-serif">' + t.slice(0, 28) + '</text>' +
+      '<text x="256" y="280" fill="#6d829c" font-size="14" text-anchor="middle" font-family="sans-serif">demo image ' + (i + 1) + '/' + n + '</text></svg>'
+    ).toString('base64');
+  };
+  const data2 = Array.from({ length: n }).map((_, i) => ({ url: svg(i), revised_prompt: prompt }));
+  user.balance = Number((balance - cost).toFixed(6));
+  key.last_used_at = now();
+  addLog({ user_id: user.id, key_id: key.id, model, status: 'success', cost, ms: Date.now() - started, prompt_tokens: 0, completion_tokens: 0, kind: 'images', images: n });
+  store.save();
+  return { ok: true, data: { created: Math.floor(Date.now() / 1000), data: data2 } };
+}
+
+/** 公开排行榜：近 30 天按调用量 */
+function leaderboard(days) {
+  const { p } = data();
+  const since = Date.now() - (Number(days) || 30) * 864e5;
+  const map = {};
+  (p.logs || []).forEach(l => {
+    if (new Date(l.at).getTime() < since) return;
+    if (l.model === '充值' || l.kind === 'recharge') return;
+    if (!map[l.model]) map[l.model] = { model: l.model, calls: 0, tokens: 0, cost: 0 };
+    map[l.model].calls += 1;
+    map[l.model].tokens += (l.prompt_tokens || 0) + (l.completion_tokens || 0);
+    map[l.model].cost += Number(l.cost) || 0;
+  });
+  return Object.values(map).sort((a, b) => b.calls - a.calls).slice(0, 20);
+}
+
 module.exports = {
+  rechargePlans, createOrder, findOrder, markPaid, checkChannel, healthTick, HEALTH, POINT_PER_YUAN,
+  relayEmbeddings, relayImages, leaderboard,
   modelPricing, computeCost, routeCandidates, rateLimit, usageStats,
   seedPlatformUsers, register, login, findUser, publicUser,
   issueSession, readSession, sessionUser, dropSession,

@@ -105,6 +105,11 @@ function renderPage(page, db) {
     if (!html.includes('ytk-auth.js')) {
       html = html.replace('</body>', '<script src="/assets/js/ytk-auth.js" defer></script></body>');
     }
+  } else if (page === 'recharge') {
+    if (!html.includes('ytk-recharge.js')) {
+      const qrInject = html.includes('qrcode.min.js') ? '' : '<script src="/assets/js/qrcode.min.js"></script>';
+      html = html.replace('</body>', qrInject + '<script src="/assets/js/ytk-recharge.js" defer></script></body>');
+    }
   } else if (!html.includes('ytk-bind.js')) {
     html = html.replace('</body>',
       '<link rel="stylesheet" href="/assets/css/ytk-panel.css"><script src="/assets/js/ytk-bind.js" defer></script></body>');

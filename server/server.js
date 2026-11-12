@@ -246,6 +246,26 @@ async function handleUserApi(req, res, url) {
     return sendJson(res, 200, { ok: true, items, total: items.length });
   }
 
+  if (p === '/api/user/recharge/plans' && method === 'GET') {
+    return sendJson(res, 200, { ok: true, plans: platform.rechargePlans(), point_per_yuan: platform.POINT_PER_YUAN });
+  }
+  if (p === '/api/user/recharge/create' && method === 'POST') {
+    const r = platform.createOrder(me.id, body.amount);
+    if (r.error) return sendJson(res, 400, { ok: false, error: r.error });
+    const o = r.order;
+    return sendJson(res, 200, { ok: true, order: o, pay_url: '/pay/' + o.id, points: o.points });
+  }
+  if (p === '/api/user/recharge/status' && method === 'GET') {
+    const o = platform.findOrder(url.searchParams.get('order'));
+    if (!o || o.user_id !== me.id) return sendJson(res, 404, { ok: false, error: '订单不存在' });
+    return sendJson(res, 200, { ok: true, status: o.status, order: o, balance: platform.publicUser(me).balance });
+  }
+  if (p === '/api/user/orders' && method === 'GET') {
+    const d = store.load();
+    const list = ((d.platform && d.platform.orders) || []).filter(o => o.user_id === me.id).slice(0, 50);
+    return sendJson(res, 200, { ok: true, items: list });
+  }
+
   if (p === '/api/user/usage' && method === 'GET') {
     return sendJson(res, 200, Object.assign({ ok: true }, platform.usageStats(me.id, url.searchParams.get('days'))));
   }
@@ -334,6 +354,23 @@ async function handleV1(req, res, url) {
     }
     return sendJson(res, 200, r.data);
   }
+  if (p === '/v1/embeddings' && req.method === 'POST') {
+    let body = {};
+    try { body = await readBody(req); } catch (e) { return sendJson(res, 400, { error: { message: 'invalid json', type: 'invalid_request_error' } }); }
+    const secret = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+    const r = await platform.relayEmbeddings(secret, body);
+    if (!r.ok) return sendJson(res, r.status, { error: { message: r.error, type: r.type || 'error' } });
+    return sendJson(res, 200, r.data);
+  }
+  if (p === '/v1/images/generations' && req.method === 'POST') {
+    let body = {};
+    try { body = await readBody(req); } catch (e) { return sendJson(res, 400, { error: { message: 'invalid json', type: 'invalid_request_error' } }); }
+    const secret = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+    const r = await platform.relayImages(secret, body);
+    if (!r.ok) return sendJson(res, r.status, { error: { message: r.error, type: r.type || 'error' } });
+    return sendJson(res, 200, r.data);
+  }
+
   return sendJson(res, 404, { error: { message: 'not found', type: 'invalid_request_error' } });
 }
 
@@ -740,7 +777,14 @@ const api = async (req, res, url) => {
   if (p === '/api/admin/orders' && method === 'GET') {
     const q = url.searchParams.get('q') || '';
     const status = url.searchParams.get('status') || '';
-    let list = (db.orders || []).slice().sort((a, b) => b.created_at.localeCompare(a.created_at));
+    const users = {};
+    (db.users || []).forEach(u => { users[u.id] = u.username; });
+    const plat = ((db.platform && db.platform.orders) || []).map(o => ({
+      id: o.id, username: users[o.user_id] || o.user_id, plan: '充值 ¥' + o.amount + ' → ' + o.points + ' 积分',
+      amount: o.amount, channel: o.channel === 'mock' ? '模拟支付' : '易支付', status: o.status === 'paid' ? 'paid' : (o.status === 'expired' ? 'closed' : 'pending'),
+      created_at: o.created_at, paid_at: o.paid_at, source: 'platform', points: o.points,
+    }));
+    let list = plat.concat(db.orders || []).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
     if (status) list = list.filter(o => o.status === status);
     if (q) list = list.filter(o => textMatch(o, q, ['id', 'username', 'plan', 'channel']));
     return sendJson(res, 200, paginate(list, url, 20));
@@ -1001,6 +1045,16 @@ const api = async (req, res, url) => {
     }
   }
 
+  if (p.startsWith('/api/admin/channels/') && p.endsWith('/check') && method === 'POST') {
+    const id = p.slice('/api/admin/channels/'.length).replace('/check', '');
+    const d = store.load();
+    const ch = (d.platform && d.platform.channels || []).find(c => c.id === id);
+    if (!ch) return sendJson(res, 404, { error: '渠道不存在' });
+    const r = await platform.checkChannel(ch);
+    store.save();
+    return sendJson(res, 200, { ok: r.ok, channel: ch, result: r });
+  }
+
   /* ---- 调用日志 ---- */
   if (p === '/api/admin/logs' && method === 'GET') {
     const d = store.load();
@@ -1219,9 +1273,39 @@ async function handler(req, res) {
     return sendJson(res, 200, { ok: true, total: items.length, items });
   }
 
-  if (p === '/pricing' || p === '/docs') {
-    const file = path.join(PUBLIC, 'pages', p === '/pricing' ? 'pricing.html' : 'docs.html');
-    return serveFile(req, res, file, true);
+  if (p === '/api/public/leaderboard' && req.method === 'GET') {
+    return sendJson(res, 200, { ok: true, items: platform.leaderboard(url.searchParams.get('days') || 30) });
+  }
+
+  if (p === '/pricing' || p === '/docs' || p === '/leaderboard') {
+    const name = p === '/pricing' ? 'pricing.html' : (p === '/docs' ? 'docs.html' : 'leaderboard.html');
+    return serveFile(req, res, path.join(PUBLIC, 'pages', name), true);
+  }
+
+  if (p.startsWith('/pay/')) {
+    const id = p.slice('/pay/'.length);
+    const o = platform.findOrder(id);
+    if (!o) return nginx404(res);
+    return serveFile(req, res, path.join(PUBLIC, 'pages', 'pay.html'), true);
+  }
+  if (p.startsWith('/api/pay/mock/') && req.method === 'POST') {
+    const id = p.slice('/api/pay/mock/'.length);
+    const r = platform.markPaid(id, 'MOCK' + Date.now());
+    if (r.error) return sendJson(res, 404, { ok: false, error: r.error });
+    return sendJson(res, 200, { ok: true, order: r.order });
+  }
+  if (p === '/api/pay/notify/epay') {
+    // 易支付异步通知：验签后到账
+    const q = {};
+    url.searchParams.forEach((v, k) => { q[k] = v; });
+    const cfg = (store.load().settings || {}).epay || {};
+    const sign = q.sign || '';
+    const rest = Object.keys(q).filter(k => k !== 'sign' && k !== 'sign_type' && q[k] !== '').sort()
+      .map(k => k + '=' + q[k]).join('&');
+    const expect = require('crypto').createHash('md5').update(rest + (cfg.key || '')).digest('hex');
+    if (cfg.key && sign !== expect) return sendText(res, 400, 'fail');
+    if (q.trade_status === 'TRADE_SUCCESS' && q.out_trade_no) platform.markPaid(q.out_trade_no, q.trade_no);
+    return sendText(res, 200, 'success');
   }
 
   if (p === '/playground' || p === '/usage') {
@@ -1279,6 +1363,9 @@ server.listen(PORT, HOST, () => {
   console.log('  前台: http://' + HOST + ':' + PORT + '/');
   console.log('  后台: http://' + HOST + ':' + PORT + '/admin/   (默认 admin / admin123)');
 });
+
+setTimeout(() => platform.healthTick().catch(() => {}), 4000);
+setInterval(() => platform.healthTick().catch(() => {}), 60000).unref();
 
 userServer.listen(USER_PORT, HOST, () => {
   console.log('  用户中心: http://' + HOST + ':' + USER_PORT + '/   (或 http://user.localhost:' + PORT + '/)');

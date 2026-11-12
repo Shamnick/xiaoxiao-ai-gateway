@@ -32,7 +32,7 @@ class CDP { constructor(u){this.ws=new WebSocket(u);this.id=0;this.p=new Map();t
       'http://127.0.0.1:8849/?page=settings','http://127.0.0.1:8849/?page=docs','http://127.0.0.1:8849/image/',
       'http://127.0.0.1:8849/video/','http://127.0.0.1:8849/playground','http://127.0.0.1:8849/usage',
       'http://127.0.0.1:8848/admin/',
-      'http://127.0.0.1:8848/pricing','http://127.0.0.1:8848/docs'
+      'http://127.0.0.1:8848/pricing','http://127.0.0.1:8848/docs','http://127.0.0.1:8848/leaderboard'
     ];
     for(const u of pages){
       cur=u.replace(/^https?:\/\/127\.0\.0\.1:\d+/,'');

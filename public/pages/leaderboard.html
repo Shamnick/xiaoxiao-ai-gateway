@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模型用量排行 · 小小科技</title>
+<link rel="icon" type="image/png" href="/assets/img/logo.png">
+<link rel="stylesheet" href="/assets/css/site-dark.css">
+</head>
+<body>
+<header class="dk-top">
+  <a class="brand" href="/"><img src="/assets/img/logo.png" width="30" height="30" alt="">小小科技</a>
+  <nav class="dk-nav">
+    <a href="/">首页</a><a href="/?page=models">模型广场</a><a href="/pricing">价格</a>
+    <a href="/docs">API 文档</a><a href="/playground">Playground</a><a href="/leaderboard" class="on">用量排行</a>
+  </nav>
+  <div class="right"><a href="/?page=login">控制台 →</a></div>
+</header>
+<main class="dk-wrap">
+  <div class="dk-head">
+    <h1>模型用量排行</h1>
+    <p>平台近 30 天的真实调用聚合（按模型）。数据随调用实时变化。</p>
+  </div>
+  <div class="dk-tools">
+    <select id="lbDays"><option value="7">近 7 天</option><option value="30" selected>近 30 天</option><option value="90">近 90 天</option></select>
+    <span class="dk-muted" id="lbCount">加载中…</span>
+  </div>
+  <div id="lbTable"></div>
+</main>
+<script src="/assets/js/leaderboard.js" defer></script>
+</body>
+</html>

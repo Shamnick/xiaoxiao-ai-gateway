@@ -40,6 +40,11 @@
 | 公开价格页 | 67 个模型的价格表，支持搜索/品牌筛选/四种排序（`/pricing`） |
 | 公开 API 文档 | 快速开始、参数、错误码、计费规则，示例自动填充当前域名与模型（`/docs`） |
 | 运营后台 | 模型定价、渠道、调用日志、用户、订单、工单、在线客服 |
+| **充值闭环** | 下单 → 二维码/收银台 → 模拟支付或易支付异步回调 → 到账 → 余额刷新（1 元 = 10 积分，充值赠送 10%） |
+| **健康检查与熔断** | 每 60s 探测上游 `/v1/models`，连续失败 3 次自动熔断 5 分钟，后台可手动检测 |
+| **预扣与结算** | 调用前按预估 token 冻结额度，返回后按实际 usage 结算，失败释放 |
+| **多模态端点** | `POST /v1/embeddings`（512 维）、`POST /v1/images/generations`（支持 n 张） |
+| **公开排行榜** | 近 30 天按模型聚合调用量/消耗（`/leaderboard`） |
 
 ### 站点能力
 
@@ -151,6 +156,22 @@ GET /v1/models
 | GET/POST | `/api/user/keys` | Key 列表 / 签发 |
 | PUT/DELETE | `/api/user/keys/:id` | 修改 / 删除 Key |
 | GET | `/api/user/logs` | 调用日志 |
+| GET | `/api/user/recharge/plans` | 充值档位 |
+| POST | `/api/user/recharge/create` | 创建充值订单 |
+| GET | `/api/user/recharge/status?order=` | 查询订单状态 |
+| GET | `/api/user/orders` | 我的订单 |
+
+### 多模态端点
+
+```
+POST /v1/embeddings            { "model": "text-embedding-3-small", "input": "hello" }
+POST /v1/images/generations    { "model": "image-gen-1", "prompt": "...", "n": 1 }
+```
+
+### 支付
+
+- 本地默认走**模拟收银台**：`/pay/:orderId` → 点击即到账
+- 接真实易支付：后台「站点设置」保存 `epay.pid` / `epay.key` 后，回调地址 `/api/pay/notify/epay` 会做 MD5 验签并到账
 
 ### 客服接口
 
@@ -271,12 +292,13 @@ GET /v1/models
 - [x] 按 token 计费 + 额度 + 用量统计
 - [x] 多上游路由与回退
 - [x] 密钥管理 / Playground / 运营后台
-- [ ] 支付回调（易支付 / Stripe）
-- [ ] 按 token 的实时余额预扣与结算
+- [x] 支付回调（内置模拟收银台 + 易支付验签回调）
+- [x] 按 token 的实时余额预扣与结算
+- [x] embeddings / images 端点
+- [x] 模型健康检查与自动熔断
+- [x] 公开模型排行榜
 - [ ] 团队与子账号、Key 共享
-- [ ] embeddings / images / audio 端点
-- [ ] 模型健康检查与自动熔断
-- [ ] 公开模型排行榜
+- [ ] audio（TTS/STT）端点
 
 ---
 

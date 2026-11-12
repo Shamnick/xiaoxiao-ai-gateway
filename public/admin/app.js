@@ -621,8 +621,13 @@
         '<td class="mono cell-sub">' + esc(c.base_url || '（内置）') + '</td>' +
         '<td>' + ((c.models || []).slice(0, 3).map(m => '<span class="chip">' + esc(m) + '</span>').join('') || '—') + '</td>' +
         '<td class="num">' + esc(c.weight || 1) + '</td>' +
-        '<td>' + (c.enabled === false ? '<span class="badge off">停用</span>' : '<span class="badge on">启用</span>') + '</td>' +
-        '<td><div class="acts"><button class="link-btn" data-act="ch-edit" data-id="' + esc(c.id) + '">编辑</button>' +
+        '<td>' + (c.enabled === false ? '<span class="badge off">停用</span>' :
+          (c.status === 'down' ? '<span class="badge danger">熔断中</span>' :
+           c.status === 'warn' ? '<span class="badge warn">异常</span>' :
+           '<span class="badge on">正常</span>')) +
+          '<div class="cell-sub mono">' + (c.last_check ? fmtDate(c.last_check).slice(5) : '未检测') + (c.latency_ms ? ' · ' + c.latency_ms + 'ms' : '') + '</div></td>' +
+        '<td><div class="acts"><button class="link-btn" data-act="ch-check" data-id="' + esc(c.id) + '">检测</button>' +
+        '<button class="link-btn" data-act="ch-edit" data-id="' + esc(c.id) + '">编辑</button>' +
         '<button class="link-btn" data-act="ch-toggle" data-id="' + esc(c.id) + '">' + (c.enabled === false ? '启用' : '停用') + '</button>' +
         '<button class="link-btn danger" data-act="ch-del" data-id="' + esc(c.id) + '">删除</button></div></td></tr>').join('');
       return '<div class="card"><div class="card-head"><h3>上游渠道</h3><span class="sub">调用 /v1/chat/completions 时按模型匹配渠道转发；未匹配则走内置演示渠道</span>' +
@@ -1358,6 +1363,15 @@
             });
           },
         });
+        return;
+      }
+      if (act === 'ch-check') {
+        toast('检测中…');
+        try {
+          const d = await api('/channels/' + id + '/check', { method: 'POST' });
+          toast(d.ok ? '渠道正常' + (d.result.latency ? '（' + d.result.latency + 'ms）' : '') : ('异常：' + (d.result.error || '')), d.ok ? '' : 'err');
+          route();
+        } catch (err) { toast(err.message, 'err'); }
         return;
       }
       if (act === 'ch-toggle') {
