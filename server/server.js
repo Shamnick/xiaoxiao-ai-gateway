@@ -312,6 +312,15 @@ async function handleUserApi(req, res, url) {
     return sendJson(res, 200, { ok: true, items: list });
   }
 
+  if (p === '/api/user/notifications' && method === 'GET') {
+    const items = platform.listNotifications(me.id, url.searchParams.get('limit'));
+    return sendJson(res, 200, { ok: true, items, unread: items.filter(n => !n.read).length });
+  }
+  if (p === '/api/user/notifications/read' && method === 'POST') {
+    platform.markNotificationsRead(me.id, body.id);
+    return sendJson(res, 200, { ok: true });
+  }
+
   if (p === '/api/user/usage' && method === 'GET') {
     return sendJson(res, 200, Object.assign({ ok: true }, platform.usageStats(me.id, url.searchParams.get('days'))));
   }
@@ -1394,6 +1403,7 @@ const api = async (req, res, url) => {
     const s2 = d.settings && d.settings.platform ? d.settings.platform : {};
     return sendJson(res, 200, Object.assign({
       register_enabled: true, invite_bonus: 5, new_user_points: 0, low_balance_threshold: 10,
+      smtp: { host: '', port: 465, secure: true, user: '', pass: '', from: '' },
       default_rpm: 60, default_tpm: 200000, free_trial_points: 0,
       announcement: '', maintenance_notice: '',
     }, s2));
@@ -1405,6 +1415,30 @@ const api = async (req, res, url) => {
     store.audit(admin.username, 'platform-settings', '平台设置', '更新平台参数');
     store.save();
     return sendJson(res, 200, { ok: true, settings: d.settings.platform });
+  }
+
+  /* ---- 通知与邮件 ---- */
+  if (p === '/api/admin/notifications' && method === 'GET') {
+    const d = store.load();
+    const users = {};
+    (d.users || []).forEach(u => { users[u.id] = u.username; });
+    const list = ((d.platform && d.platform.notifications) || []).map(n => Object.assign({}, n, { username: users[n.user_id] || n.user_id }));
+    const q = url.searchParams.get('q') || '';
+    return sendJson(res, 200, paginate(q ? list.filter(x => textMatch(x, q, ['title', 'body', 'username'])) : list, url, 20));
+  }
+  if (p === '/api/admin/mail/test' && method === 'POST') {
+    const cfg = platform.mailConfig();
+    if (!cfg || !cfg.host) return sendJson(res, 400, { error: '请先保存 SMTP 配置' });
+    const r = await require('./mailer').sendMail(cfg, {
+      to: body.to || cfg.user || 'test@example.com',
+      subject: '小小科技 · SMTP 测试邮件',
+      text: '这是一封来自小小科技 AI Gateway 的测试邮件，收到即表示 SMTP 配置可用。',
+    });
+    return sendJson(res, r.ok ? 200 : 400, r);
+  }
+  if (p === '/api/admin/mail/log' && method === 'GET') {
+    const d = store.load();
+    return sendJson(res, 200, { items: ((d.platform && d.platform.mailLog) || []).slice(0, 100) });
   }
 
   /* ---- 系统状态 ---- */
@@ -1638,6 +1672,13 @@ async function handler(req, res) {
     const o = platform.findOrder(id);
     if (!o || o.user_id !== u.id) return sendJson(res, 404, { ok: false, error: '订单不存在' });
     const r = platform.markPaid(id, 'MOCK' + Date.now());
+    if (r.order && !r.duplicated) {
+      platform.notify(r.order.user_id, {
+        title: '充值成功',
+        body: '充值 ¥' + r.order.amount + ' 已到账，获得 ' + r.order.points + ' 积分，当前可立即调用接口。',
+        kind: 'payment', email: u.email,
+      });
+    }
     if (r.error) return sendJson(res, 404, { ok: false, error: r.error });
     return sendJson(res, 200, { ok: true, order: r.order });
   }

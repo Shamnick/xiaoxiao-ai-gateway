@@ -338,7 +338,7 @@ POST /v1/images/generations    { "model": "image-gen-1", "prompt": "...", "n": 1
 
 **New API 更强的地方**：上游协议适配种类多（30+ 供应商）、渠道分组与模型重定向更细、令牌 IP 白名单、多语言、Docker 一键部署、社区与文档生态成熟。
 
-**尚未实现（Roadmap）**：邮件通知、audio 端点、上游协议扩展（Claude/Gemini 原生协议）。
+**尚未实现（Roadmap）**：audio 端点（TTS/STT）、上游协议扩展（Claude/Gemini 原生协议）、邮件模板自定义。
 
 ## 说明
 

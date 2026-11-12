@@ -1070,6 +1070,7 @@
     async render() {
       const s = await api('/settings');
       state.cache.settings = s;
+      const smtp = (s.platform && s.platform.smtp) || {};
       return '<div class="grid g2">' +
         '<div class="card"><div class="card-head"><h3>基础信息</h3></div><div class="card-pad">' +
         '<div class="field row2"><div><label class="fl">品牌名称（中文）</label><input class="inp" id="sBrand" style="width:100%" value="' + esc(s.brand_name || '小小科技') + '"></div>' +
@@ -1092,6 +1093,15 @@
         '<div><label class="fl">默认 TPM 限制</label><input class="inp" id="pfTpm" type="number" style="width:100%" value="' + esc((s.platform && s.platform.default_tpm) || 200000) + '"></div></div>' +
         '<div class="field"><label class="switch"><input type="checkbox" id="pfRegister"' + (!s.platform || s.platform.register_enabled !== false ? ' checked' : '') + '><i></i>开放注册</label></div>' +
         '<div class="field"><label class="fl">站内公告（显示在用户中心顶部，可留空）</label><textarea class="inp" id="pfAnn" style="width:100%;min-height:64px">' + esc((s.platform && s.platform.announcement) || '') + '</textarea></div>' +
+        '<div class="divider"></div><h4 style="margin:0 0 8px">SMTP 邮件（可选）</h4>' +
+        '<div class="field row2"><div><label class="fl">SMTP 服务器</label><input class="inp" id="smHost" style="width:100%" placeholder="smtp.example.com" value="' + esc(smtp.host || '') + '"></div>' +
+        '<div><label class="fl">端口</label><input class="inp" id="smPort" type="number" style="width:100%" value="' + esc(smtp.port || 465) + '"></div></div>' +
+        '<div class="field row2"><div><label class="fl">账号</label><input class="inp" id="smUser" style="width:100%" value="' + esc(smtp.user || '') + '"></div>' +
+        '<div><label class="fl">密码 / 授权码</label><input class="inp" id="smPass" type="password" style="width:100%" value="' + esc(smtp.pass || '') + '"></div></div>' +
+        '<div class="field row2"><div><label class="fl">发件人</label><input class="inp" id="smFrom" style="width:100%" placeholder="noreply@example.com" value="' + esc(smtp.from || '') + '"></div>' +
+        '<div style="display:flex;align-items:flex-end;gap:8px"><label class="switch"><input type="checkbox" id="smSecure"' + (smtp.secure !== false ? ' checked' : '') + '><i></i>SSL(465)</label>' +
+        '<button class="btn btn-sm" data-act="mail-test">发测试邮件</button></div></div>' +
+        '<div class="hint">配置后：注册欢迎、充值到账会同时发邮件；不配置则只写站内通知，不影响主流程。</div>' +
         '<div class="warn-box">修改外链会全局替换前台页面中的旧地址（客服 / 续杯 / 用户中心）。</div>' +
         '<div class="toolbar" style="margin-top:14px"><button class="btn btn-primary" data-act="settings-save">保存设置</button>' +
         '<a class="btn" href="/" target="_blank" rel="noopener">打开前台</a></div>' +
@@ -1259,6 +1269,13 @@
       }
 
       /* ----- 模型 ----- */
+      if (act === 'mail-test') {
+        const to = prompt('发送测试邮件到：', state.admin && state.admin.email || '');
+        if (!to) return;
+        try { const d = await api('/mail/test', { method: 'POST', body: { to } }); toast(d.ok ? '已发送，请查收' : ('失败：' + (d.error || '')), d.ok ? '' : 'err'); }
+        catch (err) { toast(err.message, 'err'); }
+        return;
+      }
       if (act === 'sys-refresh') { loadSystem(); toast('已刷新'); return; }
       if (act === 'model-query') {
         const s = vs('models');
@@ -1892,6 +1909,14 @@
                 default_rpm: Number($('#pfRpm').value) || 0,
                 default_tpm: Number($('#pfTpm').value) || 0,
                 announcement: $('#pfAnn').value,
+                smtp: {
+                  host: $('#smHost').value.trim(),
+                  port: Number($('#smPort').value) || 465,
+                  secure: $('#smSecure').checked,
+                  user: $('#smUser').value.trim(),
+                  pass: $('#smPass').value,
+                  from: $('#smFrom').value.trim(),
+                },
               },
             }
           });

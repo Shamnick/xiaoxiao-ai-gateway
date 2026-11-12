@@ -719,6 +719,60 @@ function leaderboard(days) {
   return Object.values(map).sort((a, b) => b.calls - a.calls).slice(0, 20);
 }
 
+/* ------------------------------ 站内通知 + 邮件 ------------------------------ */
+const mailer = require('./mailer');
+
+function notifications() {
+  const { p } = data();
+  if (!p.notifications) p.notifications = [];
+  return p.notifications;
+}
+
+function addNotification(userId, title, body, kind) {
+  const list = notifications();
+  const n = { id: 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), user_id: userId, title, body: body || '', kind: kind || 'info', read: false, at: now() };
+  list.unshift(n);
+  if (list.length > 500) list.length = 500;
+  scheduleSave();
+  return n;
+}
+
+function listNotifications(userId, limit) {
+  return notifications().filter(n => n.user_id === userId).slice(0, Number(limit) || 50);
+}
+
+function markNotificationsRead(userId, id) {
+  notifications().forEach(n => {
+    if (n.user_id !== userId) return;
+    if (!id || n.id === id) n.read = true;
+  });
+  scheduleSave();
+}
+
+function mailConfig() {
+  const { db } = data();
+  const cfg = (db.settings && db.settings.platform && db.settings.platform.smtp) || {};
+  return cfg;
+}
+
+/** 通知：站内必达；配置了 SMTP 且有邮箱再异步发邮件 */
+function notify(userId, opts) {
+  const n = addNotification(userId, opts.title, opts.body, opts.kind);
+  const cfg = mailConfig();
+  if (cfg && cfg.host && opts.email) {
+    mailer.sendMail(cfg, { to: opts.email, subject: opts.title, text: opts.body || opts.title })
+      .then(r => {
+        const { p } = data();
+        p.mailLog = p.mailLog || [];
+        p.mailLog.unshift({ at: now(), to: opts.email, subject: opts.title, ok: !!r.ok, error: r.error || '' });
+        if (p.mailLog.length > 200) p.mailLog.length = 200;
+        scheduleSave();
+      })
+      .catch(() => {});
+  }
+  return n;
+}
+
 /* ------------------------------ 用户分组与倍率 ------------------------------ */
 function ensureGroups() {
   const { db, p } = data();
@@ -785,6 +839,7 @@ function restoreBackup(name) {
 }
 
 module.exports = {
+  addNotification, listNotifications, markNotificationsRead, notify, mailConfig,
   keyIpAllowed, ipMatch, scheduleSave, ensureGroups, groupRatio, listBackups, createBackup, restoreBackup,
   rechargePlans, createOrder, findOrder, markPaid, checkChannel, healthTick, HEALTH, POINT_PER_YUAN,
   relayEmbeddings, relayImages, leaderboard,
