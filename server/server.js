@@ -14,6 +14,7 @@ const store = require('./store');
 const render = require('./render');
 const userSite = require('./user-site');
 const platform = require('./platform');
+const adapters = require('./adapters');
 
 const ROOT = path.resolve(__dirname, '..');
 const PUBLIC = path.join(ROOT, 'public');
@@ -396,6 +397,52 @@ async function handleV1(req, res, url) {
     const r = await platform.relayChat(secret, body, clientIp(req));
     if (!r.ok) {
       return sendJson(res, r.status, { error: { message: r.error, type: r.type || 'error' } });
+    }
+    // 真实上游流式：逐块转发（OpenAI 原样透传，Anthropic/Gemini 转为 OpenAI SSE）
+    if (r.stream && r.upstreamRes) {
+      res.writeHead(200, {
+        'content-type': 'text/event-stream; charset=utf-8',
+        'cache-control': 'no-cache, no-transform',
+        connection: 'keep-alive',
+        'x-accel-buffering': 'no',
+      });
+      const isOpenAI = !r.adapter || r.adapter === adapters.openai;
+      const reader = r.upstreamRes.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      let usage = null;
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const text = dec.decode(value, { stream: true });
+          if (isOpenAI) {
+            res.write(text);
+            buf += text;
+            const hits = buf.match(/"usage"\s*:\s*\{[^{}]*\}/g);
+            if (hits && hits.length) {
+              try {
+                const u = JSON.parse('{' + hits[hits.length - 1] + '}').usage;
+                if (u && (u.prompt_tokens != null || u.completion_tokens != null)) usage = u;
+              } catch (e) { /* ignore */ }
+            }
+            if (buf.length > 20000) buf = buf.slice(-8000);
+          } else {
+            buf += text;
+            const lines = buf.split('\n');
+            buf = lines.pop();
+            for (const line of lines) {
+              const out = r.adapter.transformStreamLine(line.trim(), r.ctx);
+              if (out) res.write(out);
+            }
+          }
+        }
+      } catch (e) { /* 客户端断开或上游异常，按已产生内容结算 */ }
+      finally {
+        try { res.end(); } catch (e) { /* ignore */ }
+        r.settle(isOpenAI ? (usage || { prompt_tokens: 0, completion_tokens: 0 }) : r.ctx.usage);
+      }
+      return;
     }
     if (r.stream && Array.isArray(r.data)) {
       res.writeHead(200, {

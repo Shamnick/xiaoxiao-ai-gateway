@@ -5,6 +5,7 @@
  */
 const crypto = require('crypto');
 const store = require('./store');
+const adapters = require('./adapters');
 
 const KEY_PREFIX = 'sk-yt-';
 
@@ -519,6 +520,29 @@ async function relayChat(secret, body, clientIp) {
   const candidates = routeCandidates(model, user.group);
   let payload = null, usage = null, usedChannel = null, lastErr = '';
 
+  const settle = (u, ch) => {
+    const pt = Number(u && u.prompt_tokens) || 0;
+    const ct = Number(u && u.completion_tokens) || 0;
+    const baseCost = computeCost(model, { prompt_tokens: pt, completion_tokens: ct });
+    const ratio = groupRatio(user);
+    const cost = Number((baseCost * (ratio || 0)).toFixed(6));
+    if (key.quota > 0) key.used += 1;
+    else {
+      user.frozen = Number(Math.max(0, (Number(user.frozen) || 0) - estCost).toFixed(6));
+      user.balance = Number((Number(user.balance) - cost).toFixed(6));
+    }
+    key.last_used_at = now();
+    addLog({
+      user_id: user.id, key_id: key.id, model,
+      status: 'success', cost, ms: Date.now() - started,
+      prompt_tokens: pt, completion_tokens: ct,
+      channel: ch ? ch.name : 'unknown',
+      stream: !!stream,
+    });
+    scheduleSave();
+    return cost;
+  };
+
   for (const channel of candidates) {
     if (channel.type === 'mock') {
       payload = mockCompletion(model, body.messages || [], stream);
@@ -527,26 +551,31 @@ async function relayChat(secret, body, clientIp) {
       break;
     }
     if (!channel.base_url) continue;
+    const adapter = adapters.forType(channel.type);
+    const req = adapter.buildRequest(channel, model, body, stream);
     try {
-      const upBody = Object.assign({}, body);
-      const mapped = channel.model_map && channel.model_map[model];
-      if (mapped) upBody.model = mapped;
-      const upstream = await fetch(String(channel.base_url).replace(/\/$/, '') + '/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + channel.api_key },
-        body: JSON.stringify(upBody),
+      const upstream = await fetch(req.url, Object.assign({}, req.options, {
         signal: AbortSignal.timeout ? AbortSignal.timeout(Number(channel.timeout_ms) || 60000) : undefined,
-      });
+      }));
       if (!upstream.ok) {
         lastErr = '上游 ' + channel.name + ' 返回 ' + upstream.status;
         channel.status = 'warn';
         continue;
       }
-      payload = await upstream.json();
-      usage = payload.usage || {};
-      usedChannel = channel;
       channel.status = 'ok';
       channel.last_check = now();
+      if (stream) {
+        return {
+          ok: true, stream: true, upstreamRes: upstream, adapter,
+          ctx: { id: 'chatcmpl-' + Date.now(), created: Math.floor(Date.now() / 1000), model, usage: {}, finished: false },
+          settle: (u) => settle(u, channel),
+          channelName: channel.name,
+        };
+      }
+      const raw = await upstream.json();
+      payload = adapter.parseResponse(raw, model);
+      usage = payload.usage || {};
+      usedChannel = channel;
       break;
     } catch (e) {
       lastErr = '上游 ' + channel.name + ' 不可达：' + e.message;
@@ -560,28 +589,13 @@ async function relayChat(secret, body, clientIp) {
     return { ok: false, status: 502, error: lastErr || '无可用渠道', type: 'upstream_error' };
   }
 
-  const pt = Number(usage && usage.prompt_tokens) || 0;
-  const ct = Number(usage && usage.completion_tokens) || 0;
-  const baseCost = computeCost(model, usage);
-  const ratio = groupRatio(user);
-  const cost = Number((baseCost * (ratio || 0)).toFixed(6));
-
-  if (key.quota > 0) key.used += 1;
-  else {
-    user.frozen = Number(Math.max(0, (Number(user.frozen) || 0) - estCost).toFixed(6));
-    user.balance = Number((balance - cost).toFixed(6));
+  if (Array.isArray(payload)) {
+    const cost = settle(usage, usedChannel);
+    return { ok: true, data: payload, stream: true, usage, cost, channel: usedChannel ? usedChannel.name : '' };
   }
-  key.last_used_at = now();
 
-  addLog({
-    user_id: user.id, key_id: key.id, model,
-    status: 'success', cost, ms: Date.now() - started,
-    prompt_tokens: pt, completion_tokens: ct,
-    channel: usedChannel ? usedChannel.name : 'unknown',
-    stream: !!stream,
-  });
-  scheduleSave();
-  return { ok: true, data: payload, stream, usage, cost, channel: usedChannel ? usedChannel.name : '' };
+  const cost = settle(usage, usedChannel);
+  return { ok: true, data: payload, stream: false, usage, cost, channel: usedChannel ? usedChannel.name : '' };
 }
 
 /** 用量统计：按天 / 按模型 / 按 Key */

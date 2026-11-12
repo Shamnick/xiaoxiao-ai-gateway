@@ -1575,9 +1575,9 @@
           title: c ? '编辑渠道 · ' + c.name : '新增上游渠道',
           body: '<div class="field"><label class="fl">渠道名称 *</label><input class="inp" id="chName" style="width:100%" value="' + esc(c ? c.name : '') + '"></div>' +
             '<div class="field row2"><div><label class="fl">类型</label><select class="sel" id="chType" style="width:100%">' +
-            [['openai', 'OpenAI 兼容'], ['mock', '内置演示']].map(x => '<option value="' + x[0] + '"' + (c && c.type === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') +
+            [['openai', 'OpenAI 兼容'], ['anthropic', 'Anthropic (Claude)'], ['gemini', 'Google Gemini'], ['mock', '内置演示']].map(x => '<option value="' + x[0] + '"' + (c && c.type === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') +
             '</select></div><div><label class="fl">权重</label><input class="inp" id="chWeight" type="number" min="1" style="width:100%" value="' + esc(c ? c.weight : 1) + '"></div></div>' +
-            '<div class="field"><label class="fl">上游地址（OpenAI 兼容，如 https://api.xxx.com）</label><input class="inp" id="chBase" style="width:100%" value="' + esc(c ? c.base_url : '') + '"></div>' +
+            '<div class="field"><label class="fl">上游地址</label><input class="inp" id="chBase" style="width:100%" placeholder="https://api.openai.com / https://api.anthropic.com / https://generativelanguage.googleapis.com" value="' + esc(c ? c.base_url : '') + '"><div class="hint">Anthropic 填 https://api.anthropic.com（自动拼接 /v1/messages）；Gemini 填 https://generativelanguage.googleapis.com（自动拼接 /v1beta/models/{模型}:generateContent）</div></div>' +
             '<div class="field"><label class="fl">上游 API Key</label><input class="inp" id="chKey" style="width:100%" value="' + esc(c ? c.api_key : '') + '" placeholder="sk-..."></div>' +
             '<div class="field row2"><div><label class="fl">优先级（大者优先）</label><input class="inp" id="chPriority" type="number" style="width:100%" value="' + esc(c ? (c.priority || 0) : 0) + '"></div>' +
             '<div><label class="fl">超时（毫秒）</label><input class="inp" id="chTimeout" type="number" style="width:100%" value="' + esc(c ? (c.timeout_ms || 60000) : 60000) + '"></div></div>' +

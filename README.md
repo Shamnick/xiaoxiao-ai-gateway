@@ -44,6 +44,8 @@
 | **健康检查与熔断** | 每 60s 探测上游 `/v1/models`，连续失败 3 次自动熔断 5 分钟，后台可手动检测 |
 | **预扣与结算** | 调用前按预估 token 冻结额度，返回后按实际 usage 结算，失败释放 |
 | **多模态端点** | `POST /v1/embeddings`（512 维）、`POST /v1/images/generations`（支持 n 张） |
+| **多协议上游** | OpenAI 兼容 / **Anthropic（Claude Messages）** / **Google Gemini**，对外统一 OpenAI 格式；请求、响应、SSE 流式三层转换 |
+| **流式透传** | 真实上游 `stream:true` 时逐块转发（不再整包解析），Anthropic/Gemini 的 SSE 事件实时转换为 OpenAI chunk |
 | **公开排行榜** | 近 30 天按模型聚合调用量/消耗（`/leaderboard`） |
 
 ### 站点能力
@@ -171,6 +173,16 @@ GET /v1/models
 | POST | `/api/user/recharge/create` | 创建充值订单 |
 | GET | `/api/user/recharge/status?order=` | 查询订单状态 |
 | GET | `/api/user/orders` | 我的订单 |
+
+### 上游协议适配
+
+| 渠道类型 | 上游地址示例 | 自动拼接 |
+|---|---|---|
+| `openai` | `https://api.openai.com` | `/v1/chat/completions` |
+| `anthropic` | `https://api.anthropic.com` | `/v1/messages`（`x-api-key` + `anthropic-version`） |
+| `gemini` | `https://generativelanguage.googleapis.com` | `/v1beta/models/{model}:generateContent?key=` |
+
+转换内容：system 消息分离、messages 角色映射、`max_tokens` / `temperature` / `top_p` 透传、模型映射、usage 字段归一（`input_tokens`→`prompt_tokens`、`promptTokenCount`→`prompt_tokens`）、SSE 事件流转换。验证脚本：`node tools/test-adapters.js`（13 项）+ 流式转换测试（3 项）。
 
 ### 多模态端点
 
@@ -323,6 +335,7 @@ POST /v1/images/generations    { "model": "image-gen-1", "prompt": "...", "n": 1
 | 部署 | **Docker / docker-compose / 直接 node** | Docker / 二进制 |
 | 数据存储 | 单文件 JSON（可直接拷走） | MySQL / PostgreSQL / SQLite |
 | 对外 API | OpenAI 兼容（chat/embeddings/images/models） | OpenAI / Claude / Gemini / Rerank 等多协议 |
+| 上游协议 | **OpenAI 兼容 / Anthropic / Gemini 三种原生适配** | 30+ 供应商协议 |
 | 计费 | 固定请求费 + token 单价 + **分组倍率** | 模型倍率 + 分组倍率 + 补全倍率 |
 | 路由 | 优先级 + 权重加权 + 失败回退 + **熔断** | 优先级 + 权重 + 重试 |
 | 渠道 | 模型映射、**渠道分组**、优先级、超时、批量检测、健康状态 | 模型重定向、渠道分组、多类型适配（30+） |
@@ -338,7 +351,7 @@ POST /v1/images/generations    { "model": "image-gen-1", "prompt": "...", "n": 1
 
 **New API 更强的地方**：上游协议适配种类多（30+ 供应商）、渠道分组与模型重定向更细、令牌 IP 白名单、多语言、Docker 一键部署、社区与文档生态成熟。
 
-**尚未实现（Roadmap）**：audio 端点（TTS/STT）、上游协议扩展（Claude/Gemini 原生协议）、邮件模板自定义。
+**尚未实现（Roadmap）**：audio 端点（TTS/STT）、Rerank 接口、邮件模板自定义。
 
 ## 说明
 
