@@ -175,6 +175,9 @@ function createKey(userId, opts) {
     quota: o.quota == null ? 0 : Number(o.quota) || 0,   // 0 = 不限，按用户余额计费
     used: 0,
     models: Array.isArray(o.models) && o.models.length ? o.models : ['*'],
+    allowed_ips: Array.isArray(o.allowed_ips) ? o.allowed_ips.filter(Boolean) : [],
+    limit_rpm: Number(o.limit_rpm) || 0,
+    limit_tpm: Number(o.limit_tpm) || 0,
     expires_at: o.expires_days ? new Date(Date.now() + Number(o.expires_days) * 864e5).toISOString() : null,
     created_at: now(), last_used_at: null,
   };
@@ -200,18 +203,25 @@ function listChannels() {
 }
 
 /** 候选渠道：按 priority 降序、同优先级按权重加权随机（失败可回退） */
-function routeCandidates(model) {
+function routeCandidates(model, userGroup) {
   const nowTs = Date.now();
   const list = listChannels().filter(c => {
     if (c.enabled === false) return false;
     if (c.status === 'down' && c.cooldown_until && Number(c.cooldown_until) > nowTs) return false;
     return true;
   });
-  const hit = list.filter(c => (c.models || []).includes('*') || (c.models || []).includes(model));
+  let hit = list.filter(c => (c.models || []).includes('*') || (c.models || []).includes(model));
   if (!hit.length) return [];
+  // 渠道分组：优先匹配用户所在分组，其次不限分组，最后才用其它分组
+  const g = userGroup || 'default';
+  const inGroup = hit.filter(c => Array.isArray(c.groups) && c.groups.length && c.groups.indexOf(g) !== -1);
+  const anyGroup = hit.filter(c => !Array.isArray(c.groups) || !c.groups.length);
+  const otherGroup = hit.filter(c => Array.isArray(c.groups) && c.groups.length && c.groups.indexOf(g) === -1);
+  // 分组匹配度作为最高优先级（+1000），再做同层权重随机
+  const rank = c => (inGroup.indexOf(c) !== -1 ? 2000 : (anyGroup.indexOf(c) !== -1 ? 1000 : 0));
   const byPriority = {};
   hit.forEach(c => {
-    const p = Number(c.priority) || 0;
+    const p = (Number(c.priority) || 0) + rank(c);
     (byPriority[p] = byPriority[p] || []).push(c);
   });
   const out = [];
@@ -229,6 +239,47 @@ function routeCandidates(model) {
 }
 
 function pickChannel(model) { return routeCandidates(model)[0] || null; }
+
+/* ------------------------------ 令牌 IP 白名单 ------------------------------ */
+function ipToLong(ip) {
+  const parts = String(ip).split('.');
+  if (parts.length !== 4) return null;
+  let n = 0;
+  for (const p2 of parts) {
+    const v = Number(p2);
+    if (!(v >= 0 && v <= 255)) return null;
+    n = (n << 8) + v;
+  }
+  return n >>> 0;
+}
+
+function ipMatch(ip, rule) {
+  const r = String(rule || '').trim();
+  if (!r) return false;
+  if (r === ip) return true;
+  if (r.indexOf('/') !== -1) {
+    const [base, bitsRaw] = r.split('/');
+    const bits = Number(bitsRaw);
+    const a = ipToLong(ip);
+    const b = ipToLong(base);
+    if (a === null || b === null || !(bits >= 0 && bits <= 32)) return false;
+    const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
+    return (a & mask) === (b & mask);
+  }
+  // 支持简单通配 10.0.0.*
+  if (r.indexOf('*') !== -1) {
+    const rx = new RegExp('^' + r.replace(/\./g, '\\.').replace(/\*/g, '\\d{1,3}') + '$');
+    return rx.test(ip);
+  }
+  return false;
+}
+
+function keyIpAllowed(key, ip) {
+  const list = key && key.allowed_ips;
+  if (!Array.isArray(list) || !list.length) return true;
+  if (list.some(x => String(x).trim() === '*')) return true;
+  return list.some(x => ipMatch(ip, x));
+}
 
 /* ------------------------------ 限流 ------------------------------ */
 const RATE = new Map();
@@ -424,13 +475,17 @@ function mockCompletion(model, messages, stream) {
  * 核心：鉴权 → 选渠道 → 转发/模拟 → 计费 → 记日志
  * 返回 { ok, data } 或 { ok:false, status, error }
  */
-async function relayChat(secret, body) {
+async function relayChat(secret, body, clientIp) {
   seedPlatformUsers();
   const { db } = data();
   const started = Date.now();
   const key = findKeyBySecret(secret);
   if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
   if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
+  if (!keyIpAllowed(key, clientIp)) {
+    addLog({ user_id: key.user_id, key_id: key.id, model: body.model || '', status: 'error', cost: 0, ms: 0, error: 'IP 不在白名单：' + (clientIp || 'unknown') });
+    return { ok: false, status: 403, error: '当前 IP（' + (clientIp || 'unknown') + '）不在该 Key 的白名单内', type: 'ip_forbidden' };
+  }
   if (key.expires_at && new Date(key.expires_at) < new Date()) return { ok: false, status: 403, error: 'API Key 已过期', type: 'key_expired' };
   const user = findUser(key.user_id);
   if (!user || user.status === 'banned') return { ok: false, status: 403, error: '账号不可用', type: 'account_disabled' };
@@ -461,7 +516,7 @@ async function relayChat(secret, body) {
   if (key.quota <= 0) user.frozen = Number((frozen + estCost).toFixed(6));
 
   const stream = !!(body && body.stream);
-  const candidates = routeCandidates(model);
+  const candidates = routeCandidates(model, user.group);
   let payload = null, usage = null, usedChannel = null, lastErr = '';
 
   for (const channel of candidates) {
@@ -568,13 +623,17 @@ function usageStats(userId, days) {
 }
 
 /** embeddings：mock 返回确定性向量；有上游则转发 */
-async function relayEmbeddings(secret, body) {
+async function relayEmbeddings(secret, body, clientIp) {
   seedPlatformUsers();
   const { db } = data();
   const started = Date.now();
   const key = findKeyBySecret(secret);
   if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
   if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
+  if (!keyIpAllowed(key, clientIp)) {
+    addLog({ user_id: key.user_id, key_id: key.id, model: body.model || '', status: 'error', cost: 0, ms: 0, error: 'IP 不在白名单：' + (clientIp || 'unknown') });
+    return { ok: false, status: 403, error: '当前 IP（' + (clientIp || 'unknown') + '）不在该 Key 的白名单内', type: 'ip_forbidden' };
+  }
   const user = findUser(key.user_id);
   if (!user || user.status === 'banned') return { ok: false, status: 403, error: '账号不可用', type: 'account_disabled' };
   const model = String(body.model || 'text-embedding-3-small');
@@ -607,13 +666,17 @@ async function relayEmbeddings(secret, body) {
 }
 
 /** images：mock 返回 SVG data URL；有上游则转发 */
-async function relayImages(secret, body) {
+async function relayImages(secret, body, clientIp) {
   seedPlatformUsers();
   const { db } = data();
   const started = Date.now();
   const key = findKeyBySecret(secret);
   if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
   if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
+  if (!keyIpAllowed(key, clientIp)) {
+    addLog({ user_id: key.user_id, key_id: key.id, model: body.model || '', status: 'error', cost: 0, ms: 0, error: 'IP 不在白名单：' + (clientIp || 'unknown') });
+    return { ok: false, status: 403, error: '当前 IP（' + (clientIp || 'unknown') + '）不在该 Key 的白名单内', type: 'ip_forbidden' };
+  }
   const user = findUser(key.user_id);
   if (!user || user.status === 'banned') return { ok: false, status: 403, error: '账号不可用', type: 'account_disabled' };
   const model = String(body.model || 'image-gen-1');
@@ -722,7 +785,7 @@ function restoreBackup(name) {
 }
 
 module.exports = {
-  scheduleSave, ensureGroups, groupRatio, listBackups, createBackup, restoreBackup,
+  keyIpAllowed, ipMatch, scheduleSave, ensureGroups, groupRatio, listBackups, createBackup, restoreBackup,
   rechargePlans, createOrder, findOrder, markPaid, checkChannel, healthTick, HEALTH, POINT_PER_YUAN,
   relayEmbeddings, relayImages, leaderboard,
   modelPricing, computeCost, routeCandidates, rateLimit, usageStats,

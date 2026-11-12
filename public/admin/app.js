@@ -648,6 +648,7 @@
         '<td class="num">' + (t.quota > 0 ? t.quota : '按余额') + '</td>' +
         '<td class="num">' + t.used + '</td>' +
         '<td>' + (t.enabled ? '<span class="badge on">启用</span>' : '<span class="badge off">停用</span>') + '</td>' +
+        '<td class="cell-sub">' + ((t.allowed_ips || []).length ? '<span class="badge warn">' + t.allowed_ips.length + ' 条</span>' : '不限') + '</td>' +
         '<td class="mono cell-sub">' + fmtDate(t.created_at) + '</td>' +
         '<td><div class="acts"><button class="link-btn" data-act="token-toggle" data-id="' + t.id + '">' + (t.enabled ? '停用' : '启用') + '</button>' +
         '<button class="link-btn" data-act="token-quota" data-id="' + t.id + '">改额度</button>' +
@@ -657,8 +658,8 @@
         '<select class="sel" id="tkStatus2"><option value="">全部状态</option>' +
         [['on', '启用'], ['off', '停用']].map(x => '<option value="' + x[0] + '"' + (s.status === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') +
         '</select><button class="btn btn-sm" data-act="token-query">查询</button></div>' +
-        '<div class="table-wrap"><table class="tbl"><thead><tr><th>ID</th><th>令牌</th><th>用户</th><th class="num">额度</th><th class="num">已用</th><th>状态</th><th>创建时间</th><th style="width:180px">操作</th></tr></thead>' +
-        '<tbody>' + (rows || '<tr><td colspan="8">' + emptyHTML('还没有令牌') + '</td></tr>') + '</tbody></table></div>' +
+        '<div class="table-wrap"><table class="tbl"><thead><tr><th>ID</th><th>令牌</th><th>用户</th><th class="num">额度</th><th class="num">已用</th><th>状态</th><th>IP 限制</th><th>创建时间</th><th style="width:180px">操作</th></tr></thead>' +
+        '<tbody>' + (rows || '<tr><td colspan="9">' + emptyHTML('还没有令牌') + '</td></tr>') + '</tbody></table></div>' +
         pagerHTML(d) + '</div></div>';
     },
   };
@@ -1457,12 +1458,17 @@
         if (!t) return;
         openModal({
           title: '设置额度 · ' + t.name,
-          body: '<div class="field"><label class="fl">额度（0 = 按账户余额计费）</label><input class="inp" id="tqVal" type="number" min="0" style="width:100%" value="' + t.quota + '"></div>',
+          body: '<div class="field"><label class="fl">额度（0 = 按账户余额计费）</label><input class="inp" id="tqVal" type="number" min="0" style="width:100%" value="' + t.quota + '"></div>' +
+            '<div class="field"><label class="fl">IP 白名单（逗号分隔，支持 1.2.3.4 / 10.0.0.0/8 / 192.168.*，留空 = 不限）</label>' +
+            '<input class="inp" id="tqIps" style="width:100%" value="' + esc((t.allowed_ips || []).join(',')) + '"></div>',
           footer: '<button class="btn" data-act="modal-close">取消</button><button class="btn btn-primary" id="tqSave">保存</button>',
           onMount() {
             $('#tqSave').addEventListener('click', async () => {
               try {
-                await api('/tokens/' + t.id, { method: 'PUT', body: { quota: Number($('#tqVal').value) || 0 } });
+                await api('/tokens/' + t.id, { method: 'PUT', body: {
+                  quota: Number($('#tqVal').value) || 0,
+                  allowed_ips: $('#tqIps').value.split(',').map(x => x.trim()).filter(Boolean),
+                } });
                 closeModal(); toast('已更新'); route();
               } catch (err) { toast(err.message, 'err'); }
             });
@@ -1559,6 +1565,7 @@
             '<div class="field row2"><div><label class="fl">优先级（大者优先）</label><input class="inp" id="chPriority" type="number" style="width:100%" value="' + esc(c ? (c.priority || 0) : 0) + '"></div>' +
             '<div><label class="fl">超时（毫秒）</label><input class="inp" id="chTimeout" type="number" style="width:100%" value="' + esc(c ? (c.timeout_ms || 60000) : 60000) + '"></div></div>' +
             '<div class="field"><label class="fl">承接模型（逗号分隔，* 表示全部）</label><input class="inp" id="chModels" style="width:100%" value="' + esc(c ? (c.models || []).join(',') : '*') + '"></div>' +
+            '<div class="field"><label class="fl">渠道分组（逗号分隔，留空 = 所有分组可用）</label><input class="inp" id="chGroups" style="width:100%" value="' + esc(c && c.groups ? c.groups.join(',') : '') + '"><div class="hint">匹配「分组倍率」里的分组标识，例如 default,svip</div></div>' +
             '<div class="field"><label class="fl">模型映射（每行一个：请求模型=上游模型）</label><textarea class="inp" id="chMap" style="width:100%;min-height:70px;font-family:var(--mono);font-size:12px" placeholder="GPT-6-Astra-max=gpt-4o">' +
             esc(c && c.model_map ? Object.keys(c.model_map).map(k => k + '=' + c.model_map[k]).join('\n') : '') + '</textarea>' +
             '<div class="hint">上游模型名与本平台不同时使用；留空则原样透传。</div></div>' +
@@ -1575,6 +1582,7 @@
                 name: $('#chName').value.trim(), type: $('#chType').value,
                 base_url: $('#chBase').value.trim(), api_key: $('#chKey').value.trim(),
                 models: $('#chModels').value.split(',').map(s2 => s2.trim()).filter(Boolean),
+                groups: $('#chGroups').value.split(',').map(s2 => s2.trim()).filter(Boolean),
                 model_map: mapObj,
                 priority: Number($('#chPriority').value) || 0,
                 timeout_ms: Number($('#chTimeout').value) || 60000,

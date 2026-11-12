@@ -271,6 +271,7 @@ async function handleUserApi(req, res, url) {
     if (!k) return sendJson(res, 404, { ok: false, error: 'Key 不存在' });
     if (method === 'PUT') {
       ['name', 'enabled', 'quota', 'limit_rpm', 'limit_tpm'].forEach(f => { if (body[f] != null) k[f] = body[f]; });
+      if (body.allowed_ips != null) k.allowed_ips = Array.isArray(body.allowed_ips) ? body.allowed_ips : String(body.allowed_ips).split(',').map(s2 => s2.trim()).filter(Boolean);
       if (Array.isArray(body.models)) k.models = body.models;
       store.save();
       return sendJson(res, 200, { ok: true, key: k });
@@ -383,7 +384,7 @@ async function handleV1(req, res, url) {
     try { body = await readBody(req); } catch (e) { return sendJson(res, 400, { error: { message: 'invalid json', type: 'invalid_request_error' } }); }
     const auth = String(req.headers.authorization || '');
     const secret = auth.replace(/^Bearer\s+/i, '').trim();
-    const r = await platform.relayChat(secret, body);
+    const r = await platform.relayChat(secret, body, clientIp(req));
     if (!r.ok) {
       return sendJson(res, r.status, { error: { message: r.error, type: r.type || 'error' } });
     }
@@ -403,7 +404,7 @@ async function handleV1(req, res, url) {
     let body = {};
     try { body = await readBody(req); } catch (e) { return sendJson(res, 400, { error: { message: 'invalid json', type: 'invalid_request_error' } }); }
     const secret = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
-    const r = await platform.relayEmbeddings(secret, body);
+    const r = await platform.relayEmbeddings(secret, body, clientIp(req));
     if (!r.ok) return sendJson(res, r.status, { error: { message: r.error, type: r.type || 'error' } });
     return sendJson(res, 200, r.data);
   }
@@ -411,7 +412,7 @@ async function handleV1(req, res, url) {
     let body = {};
     try { body = await readBody(req); } catch (e) { return sendJson(res, 400, { error: { message: 'invalid json', type: 'invalid_request_error' } }); }
     const secret = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
-    const r = await platform.relayImages(secret, body);
+    const r = await platform.relayImages(secret, body, clientIp(req));
     if (!r.ok) return sendJson(res, r.status, { error: { message: r.error, type: r.type || 'error' } });
     return sendJson(res, 200, r.data);
   }
@@ -1150,6 +1151,7 @@ const api = async (req, res, url) => {
       base_url: String(body.base_url || ''), api_key: String(body.api_key || ''),
       models: Array.isArray(body.models) ? body.models : (String(body.models || '*').split(',').map(s2 => s2.trim()).filter(Boolean)),
       model_map: body.model_map && typeof body.model_map === 'object' ? body.model_map : {},
+      groups: Array.isArray(body.groups) ? body.groups : String(body.groups || '').split(',').map(s2 => s2.trim()).filter(Boolean),
       priority: Number(body.priority) || 0,
       timeout_ms: Number(body.timeout_ms) || 60000,
       weight: Number(body.weight) || 1, enabled: body.enabled !== false,
@@ -1180,6 +1182,7 @@ const api = async (req, res, url) => {
     if (method === 'PUT') {
       ['name', 'type', 'base_url', 'api_key', 'enabled', 'weight', 'note', 'status', 'priority', 'timeout_ms'].forEach(f => { if (body[f] != null) ch[f] = body[f]; });
       if (body.model_map != null && typeof body.model_map === 'object') ch.model_map = body.model_map;
+      if (body.groups != null) ch.groups = Array.isArray(body.groups) ? body.groups : String(body.groups).split(',').map(s2 => s2.trim()).filter(Boolean);
       if (body.models != null) ch.models = Array.isArray(body.models) ? body.models : String(body.models).split(',').map(s2 => s2.trim()).filter(Boolean);
       store.audit(admin.username, 'channel-update', ch.name, '更新渠道 ' + ch.name);
       store.save();

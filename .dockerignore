@@ -1,0 +1,11 @@
+node_modules
+logs
+backups
+data/db.json
+src
+src-user
+docs/screenshots
+docs/demo
+.git
+*.log
+.DS_Store

@@ -78,6 +78,17 @@ PORT=8848 USER_PORT=8849 node server/server.js
 > 首次启动会用 `data/seed.json` 生成 `data/db.json`；登录后台后请立刻改密码。
 > 演示账号 `sham` 初始 1000 积分，可直接调用。
 
+### Docker 部署
+
+```bash
+docker compose up -d --build
+# 官网 http://localhost:8848  ·  用户中心 http://localhost:8849  ·  后台 /admin/
+docker compose logs -f      # 看日志
+docker compose down         # 停止
+```
+
+数据持久化在 `./data`、日志在 `./logs`、备份在 `./backups`，删容器不丢数据。
+
 ### 第一次调用
 
 ```bash
@@ -309,12 +320,13 @@ POST /v1/images/generations    { "model": "image-gen-1", "prompt": "...", "n": 1
 | 维度 | 本项目 | New API |
 |---|---|---|
 | 运行时 | Node.js 18+，**零第三方依赖** | Go，二进制部署 |
+| 部署 | **Docker / docker-compose / 直接 node** | Docker / 二进制 |
 | 数据存储 | 单文件 JSON（可直接拷走） | MySQL / PostgreSQL / SQLite |
 | 对外 API | OpenAI 兼容（chat/embeddings/images/models） | OpenAI / Claude / Gemini / Rerank 等多协议 |
 | 计费 | 固定请求费 + token 单价 + **分组倍率** | 模型倍率 + 分组倍率 + 补全倍率 |
 | 路由 | 优先级 + 权重加权 + 失败回退 + **熔断** | 优先级 + 权重 + 重试 |
-| 渠道 | 模型映射、超时、批量检测、健康状态 | 模型重定向、渠道分组、多类型适配（30+） |
-| 令牌 | 用户级 Key + 额度 + 有效期 + **RPM/TPM 限流** | 令牌 + 额度 + IP 限制 + 模型限制 |
+| 渠道 | 模型映射、**渠道分组**、优先级、超时、批量检测、健康状态 | 模型重定向、渠道分组、多类型适配（30+） |
+| 令牌 | 用户级 Key + 额度 + 有效期 + RPM/TPM 限流 + **IP 白名单（CIDR/通配）** | 令牌 + 额度 + IP 限制 + 模型限制 |
 | 备份 | **内置备份/恢复 + pre-restore 快照** | 依赖数据库备份 |
 | 公开页面 | **价格页 / API 文档 / 用量排行 / 品牌官网** | 无 |
 | 用户中心 | 控制台 / 订阅 / Key / 账单 / 充值 / 邀请 / 文档 / 图片视频 | 控制台 / 令牌 / 日志 / 充值 |
@@ -326,7 +338,7 @@ POST /v1/images/generations    { "model": "image-gen-1", "prompt": "...", "n": 1
 
 **New API 更强的地方**：上游协议适配种类多（30+ 供应商）、渠道分组与模型重定向更细、令牌 IP 白名单、多语言、Docker 一键部署、社区与文档生态成熟。
 
-**尚未实现（Roadmap）**：渠道分组、令牌 IP 白名单、邮件通知、多语言、Docker 镜像、audio 端点。
+**尚未实现（Roadmap）**：邮件通知、audio 端点、上游协议扩展（Claude/Gemini 原生协议）。
 
 ## 说明
 
