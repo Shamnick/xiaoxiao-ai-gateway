@@ -717,6 +717,163 @@ async function relayImages(secret, body, clientIp) {
   return { ok: true, data: { created: Math.floor(Date.now() / 1000), data: data2 } };
 }
 
+/* ------------------------------ 音频 / 重排 ------------------------------ */
+/** 生成一段可播放的 WAV（正弦波，长度按文本估算），用于 mock 上游 */
+function makeWav(text) {
+  const seconds = Math.min(6, Math.max(0.6, String(text || '').length / 24));
+  const rate = 16000;
+  const samples = Math.floor(rate * seconds);
+  const buf = Buffer.alloc(44 + samples * 2);
+  buf.write('RIFF', 0); buf.writeUInt32LE(36 + samples * 2, 4); buf.write('WAVE', 8);
+  buf.write('fmt ', 12); buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); buf.writeUInt16LE(1, 22);
+  buf.writeUInt32LE(rate, 24); buf.writeUInt32LE(rate * 2, 28); buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34);
+  buf.write('data', 36); buf.writeUInt32LE(samples * 2, 40);
+  for (let i = 0; i < samples; i++) {
+    const v = Math.sin((2 * Math.PI * 440 * i) / rate) * 0.08 * 32767;
+    buf.writeInt16LE(Math.round(v), 44 + i * 2);
+  }
+  return buf;
+}
+
+async function relaySpeech(secret, body, clientIp) {
+  seedPlatformUsers();
+  const { db } = data();
+  const started = Date.now();
+  const key = findKeyBySecret(secret);
+  if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
+  if (!keyIpAllowed(key, clientIp)) return { ok: false, status: 403, error: 'IP 不在白名单内', type: 'ip_forbidden' };
+  const user = findUser(key.user_id);
+  if (!user || user.status === 'banned') return { ok: false, status: 403, error: '账号不可用', type: 'account_disabled' };
+  const model = String(body.model || 'tts-1');
+  const input = String(body.input || '').slice(0, 4000);
+  if (!input) return { ok: false, status: 400, error: 'input 不能为空', type: 'invalid_request' };
+  const chars = input.length;
+  const pr = modelPricing(model);
+  const cost = Number(((Number(pr.request) || 0.01) + chars / 1000 * (Number(pr.prompt) || 0) / 1000).toFixed(6));
+  const bal = Number(user.balance) || 0;
+  if (bal - (Number(user.frozen) || 0) < cost) return { ok: false, status: 402, error: '积分余额不足', type: 'insufficient_quota' };
+
+  const ch = routeCandidates(model, user.group).find(c => c.type !== 'mock' && c.base_url);
+  let audio = null;
+  let usedChannel = 'mock';
+  if (ch) {
+    try {
+      const r = await fetch(String(ch.base_url).replace(/\/$/, '') + '/v1/audio/speech', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + ch.api_key },
+        body: JSON.stringify(Object.assign({}, body, { model: (ch.model_map && ch.model_map[model]) || model })),
+      });
+      if (r.ok) { audio = Buffer.from(await r.arrayBuffer()); usedChannel = ch.name; }
+    } catch (e) { /* 回退 mock */ }
+  }
+  if (!audio) { audio = makeWav(input); usedChannel = ch ? (ch.name + '（回退）') : 'mock'; }
+
+  user.balance = Number((bal - cost).toFixed(6));
+  key.last_used_at = now();
+  addLog({ user_id: user.id, key_id: key.id, model, status: 'success', cost, ms: Date.now() - started, prompt_tokens: chars, completion_tokens: 0, kind: 'speech', channel: usedChannel });
+  scheduleSave();
+  return { ok: true, audio, contentType: 'audio/wav' };
+}
+
+function parseMultipart(raw, contentType) {
+  const m = /boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType || '');
+  if (!m) return null;
+  const boundary = '--' + (m[1] || m[2]).trim();
+  const parts = [];
+  let idx = raw.indexOf(boundary);
+  while (idx !== -1) {
+    const start = idx + boundary.length + 2;
+    const next = raw.indexOf(boundary, start);
+    if (next === -1) break;
+    const chunk = raw.slice(start, next - 2);
+    const sep = chunk.indexOf('\r\n\r\n');
+    if (sep !== -1) {
+      const head = chunk.slice(0, sep).toString('utf8');
+      const bodyBuf = chunk.slice(sep + 4);
+      const nameM = /name="([^"]+)"/.exec(head);
+      parts.push({ name: nameM ? nameM[1] : '', headers: head, data: bodyBuf });
+    }
+    idx = next;
+  }
+  return parts;
+}
+
+async function relayTranscription(secret, raw, contentType, clientIp) {
+  seedPlatformUsers();
+  const { db } = data();
+  const started = Date.now();
+  const key = findKeyBySecret(secret);
+  if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
+  if (!keyIpAllowed(key, clientIp)) return { ok: false, status: 403, error: 'IP 不在白名单内', type: 'ip_forbidden' };
+  const user = findUser(key.user_id);
+  if (!user || user.status === 'banned') return { ok: false, status: 403, error: '账号不可用', type: 'account_disabled' };
+
+  let model = 'whisper-1';
+  let fileSize = 0;
+  const isJson = /application\/json/i.test(contentType || '');
+  if (isJson) {
+    let b = {}; try { b = JSON.parse(raw.toString('utf8')); } catch (e) {}
+    model = String(b.model || model);
+    fileSize = Buffer.byteLength(String(b.file || b.audio || ''));
+  } else {
+    const parts = parseMultipart(raw, contentType) || [];
+    const file = parts.find(p => p.name === 'file');
+    const mdl = parts.find(p => p.name === 'model');
+    if (mdl) model = mdl.data.toString('utf8').trim() || model;
+    fileSize = file ? file.data.length : raw.length;
+  }
+  if (!fileSize) return { ok: false, status: 400, error: '缺少音频文件', type: 'invalid_request' };
+
+  const pr = modelPricing(model);
+  const cost = Number(((Number(pr.request) || 0.01) + fileSize / 1e6 * (Number(pr.prompt) || 0)).toFixed(6));
+  const bal = Number(user.balance) || 0;
+  if (bal - (Number(user.frozen) || 0) < cost) return { ok: false, status: 402, error: '积分余额不足', type: 'insufficient_quota' };
+
+  user.balance = Number((bal - cost).toFixed(6));
+  key.last_used_at = now();
+  addLog({ user_id: user.id, key_id: key.id, model, status: 'success', cost, ms: Date.now() - started, prompt_tokens: 0, completion_tokens: 0, kind: 'transcription', bytes: fileSize });
+  scheduleSave();
+  return { ok: true, data: { text: '（演示转写）已接收 ' + Math.round(fileSize / 1024) + ' KB 音频。接入真实上游后此处返回识别文本。', usage: { seconds: Math.round(fileSize / 32000) } } };
+}
+
+/** 重排：本地用词重叠打分，接上游则转发 */
+async function relayRerank(secret, body, clientIp) {
+  seedPlatformUsers();
+  const { db } = data();
+  const started = Date.now();
+  const key = findKeyBySecret(secret);
+  if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
+  if (!keyIpAllowed(key, clientIp)) return { ok: false, status: 403, error: 'IP 不在白名单内', type: 'ip_forbidden' };
+  const user = findUser(key.user_id);
+  if (!user || user.status === 'banned') return { ok: false, status: 403, error: '账号不可用', type: 'account_disabled' };
+  const model = String(body.model || 'rerank-v1');
+  const query = String(body.query || '');
+  const docs = Array.isArray(body.documents) ? body.documents : [];
+  if (!query || !docs.length) return { ok: false, status: 400, error: 'query 与 documents 必填', type: 'invalid_request' };
+  const pr = modelPricing(model);
+  const cost = Number(((Number(pr.request) || 0.01) + docs.length * 0.0001).toFixed(6));
+  const bal = Number(user.balance) || 0;
+  if (bal - (Number(user.frozen) || 0) < cost) return { ok: false, status: 402, error: '积分余额不足', type: 'insufficient_quota' };
+
+  const terms = query.toLowerCase().split(/\s+|(?=[\u4e00-\u9fa5])/).filter(Boolean);
+  const results = docs.map((d, i) => {
+    const t = String(typeof d === 'string' ? d : (d && d.text) || '').toLowerCase();
+    let hit = 0;
+    terms.forEach(x => { if (x && t.indexOf(x) !== -1) hit += 1; });
+    return { index: i, relevance_score: Number((terms.length ? hit / terms.length : 0).toFixed(6)) };
+  }).sort((a, b) => b.relevance_score - a.relevance_score);
+  if (body.top_n) results.length = Math.min(results.length, Number(body.top_n));
+
+  user.balance = Number((bal - cost).toFixed(6));
+  key.last_used_at = now();
+  addLog({ user_id: user.id, key_id: key.id, model, status: 'success', cost, ms: Date.now() - started, prompt_tokens: 0, completion_tokens: 0, kind: 'rerank' });
+  scheduleSave();
+  return { ok: true, data: { id: 'rerank-' + Date.now(), model, results, usage: { documents: docs.length } } };
+}
+
 /** 公开排行榜：近 30 天按调用量 */
 function leaderboard(days) {
   const { p } = data();
@@ -763,6 +920,21 @@ function markNotificationsRead(userId, id) {
   scheduleSave();
 }
 
+const DEFAULT_MAIL_TEMPLATES = {
+  welcome: { subject: '欢迎加入小小科技', body: '你好 {{username}}，账号已创建。到「我的 Key」签发密钥即可调用接口。' },
+  payment: { subject: '充值到账通知', body: '你好 {{username}}，充值 ¥{{amount}} 已到账，获得 {{points}} 积分。' },
+};
+
+function mailTemplate(kind) {
+  const { db } = data();
+  const t = (db.settings && db.settings.platform && db.settings.platform.mail_templates) || {};
+  return Object.assign({}, DEFAULT_MAIL_TEMPLATES[kind] || {}, t[kind] || {});
+}
+
+function renderTemplate(tpl, vars) {
+  return String(tpl || '').replace(/\{\{(\w+)\}\}/g, (m, k) => (vars[k] != null ? String(vars[k]) : ''));
+}
+
 function mailConfig() {
   const { db } = data();
   const cfg = (db.settings && db.settings.platform && db.settings.platform.smtp) || {};
@@ -774,11 +946,14 @@ function notify(userId, opts) {
   const n = addNotification(userId, opts.title, opts.body, opts.kind);
   const cfg = mailConfig();
   if (cfg && cfg.host && opts.email) {
-    mailer.sendMail(cfg, { to: opts.email, subject: opts.title, text: opts.body || opts.title })
+    const tpl = opts.kind ? mailTemplate(opts.kind) : null;
+    const subject = tpl && tpl.subject ? renderTemplate(tpl.subject, opts.vars || {}) : opts.title;
+    const text = tpl && tpl.body ? renderTemplate(tpl.body, opts.vars || {}) : (opts.body || opts.title);
+    mailer.sendMail(cfg, { to: opts.email, subject, text })
       .then(r => {
         const { p } = data();
         p.mailLog = p.mailLog || [];
-        p.mailLog.unshift({ at: now(), to: opts.email, subject: opts.title, ok: !!r.ok, error: r.error || '' });
+        p.mailLog.unshift({ at: now(), to: opts.email, subject, ok: !!r.ok, error: r.error || '' });
         if (p.mailLog.length > 200) p.mailLog.length = 200;
         scheduleSave();
       })
@@ -853,6 +1028,8 @@ function restoreBackup(name) {
 }
 
 module.exports = {
+  DEFAULT_MAIL_TEMPLATES, mailTemplate, renderTemplate,
+  relaySpeech, relayTranscription, relayRerank,
   addNotification, listNotifications, markNotificationsRead, notify, mailConfig,
   keyIpAllowed, ipMatch, scheduleSave, ensureGroups, groupRatio, listBackups, createBackup, restoreBackup,
   rechargePlans, createOrder, findOrder, markPaid, checkChannel, healthTick, HEALTH, POINT_PER_YUAN,

@@ -1721,6 +1721,29 @@
       }
 
       /* ----- 用户中心：兑换码 ----- */
+      if (act === 'uc-redeem-batch') {
+        openModal({
+          title: '批量生成兑换码',
+          body: '<div class="field row2"><div><label class="fl">数量（1-200）</label><input class="inp" id="rbCount" type="number" value="10" style="width:100%"></div>' +
+            '<div><label class="fl">面值（积分）</label><input class="inp" id="rbPoints" type="number" value="100" style="width:100%"></div></div>' +
+            '<div class="field"><label class="fl">前缀</label><input class="inp" id="rbPrefix" value="XX" style="width:100%" maxlength="8"></div>' +
+            '<div class="hint">生成的码可在用户中心「订阅 / 兑换码」直接兑换。</div>',
+          footer: '<button class="btn" data-act="modal-close">取消</button><button class="btn btn-primary" id="rbGo">生成</button>',
+          onMount() {
+            $('#rbGo').addEventListener('click', async () => {
+              try {
+                const r = await api('/uc/redeem/batch', { method: 'POST', body: {
+                  count: Number($('#rbCount').value) || 10,
+                  points: Number($('#rbPoints').value) || 100,
+                  prefix: $('#rbPrefix').value.trim() || 'XX',
+                } });
+                closeModal(); toast('已生成 ' + r.codes.length + ' 个兑换码'); route();
+              } catch (err) { toast(err.message, 'err'); }
+            });
+          },
+        });
+        return;
+      }
       if (act === 'uc-redeem-new') {
         const plans = (state.cache.ucPlans || []);
         openModal({

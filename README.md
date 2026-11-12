@@ -44,6 +44,9 @@
 | **健康检查与熔断** | 每 60s 探测上游 `/v1/models`，连续失败 3 次自动熔断 5 分钟，后台可手动检测 |
 | **预扣与结算** | 调用前按预估 token 冻结额度，返回后按实际 usage 结算，失败释放 |
 | **多模态端点** | `POST /v1/embeddings`（512 维）、`POST /v1/images/generations`（支持 n 张） |
+| **音频端点** | `POST /v1/audio/speech`（返回 WAV，支持上游转发）、`POST /v1/audio/transcriptions`（multipart 解析，按文件大小计费） |
+| **Rerank** | `POST /v1/rerank`（query + documents → relevance_score 排序，支持 top_n） |
+| **批量兑换码** | 后台一键生成 1-200 个码（前缀 + 面值），用户中心直接兑换，重复兑换自动拒绝 |
 | **多协议上游** | OpenAI 兼容 / **Anthropic（Claude Messages）** / **Google Gemini**，对外统一 OpenAI 格式；请求、响应、SSE 流式三层转换 |
 | **流式透传** | 真实上游 `stream:true` 时逐块转发（不再整包解析），Anthropic/Gemini 的 SSE 事件实时转换为 OpenAI chunk |
 | **公开排行榜** | 近 30 天按模型聚合调用量/消耗（`/leaderboard`） |
@@ -184,12 +187,17 @@ GET /v1/models
 
 转换内容：system 消息分离、messages 角色映射、`max_tokens` / `temperature` / `top_p` 透传、模型映射、usage 字段归一（`input_tokens`→`prompt_tokens`、`promptTokenCount`→`prompt_tokens`）、SSE 事件流转换。验证脚本：`node tools/test-adapters.js`（13 项）+ 流式转换测试（3 项）。
 
-### 多模态端点
+### 多模态与语音端点
 
 ```
-POST /v1/embeddings            { "model": "text-embedding-3-small", "input": "hello" }
-POST /v1/images/generations    { "model": "image-gen-1", "prompt": "...", "n": 1 }
+POST /v1/embeddings              { "model": "text-embedding-3-small", "input": "hello" }
+POST /v1/images/generations      { "model": "image-gen-1", "prompt": "...", "n": 1 }
+POST /v1/audio/speech            { "model": "tts-1", "input": "你好", "voice": "alloy" }   → 返回 audio/wav
+POST /v1/audio/transcriptions    multipart: file + model                                  → { text, usage }
+POST /v1/rerank                  { "model": "rerank-v1", "query": "...", "documents": ["..."] }
 ```
+
+音频与重排默认走本地实现（WAV 合成 / 词重叠打分），配置了上游渠道时优先转发。
 
 ### 支付
 

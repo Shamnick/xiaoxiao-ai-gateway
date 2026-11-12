@@ -108,6 +108,20 @@ function sendHtml(res, code, html, opts) {
   res.end(res.req.method === 'HEAD' ? undefined : buf);
 }
 
+function readRaw(req, limit) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+    req.on('data', c => {
+      size += c.length;
+      if (size > (limit || 25 * 1024 * 1024)) { reject(new Error('body too large')); req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let size = 0;
@@ -454,6 +468,30 @@ async function handleV1(req, res, url) {
       r.data.forEach(chunk => res.write(chunk));
       return res.end();
     }
+    return sendJson(res, 200, r.data);
+  }
+  if (p === '/v1/audio/speech' && req.method === 'POST') {
+    let body = {};
+    try { body = await readBody(req); } catch (e) { return sendJson(res, 400, { error: { message: 'invalid json', type: 'invalid_request_error' } }); }
+    const secret = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+    const r = await platform.relaySpeech(secret, body, clientIp(req));
+    if (!r.ok) return sendJson(res, r.status, { error: { message: r.error, type: r.type || 'error' } });
+    res.writeHead(200, { 'content-type': r.contentType, 'content-length': r.audio.length, 'cache-control': 'no-store' });
+    return res.end(r.audio);
+  }
+  if (p === '/v1/audio/transcriptions' && req.method === 'POST') {
+    const raw = await readRaw(req, 30 * 1024 * 1024);
+    const secret = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+    const r = await platform.relayTranscription(secret, raw, String(req.headers['content-type'] || ''), clientIp(req));
+    if (!r.ok) return sendJson(res, r.status, { error: { message: r.error, type: r.type || 'error' } });
+    return sendJson(res, 200, r.data);
+  }
+  if (p === '/v1/rerank' && req.method === 'POST') {
+    let body = {};
+    try { body = await readBody(req); } catch (e) { return sendJson(res, 400, { error: { message: 'invalid json', type: 'invalid_request_error' } }); }
+    const secret = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+    const r = await platform.relayRerank(secret, body, clientIp(req));
+    if (!r.ok) return sendJson(res, r.status, { error: { message: r.error, type: r.type || 'error' } });
     return sendJson(res, 200, r.data);
   }
   if (p === '/v1/embeddings' && req.method === 'POST') {
@@ -1163,6 +1201,33 @@ const api = async (req, res, url) => {
       return sendJson(res, 200, { ok: true, item: rec });
     }
   }
+  /* ---- 兑换码批量生成 ---- */
+  if (p === '/api/admin/uc/redeem/batch' && method === 'POST') {
+    const d = store.load();
+    const uc = (d.userCenter = d.userCenter || {});
+    const list = Array.isArray(uc.redeemCodes) ? uc.redeemCodes : [];
+    const count = Math.min(200, Math.max(1, Number(body.count) || 10));
+    const points = Number(body.points) || 100;
+    const prefix = String(body.prefix || 'XX').replace(/[^A-Za-z0-9]/g, '').slice(0, 8) || 'XX';
+    const days = Number(body.expires_days) || 0;
+    const made = [];
+    for (let i = 0; i < count; i++) {
+      const code = prefix + '-' + require('crypto').randomBytes(4).toString('hex').toUpperCase();
+      const row = {
+        code, plan: String(body.plan || '按量充值'), days: Number(body.days) || 0,
+        points, concurrency: Number(body.concurrency) || 1, daily: 0,
+        used: false, created_at: nowIso(), source: 'batch',
+      };
+      if (days) row.expires_at = new Date(Date.now() + days * 864e5).toISOString();
+      list.unshift(row);
+      made.push(code);
+    }
+    uc.redeemCodes = list.slice(0, 5000);
+    store.save();
+    store.audit(admin.username, 'redeem-batch', made.length + ' 个', '批量生成兑换码 ' + points + ' 积分');
+    return sendJson(res, 200, { ok: true, codes: made, total: list.length });
+  }
+
   const rdRe = /^\/api\/admin\/uc\/redeem\/([\w-]+)$/.exec(p);
   if (rdRe) {
     const uc = db.userCenter || {};
@@ -1723,7 +1788,7 @@ async function handler(req, res) {
       platform.notify(r.order.user_id, {
         title: '充值成功',
         body: '充值 ¥' + r.order.amount + ' 已到账，获得 ' + r.order.points + ' 积分，当前可立即调用接口。',
-        kind: 'payment', email: u.email,
+        kind: 'payment', email: u.email, vars: { username: u.username, amount: r.order.amount, points: r.order.points },
       });
     }
     if (r.error) return sendJson(res, 404, { ok: false, error: r.error });
