@@ -244,7 +244,13 @@ async function handleUserApi(req, res, url) {
   if (!me) return sendJson(res, 401, { ok: false, error: '未登录' });
 
   if (p === '/api/user/me' && method === 'GET') {
-    return sendJson(res, 200, { ok: true, user: platform.publicUser(me) });
+    const d = store.load();
+    const thr = Number((d.settings && d.settings.platform && d.settings.platform.low_balance_threshold) || 10);
+    const pu = platform.publicUser(me);
+    return sendJson(res, 200, {
+      ok: true, user: pu,
+      low_balance: Number(pu.balance) < thr, low_balance_threshold: thr,
+    });
   }
 
   if (p === '/api/user/keys' && method === 'GET') {
@@ -1143,6 +1149,9 @@ const api = async (req, res, url) => {
       name: String(body.name || '新渠道'), type: body.type || 'openai',
       base_url: String(body.base_url || ''), api_key: String(body.api_key || ''),
       models: Array.isArray(body.models) ? body.models : (String(body.models || '*').split(',').map(s2 => s2.trim()).filter(Boolean)),
+      model_map: body.model_map && typeof body.model_map === 'object' ? body.model_map : {},
+      priority: Number(body.priority) || 0,
+      timeout_ms: Number(body.timeout_ms) || 60000,
       weight: Number(body.weight) || 1, enabled: body.enabled !== false,
       status: 'unknown', last_check: null, note: body.note || '',
     };
@@ -1151,13 +1160,26 @@ const api = async (req, res, url) => {
     store.save();
     return sendJson(res, 200, { ok: true, channel: ch });
   }
+  if (p === '/api/admin/channels/check-all' && method === 'POST') {
+    const d = store.load();
+    const list = ((d.platform && d.platform.channels) || []).filter(c => c.enabled !== false);
+    const results = [];
+    for (const c of list) {
+      const r = await platform.checkChannel(c);
+      results.push({ id: c.id, name: c.name, ok: r.ok, error: r.error || '', latency: r.latency || 0 });
+    }
+    store.save();
+    return sendJson(res, 200, { ok: true, results });
+  }
+
   const chRe = /^\/api\/admin\/channels\/([\w-]+)$/.exec(p);
   if (chRe) {
     const d = store.load();
     const ch = (d.platform && d.platform.channels || []).find(c => c.id === chRe[1]);
     if (!ch) return sendJson(res, 404, { error: '渠道不存在' });
     if (method === 'PUT') {
-      ['name', 'type', 'base_url', 'api_key', 'enabled', 'weight', 'note', 'status'].forEach(f => { if (body[f] != null) ch[f] = body[f]; });
+      ['name', 'type', 'base_url', 'api_key', 'enabled', 'weight', 'note', 'status', 'priority', 'timeout_ms'].forEach(f => { if (body[f] != null) ch[f] = body[f]; });
+      if (body.model_map != null && typeof body.model_map === 'object') ch.model_map = body.model_map;
       if (body.models != null) ch.models = Array.isArray(body.models) ? body.models : String(body.models).split(',').map(s2 => s2.trim()).filter(Boolean);
       store.audit(admin.username, 'channel-update', ch.name, '更新渠道 ' + ch.name);
       store.save();
@@ -1363,24 +1385,12 @@ const api = async (req, res, url) => {
   }
 
   /* ---- 渠道批量检测 ---- */
-  if (p === '/api/admin/channels/check-all' && method === 'POST') {
-    const d = store.load();
-    const list = ((d.platform && d.platform.channels) || []).filter(c => c.enabled !== false);
-    const results = [];
-    for (const c of list) {
-      const r = await platform.checkChannel(c);
-      results.push({ id: c.id, name: c.name, ok: r.ok, error: r.error || '', latency: r.latency || 0 });
-    }
-    store.save();
-    return sendJson(res, 200, { ok: true, results });
-  }
-
   /* ---- 平台设置 ---- */
   if (p === '/api/admin/settings/platform' && method === 'GET') {
     const d = store.load();
     const s2 = d.settings && d.settings.platform ? d.settings.platform : {};
     return sendJson(res, 200, Object.assign({
-      register_enabled: true, invite_bonus: 5, new_user_points: 0,
+      register_enabled: true, invite_bonus: 5, new_user_points: 0, low_balance_threshold: 10,
       default_rpm: 60, default_tpm: 200000, free_trial_points: 0,
       announcement: '', maintenance_notice: '',
     }, s2));

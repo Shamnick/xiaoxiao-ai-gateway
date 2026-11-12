@@ -309,3 +309,13 @@ canvas.chart{width:100%;height:100%;display:block}
   .uname{display:none}
   .quick-search{display:none}
 }
+
+/* 移动端兜底：避免整页横向溢出 */
+@media (max-width:900px){
+  .content{overflow-x:hidden}
+  .table-wrap{overflow-x:auto}
+  table.tbl{min-width:680px}
+  .topbar{padding:10px 14px}
+  .quick-search input{width:120px}
+  .quick-search input:focus{width:150px}
+}

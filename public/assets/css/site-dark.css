@@ -38,3 +38,8 @@ a{color:var(--cyan);text-decoration:none}
 .dk-doc p{color:var(--txt2)}
 .dk-badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;border:1px solid var(--line);color:var(--txt2)}
 @media (max-width:900px){.dk-doc{grid-template-columns:1fr}.dk-side{display:none}.dk-tools input{width:100%}}
+
+/* 移动端：表格横向滚动，避免整页溢出 */
+.dk-tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px}
+.dk-tbl-wrap .dk-tbl{min-width:720px}
+@media (max-width:900px){.dk-tbl-wrap{border:1px solid var(--line)}}

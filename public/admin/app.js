@@ -1556,15 +1556,28 @@
             '</select></div><div><label class="fl">权重</label><input class="inp" id="chWeight" type="number" min="1" style="width:100%" value="' + esc(c ? c.weight : 1) + '"></div></div>' +
             '<div class="field"><label class="fl">上游地址（OpenAI 兼容，如 https://api.xxx.com）</label><input class="inp" id="chBase" style="width:100%" value="' + esc(c ? c.base_url : '') + '"></div>' +
             '<div class="field"><label class="fl">上游 API Key</label><input class="inp" id="chKey" style="width:100%" value="' + esc(c ? c.api_key : '') + '" placeholder="sk-..."></div>' +
+            '<div class="field row2"><div><label class="fl">优先级（大者优先）</label><input class="inp" id="chPriority" type="number" style="width:100%" value="' + esc(c ? (c.priority || 0) : 0) + '"></div>' +
+            '<div><label class="fl">超时（毫秒）</label><input class="inp" id="chTimeout" type="number" style="width:100%" value="' + esc(c ? (c.timeout_ms || 60000) : 60000) + '"></div></div>' +
             '<div class="field"><label class="fl">承接模型（逗号分隔，* 表示全部）</label><input class="inp" id="chModels" style="width:100%" value="' + esc(c ? (c.models || []).join(',') : '*') + '"></div>' +
+            '<div class="field"><label class="fl">模型映射（每行一个：请求模型=上游模型）</label><textarea class="inp" id="chMap" style="width:100%;min-height:70px;font-family:var(--mono);font-size:12px" placeholder="GPT-6-Astra-max=gpt-4o">' +
+            esc(c && c.model_map ? Object.keys(c.model_map).map(k => k + '=' + c.model_map[k]).join('\n') : '') + '</textarea>' +
+            '<div class="hint">上游模型名与本平台不同时使用；留空则原样透传。</div></div>' +
             '<div class="field"><label class="switch"><input type="checkbox" id="chEnabled"' + (!c || c.enabled !== false ? ' checked' : '') + '><i></i>启用该渠道</label></div>',
           footer: '<button class="btn" data-act="modal-close">取消</button><button class="btn btn-primary" id="chSave">保存</button>',
           onMount() {
             $('#chSave').addEventListener('click', async () => {
+              const mapObj = {};
+              ($('#chMap').value || '').split('\n').forEach(line => {
+                const i2 = line.indexOf('=');
+                if (i2 > 0) mapObj[line.slice(0, i2).trim()] = line.slice(i2 + 1).trim();
+              });
               const payload = {
                 name: $('#chName').value.trim(), type: $('#chType').value,
                 base_url: $('#chBase').value.trim(), api_key: $('#chKey').value.trim(),
                 models: $('#chModels').value.split(',').map(s2 => s2.trim()).filter(Boolean),
+                model_map: mapObj,
+                priority: Number($('#chPriority').value) || 0,
+                timeout_ms: Number($('#chTimeout').value) || 60000,
                 weight: Number($('#chWeight').value) || 1, enabled: $('#chEnabled').checked,
               };
               if (!payload.name) return toast('请填写渠道名称', 'err');

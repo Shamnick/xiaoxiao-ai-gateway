@@ -473,10 +473,13 @@ async function relayChat(secret, body) {
     }
     if (!channel.base_url) continue;
     try {
+      const upBody = Object.assign({}, body);
+      const mapped = channel.model_map && channel.model_map[model];
+      if (mapped) upBody.model = mapped;
       const upstream = await fetch(String(channel.base_url).replace(/\/$/, '') + '/v1/chat/completions', {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: 'Bearer ' + channel.api_key },
-        body: JSON.stringify(body),
+        body: JSON.stringify(upBody),
         signal: AbortSignal.timeout ? AbortSignal.timeout(Number(channel.timeout_ms) || 60000) : undefined,
       });
       if (!upstream.ok) {

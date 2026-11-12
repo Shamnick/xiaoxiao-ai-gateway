@@ -29,7 +29,7 @@
     });
     $('#pCount').textContent = '共 ' + list.length + ' 个模型';
     if (!list.length) { $('#pTable').innerHTML = '<div class="dk-card">没有匹配的模型</div>'; return; }
-    $('#pTable').innerHTML = '<table class="dk-tbl"><thead><tr>' +
+    $('#pTable').innerHTML = '<div class="dk-tbl-wrap"><table class="dk-tbl"><thead><tr>' +
       '<th>模型</th><th>品牌</th><th class="num">上下文</th><th class="num">输入（积分/1M）</th>' +
       '<th class="num">输出（积分/1M）</th><th class="num">请求费</th><th>能力</th></tr></thead><tbody>' +
       list.map(function (m) {
@@ -41,7 +41,7 @@
           '<td class="num price">' + fmt(m.pricing.completion) + '</td>' +
           '<td class="num dk-muted">' + fmt(m.pricing.request) + '</td>' +
           '<td>' + (m.tags || []).slice(0, 2).map(function (t) { return '<span class="dk-chip">' + esc(t) + '</span>'; }).join('') + '</td></tr>';
-      }).join('') + '</tbody></table>';
+      }).join('') + '</tbody></table></div>';
   }
 
   fetch('/api/public/models').then(function (r) { return r.json(); }).then(function (d) {

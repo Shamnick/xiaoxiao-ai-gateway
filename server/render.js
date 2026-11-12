@@ -49,6 +49,11 @@ function template(page) {
   return cache.get(page);
 }
 
+/** 只转义标签相关字符，保留 &nbsp; 等既有实体 */
+function escT(v) {
+  return String(v == null ? '' : v).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function escA(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -69,17 +74,17 @@ function renderCard(m, settings) {
     out += '<img src="' + (m.logo_src || ('assets/img/brands/' + brand + '.svg')) + '" alt="' + escA(brand) +
       '" width="22" height="22" loading="lazy" decoding="async">';
   }
-  out += '</span><div class="model-head-main"><div class="model-name-row"><h3 class="model-name">' + m.name + '</h3>';
+  out += '</span><div class="model-head-main"><div class="model-name-row"><h3 class="model-name">' + escT(m.name) + '</h3>';
   out += '<button type="button" class="model-copy" data-model="' + escA(m.name) + '" data-label="复制" aria-label="复制模型名 ' +
     escA(m.name) + '">复制</button>';
   out += '</div></div></div><div class="model-tags">';
   (m.tags || []).forEach(t => {
-    out += '<span class="model-tag' + (t.cls ? ' ' + t.cls : '') + '">' + t.text + '</span>';
+    out += '<span class="model-tag' + (t.cls ? ' ' + t.cls : '') + '">' + escT(t.text) + '</span>';
   });
-  out += '</div><p class="model-desc">' + m.desc + '</p>';
+  out += '</div><p class="model-desc">' + escT(m.desc) + '</p>';
   out += '<div class="model-foot' + (m.has_refill ? ' has-refill' : '') + '">';
-  out += '<span class="model-vendor">' + m.vendor + '</span>';
-  out += '<span class="model-price"' + (m.price_attrs || '') + '>' + m.price + '</span>';
+  out += '<span class="model-vendor">' + escT(m.vendor) + '</span>';
+  out += '<span class="model-price"' + (m.price_attrs || '') + '>' + escT(m.price) + '</span>';
   if (m.refill_html != null) {
     const at = String(m.refill_attrs || '').split('https://a10.yutiankejiai.com/client/').join(st.refill_url);
     out += '<a class="model-refill"' + at + '>' + m.refill_html + '</a>';
@@ -102,7 +107,7 @@ function renderTabs(sec, brands) {
     .filter(b => b.enabled !== false)
     .sort((a, b) => (a.order || 0) - (b.order || 0))
     .map((b, i) => '<button type="button" class="model-tab' + (i === 0 ? ' is-active' : '') +
-      '" data-brand-tab="' + escA(b.id) + '">' + b.label + '</button>')
+      '" data-brand-tab="' + escA(b.id) + '">' + (typeof escT === 'function' ? escT(b.label) : b.label) + '</button>')
     .join(sec.tabs_prefix || '\n                  ');
   return (sec.tabs_prefix || '') + list + (sec.tabs_suffix || '');
 }
