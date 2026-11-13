@@ -1268,10 +1268,15 @@
       const btn = $('#loginBtn');
       const hint = $('#loginHint');
       hint.textContent = '';
+      const uname = $('#loginUser').value.trim();
+      if (uname.toLowerCase() === 'sham' || uname === 'sham') {
+        hint.textContent = 'sham 是用户中心账号，请到 ' + location.protocol + '//' + location.hostname + ':8849/ 登录';
+        return;
+      }
       btn.disabled = true;
       btn.textContent = '登录中…';
       try {
-        const d = await api('/login', { method: 'POST', body: { username: $('#loginUser').value.trim(), password: $('#loginPass').value } });
+        const d = await api('/login', { method: 'POST', body: { username: uname, password: $('#loginPass').value.trim() } });
         state.admin = d.admin;
         if ($('#rememberMe').checked) localStorage.setItem('ytk_admin_user', d.admin.username);
         else localStorage.removeItem('ytk_admin_user');
