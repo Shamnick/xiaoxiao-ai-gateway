@@ -87,6 +87,7 @@ function sendText(res, code, text, ctype) {
 }
 
 function sendHtml(res, code, html, opts) {
+  if (typeof html === 'string' && /\.(?:js|css)"/.test(html)) html = fingerprintAssets(html);
   const o = opts || {};
   const buf = Buffer.from(html, 'utf8');
   const headers = Object.assign({
@@ -620,18 +621,34 @@ function serveStatic(req, res, baseDir, relPath, noCache) {
 const GZIP_CACHE = new Map();
 const TEXT_EXT = ['.css', '.js', '.json', '.svg', '.html', '.txt', '.map'];
 
+
+/** 给 HTML 里的 js/css 引用追加 mtime 版本号：文件一改，URL 就变，浏览器必然重新拉取 */
+function fingerprintAssets(html) {
+  return html.replace(/(src|href)="(\/[^"?#]+\.(?:js|css))"/g, (m, attr, url) => {
+    try {
+      const file = path.join(PUBLIC, url.replace(/^\//, ''));
+      const st = fs.statSync(file);
+      return attr + '="' + url + '?v=' + Math.floor(st.mtimeMs).toString(36) + '"';
+    } catch (e) { return m; }
+  });
+}
+
 function serveFile(req, res, abs, noCache) {
   const ext = path.extname(abs).toLowerCase();
   const ctype = MIME[ext] || 'application/octet-stream';
   let buf;
   try { buf = fs.readFileSync(abs); } catch (e) { return nginx404(res); }
+  if (/\.html?$/i.test(abs) && buf.length) {
+    const replaced = fingerprintAssets(buf.toString('utf8'));
+    if (replaced !== buf.toString('utf8')) buf = Buffer.from(replaced, 'utf8');
+  }
   const etag = '"' + crypto.createHash('sha1').update(buf).digest('hex').slice(0, 16) + '-' + buf.length.toString(16) + '"';
   const headers = {
     'server': 'nginx',
     'content-type': ctype,
     'etag': etag,
     'accept-ranges': 'bytes',
-    'cache-control': noCache ? 'no-cache' : 'public, max-age=31536000, immutable',
+    'cache-control': (noCache || /\.html?$/i.test(abs)) ? 'no-cache' : 'public, max-age=3600',
   };
   if (!noCache) headers.vary = 'Accept-Encoding';
   if (req.headers['if-none-match'] === etag) {
@@ -1838,6 +1855,7 @@ function topModels(db) {
 const USER_PORT = Number(process.env.USER_PORT || 8849);
 
 function sendUserHtml(res, code, html) {
+  if (typeof html === 'string' && /\.(?:js|css)"/.test(html)) html = fingerprintAssets(html);
   const buf = Buffer.from(html, 'utf8');
   const headers = Object.assign({ 'content-type': 'text/html; charset=UTF-8' }, userSite.USER_SEC_HEADERS);
   const ae = String((res.req && res.req.headers['accept-encoding']) || '');
@@ -1994,6 +2012,10 @@ async function handler(req, res) {
     if (p === '/' || p === '') return servePage(req, res, url);
 
     if (p === '/kefu/widget.js') return serveStatic(req, res, path.join(PUBLIC, 'assets/js'), '/kefu-widget.js');
+
+    if (p === '/console' || p === '/console/') {
+      return serveFile(req, res, path.join(PUBLIC, 'admin', 'index.html'), true);
+    }
 
     if (p === '/healthz') return sendJson(res, 200, { ok: true, ts: nowIso() });
 
