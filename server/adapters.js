@@ -242,7 +242,7 @@ const vertex = {
     if (Object.keys(gen).length) payload.generationConfig = gen;
     return {
       url,
-      options: { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (channel.api_key || '') }, body: JSON.stringify(payload) },
+      options: { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (channel.__access_token || channel.api_key || '') }, body: JSON.stringify(payload) },
       mappedModel: mapped,
     };
   },

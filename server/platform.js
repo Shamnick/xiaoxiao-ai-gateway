@@ -6,6 +6,7 @@
 const crypto = require('crypto');
 const store = require('./store');
 const adapters = require('./adapters');
+const googleAuth = require('./google-auth');
 
 const KEY_PREFIX = 'sk-yt-';
 
@@ -570,6 +571,10 @@ async function relayChat(secret, body, clientIp) {
       break;
     }
     if (!channel.base_url) continue;
+    if (channel.type === 'vertex' && channel.service_account) {
+      try { channel.__access_token = await googleAuth.getAccessToken(channel.id, channel.service_account); }
+      catch (e) { /* 换取失败则回退到 api_key */ delete channel.__access_token; }
+    }
     const adapter = adapters.forType(channel.type);
     const req = adapter.buildRequest(channel, model, body, stream);
     try {
@@ -1105,6 +1110,7 @@ function restoreBackup(name) {
 }
 
 module.exports = {
+  googleAuth,
   inviteStats, rerankUpstream,
   DEFAULT_MAIL_TEMPLATES, mailTemplate, renderTemplate,
   relaySpeech, relayTranscription, relayRerank,

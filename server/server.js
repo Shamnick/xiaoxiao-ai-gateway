@@ -1281,6 +1281,7 @@ const api = async (req, res, url) => {
       location: body.location || '',
       region: body.region || '',
       api_secret: body.api_secret || '',
+      service_account: body.service_account || '',
       groups: Array.isArray(body.groups) ? body.groups : String(body.groups || '').split(',').map(s2 => s2.trim()).filter(Boolean),
       priority: Number(body.priority) || 0,
       timeout_ms: Number(body.timeout_ms) || 60000,
@@ -1311,7 +1312,7 @@ const api = async (req, res, url) => {
     if (!ch) return sendJson(res, 404, { error: '渠道不存在' });
     if (method === 'PUT') {
       ['name', 'type', 'base_url', 'api_key', 'enabled', 'weight', 'note', 'status', 'priority', 'timeout_ms',
-        'api_version', 'project', 'location', 'region', 'api_secret'].forEach(f => { if (body[f] != null) ch[f] = body[f]; });
+        'api_version', 'project', 'location', 'region', 'api_secret', 'service_account'].forEach(f => { if (body[f] != null) ch[f] = body[f]; });
       if (body.model_map != null && typeof body.model_map === 'object') ch.model_map = body.model_map;
       if (body.groups != null) ch.groups = Array.isArray(body.groups) ? body.groups : String(body.groups).split(',').map(s2 => s2.trim()).filter(Boolean);
       if (body.models != null) ch.models = Array.isArray(body.models) ? body.models : String(body.models).split(',').map(s2 => s2.trim()).filter(Boolean);
@@ -1379,6 +1380,20 @@ const api = async (req, res, url) => {
       if (body.unread === 0) t.unread = 0;
       store.save();
       return sendJson(res, 200, { ok: true, thread: t });
+    }
+  }
+
+  if (p.startsWith('/api/admin/channels/') && p.endsWith('/token') && method === 'POST') {
+    const id = p.slice('/api/admin/channels/'.length).replace('/token', '');
+    const d = store.load();
+    const ch = ((d.platform && d.platform.channels) || []).find(c => c.id === id);
+    if (!ch) return sendJson(res, 404, { error: '渠道不存在' });
+    if (!ch.service_account) return sendJson(res, 400, { error: '该渠道未配置服务账号 JSON' });
+    try {
+      const tk = await require('./google-auth').getAccessToken(ch.id + ':test', ch.service_account);
+      return sendJson(res, 200, { ok: true, token_preview: tk.slice(0, 12) + '…', length: tk.length });
+    } catch (e) {
+      return sendJson(res, 400, { ok: false, error: e.message });
     }
   }
 

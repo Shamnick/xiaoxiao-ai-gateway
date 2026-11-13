@@ -96,6 +96,24 @@ docker compose down         # 停止
 
 数据持久化在 `./data`、日志在 `./logs`、备份在 `./backups`，删容器不丢数据。
 
+### 上游连通性验证
+
+```bash
+node tools/verify-upstreams.js                 # 逐个渠道实测
+node tools/verify-upstreams.js --only=Claude   # 只测名字含 Claude 的
+node tools/verify-upstreams.js --timeout=15000 # 调大超时
+```
+
+输出形如：
+
+```
+✓ [openai] 主渠道       (312ms)
+✗ [anthropic] Claude备用 → HTTP 401 invalid x-api-key
+可用 1 / 失败 1
+```
+
+支持全部 8 种协议：openai / azure / anthropic / gemini / vertex（含 OAuth 换 token）/ bedrock（真实 Converse 请求）/ cohere / ollama。
+
 ### 第一次调用
 
 ```bash
@@ -187,7 +205,7 @@ GET /v1/models
 | `azure` | `https://YOUR-RESOURCE.openai.azure.com` | `/openai/deployments/{model}/chat/completions?api-version=`（`api-key` 头） |
 | `anthropic` | `https://api.anthropic.com` | `/v1/messages`（`x-api-key` + `anthropic-version`） |
 | `gemini` | `https://generativelanguage.googleapis.com` | `/v1beta/models/{model}:generateContent?key=` |
-| `vertex` | `https://{location}-aiplatform.googleapis.com` | `/v1/projects/{project}/locations/{location}/publishers/google/models/{model}:generateContent` |
+| `vertex` | `https://{location}-aiplatform.googleapis.com` | `/v1/projects/{project}/locations/{location}/publishers/google/models/{model}:generateContent`；填了**服务账号 JSON 会自动换 access token**（JWT Bearer，缓存 1 小时） |
 | `bedrock` | `https://bedrock-runtime.{region}.amazonaws.com` | `/model/{model}/converse`（**AWS SigV4 签名**） |
 | `cohere` | `https://api.cohere.com` | `/v2/chat` |
 | `ollama` | `http://127.0.0.1:11434` | `/api/chat` |

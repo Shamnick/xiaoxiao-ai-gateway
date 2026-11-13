@@ -1596,6 +1596,8 @@
             '<div><label class="fl">超时（毫秒）</label><input class="inp" id="chTimeout" type="number" style="width:100%" value="' + esc(c ? (c.timeout_ms || 60000) : 60000) + '"></div></div>' +
             '<div class="field"><label class="fl">承接模型（逗号分隔，* 表示全部）</label><input class="inp" id="chModels" style="width:100%" value="' + esc(c ? (c.models || []).join(',') : '*') + '"></div>' +
             '<div class="field"><label class="fl">渠道分组（逗号分隔，留空 = 所有分组可用）</label><input class="inp" id="chGroups" style="width:100%" value="' + esc(c && c.groups ? c.groups.join(',') : '') + '"><div class="hint">匹配「分组倍率」里的分组标识，例如 default,svip</div></div>' +
+            '<div class="field"><label class="fl">Google 服务账号 JSON（Vertex 专用，填了会自动换 access token）</label>' +
+            '<textarea class="inp" id="chSA" style="width:100%;min-height:64px;font-family:var(--mono);font-size:11.5px" placeholder=\'{"client_email":"...","private_key":"-----BEGIN PRIVATE KEY-----..."}\'>' + esc(c && c.service_account ? c.service_account : '') + '</textarea></div>' +
             '<div class="field"><label class="fl">模型映射（每行一个：请求模型=上游模型）</label><textarea class="inp" id="chMap" style="width:100%;min-height:70px;font-family:var(--mono);font-size:12px" placeholder="GPT-6-Astra-max=gpt-4o">' +
             esc(c && c.model_map ? Object.keys(c.model_map).map(k => k + '=' + c.model_map[k]).join('\n') : '') + '</textarea>' +
             '<div class="hint">上游模型名与本平台不同时使用；留空则原样透传。</div></div>' +
@@ -1614,6 +1616,7 @@
                 models: $('#chModels').value.split(',').map(s2 => s2.trim()).filter(Boolean),
                 groups: $('#chGroups').value.split(',').map(s2 => s2.trim()).filter(Boolean),
                 model_map: mapObj,
+                service_account: $('#chSA') ? $('#chSA').value.trim() : '',
                 api_version: $('#chApiVer').value.trim(),
                 region: $('#chRegion').value.trim(),
                 project: $('#chProject').value.trim(),
