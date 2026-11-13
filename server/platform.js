@@ -88,13 +88,17 @@ function register(username, password, email, inviteCode) {
   if (pwd.length < 6) return { error: '密码至少 6 位' };
   if (db.users.some(u => String(u.username).toLowerCase() === name.toLowerCase())) return { error: '用户名已被注册' };
   const salt = crypto.randomBytes(16).toString('hex');
-  let inviter = null, bonus = 0;
+  const cfg = (db.settings && db.settings.platform) || {};
+  let inviter = null, bonus = Number(cfg.new_user_points) || 0;
   if (inviteCode) {
     const inv = db.users.find(u => u.invite_code === String(inviteCode).trim().toUpperCase());
     if (!inv) return { error: '邀请码无效' };
     inviter = inv.id;
-    bonus = 5;
-    inv.balance = (Number(inv.balance) || 0) + 5;
+    const inviteBonus = Number(cfg.invite_bonus != null ? cfg.invite_bonus : 5);
+    bonus = Number(bonus) + inviteBonus;               // 被邀请人得一份
+    inv.balance = Number((Number(inv.balance) || 0) + inviteBonus).toFixed(6) * 1; // 邀请人得一份
+    if (!p.referrals) p.referrals = [];
+    p.referrals.unshift({ at: now(), inviter: inv.id, invitee: name, points: inviteBonus, kind: 'register' });
   }
   const u = {
     id: nextId(p, 'u'), username: name, email: email || '',
@@ -342,6 +346,21 @@ function markPaid(orderId, tradeNo) {
   o.trade_no = tradeNo || ('MOCK' + Date.now());
   const u = db.users.find(x => x.id === o.user_id);
   if (u) u.balance = Number((Number(u.balance || 0) + o.points).toFixed(6));
+  // 邀请返利：被邀请人充值，邀请人按比例获得积分
+  if (u && u.inviter) {
+    const cfg = (db.settings && db.settings.platform) || {};
+    const rate = Number(cfg.referral_rate != null ? cfg.referral_rate : 10) / 100;
+    const reward = Number((o.points * rate).toFixed(6));
+    if (reward > 0) {
+      const inviter = db.users.find(x => x.id === u.inviter);
+      if (inviter) {
+        inviter.balance = Number((Number(inviter.balance || 0) + reward).toFixed(6));
+        p.referrals = p.referrals || [];
+        p.referrals.unshift({ at: now(), inviter: inviter.id, invitee: u.username, points: reward, kind: 'recharge', base: o.points, rate: rate * 100 });
+        addNotification(inviter.id, '邀请返利到账', '好友 ' + u.username + ' 充值 ¥' + o.amount + '，你获得 ' + reward + ' 积分返利。', 'referral');
+      }
+    }
+  }
   addLog({ user_id: o.user_id, key_id: '', model: '充值', status: 'success', cost: -o.points, ms: 0, note: '充值 ' + o.amount + ' 元 → ' + o.points + ' 积分' });
   store.save();
   return { order: o };
@@ -858,6 +877,19 @@ async function relayRerank(secret, body, clientIp) {
   const bal = Number(user.balance) || 0;
   if (bal - (Number(user.frozen) || 0) < cost) return { ok: false, status: 402, error: '积分余额不足', type: 'insufficient_quota' };
 
+  // 优先转发到真实上游（Cohere / Jina / 通用 /v1/rerank），失败再本地打分
+  const ch = routeCandidates(model, user.group).find(c => c.base_url && c.type !== 'mock');
+  if (ch) {
+    try {
+      const up = await rerankUpstream(ch, model, body);
+      user.balance = Number((bal - cost).toFixed(6));
+      key.last_used_at = now();
+      addLog({ user_id: user.id, key_id: key.id, model, status: 'success', cost, ms: Date.now() - started, prompt_tokens: 0, completion_tokens: 0, kind: 'rerank', channel: ch.name });
+      scheduleSave();
+      return { ok: true, data: up };
+    } catch (e) { /* 回退本地 */ }
+  }
+
   const terms = query.toLowerCase().split(/\s+|(?=[\u4e00-\u9fa5])/).filter(Boolean);
   const results = docs.map((d, i) => {
     const t = String(typeof d === 'string' ? d : (d && d.text) || '').toLowerCase();
@@ -872,6 +904,51 @@ async function relayRerank(secret, body, clientIp) {
   addLog({ user_id: user.id, key_id: key.id, model, status: 'success', cost, ms: Date.now() - started, prompt_tokens: 0, completion_tokens: 0, kind: 'rerank' });
   scheduleSave();
   return { ok: true, data: { id: 'rerank-' + Date.now(), model, results, usage: { documents: docs.length } } };
+}
+
+/* ------------------------------ 邀请体系 ------------------------------ */
+function inviteStats(user) {
+  const { db, p } = data();
+  const invitees = (db.users || []).filter(u => u.inviter === user.id);
+  const records = (p.referrals || []).filter(r => r.inviter === user.id);
+  const total = records.reduce((n, r) => n + Number(r.points || 0), 0);
+  const rechargeTotal = (p.orders || [])
+    .filter(o => o.status === 'paid' && invitees.some(u => u.id === o.user_id))
+    .reduce((n, o) => n + Number(o.amount || 0), 0);
+  return {
+    code: user.invite_code || '',
+    count: invitees.length,
+    total_reward: Number(total.toFixed(4)),
+    recharge_amount: Number(rechargeTotal.toFixed(2)),
+    rate: Number(((db.settings && db.settings.platform && db.settings.platform.referral_rate) != null
+      ? db.settings.platform.referral_rate : 10)),
+    invitees: invitees.map(u => ({
+      username: u.username, at: u.created_at,
+      paid: Number((p.orders || []).filter(o => o.user_id === u.id && o.status === 'paid').reduce((n, o) => n + o.amount, 0).toFixed(2)),
+    })).slice(0, 50),
+    records: records.slice(0, 50),
+  };
+}
+
+/** Rerank 上游转发（Cohere / Jina / 通用 /v1/rerank） */
+async function rerankUpstream(channel, model, body) {
+  const base = String(channel.base_url).replace(/\/$/, '');
+  const mapped = (channel.model_map && channel.model_map[model]) || model;
+  const payload = { model: mapped, query: body.query, documents: body.documents, top_n: body.top_n };
+  const headers = { 'content-type': 'application/json', authorization: 'Bearer ' + (channel.api_key || '') };
+  const isCohere = channel.type === 'cohere';
+  const url = isCohere ? base + '/v2/rerank' : base + '/v1/rerank';
+  const r = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload),
+    signal: AbortSignal.timeout ? AbortSignal.timeout(Number(channel.timeout_ms) || 30000) : undefined });
+  if (!r.ok) throw new Error('上游返回 ' + r.status);
+  const raw = await r.json();
+  const list = raw.results || (raw.data) || [];
+  return {
+    id: raw.id || 'rerank-' + Date.now(),
+    model,
+    results: list.map(x => ({ index: x.index, relevance_score: Number(x.relevance_score != null ? x.relevance_score : x.score) || 0 })),
+    usage: raw.meta && raw.meta.billed_units ? raw.meta.billed_units : { documents: (body.documents || []).length },
+  };
 }
 
 /** 公开排行榜：近 30 天按调用量 */
@@ -1028,6 +1105,7 @@ function restoreBackup(name) {
 }
 
 module.exports = {
+  inviteStats, rerankUpstream,
   DEFAULT_MAIL_TEMPLATES, mailTemplate, renderTemplate,
   relaySpeech, relayTranscription, relayRerank,
   addNotification, listNotifications, markNotificationsRead, notify, mailConfig,

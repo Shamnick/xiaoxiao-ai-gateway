@@ -710,6 +710,9 @@
     id: 'channels',
     title: '上游渠道',
     async render() {
+      if (!state.cache.providers) {
+        try { state.cache.providers = (await api('/providers')).items || []; } catch (e) { state.cache.providers = []; }
+      }
       const d = await api('/channels');
       state.cache.channels = d.items || [];
       const rows = (d.items || []).map(c =>
@@ -1089,6 +1092,7 @@
         '<div class="divider"></div>' +
         '<div class="field row2"><div><label class="fl">新用户赠送积分</label><input class="inp" id="pfNewPoints" type="number" style="width:100%" value="' + esc((s.platform && s.platform.new_user_points) || 0) + '"></div>' +
         '<div><label class="fl">邀请奖励积分</label><input class="inp" id="pfInvite" type="number" style="width:100%" value="' + esc((s.platform && s.platform.invite_bonus) || 5) + '"></div></div>' +
+        '<div class="field"><label class="fl">充值返利比例（%）：被邀请人每次充值，邀请人按此比例获得积分</label><input class="inp" id="pfRefRate" type="number" min="0" max="100" style="width:100%" value="' + esc((s.platform && s.platform.referral_rate) != null ? s.platform.referral_rate : 10) + '"></div>' +
         '<div class="field row2"><div><label class="fl">默认 RPM 限制（0 = 不限）</label><input class="inp" id="pfRpm" type="number" style="width:100%" value="' + esc((s.platform && s.platform.default_rpm) || 60) + '"></div>' +
         '<div><label class="fl">默认 TPM 限制</label><input class="inp" id="pfTpm" type="number" style="width:100%" value="' + esc((s.platform && s.platform.default_tpm) || 200000) + '"></div></div>' +
         '<div class="field"><label class="switch"><input type="checkbox" id="pfRegister"' + (!s.platform || s.platform.register_enabled !== false ? ' checked' : '') + '><i></i>开放注册</label></div>' +
@@ -1569,14 +1573,23 @@
 
       /* ----- 中转运营：渠道 ----- */
       if (act === 'ch-new' || act === 'ch-edit') {
-        const d = await api('/channels');
+        if (!state.cache.providers) {
+        try { state.cache.providers = (await api('/providers')).items || []; } catch (e) { state.cache.providers = []; }
+      }
+      const d = await api('/channels');
         const c = act === 'ch-edit' ? (d.items || []).find(x => x.id === id) : null;
         openModal({
           title: c ? '编辑渠道 · ' + c.name : '新增上游渠道',
           body: '<div class="field"><label class="fl">渠道名称 *</label><input class="inp" id="chName" style="width:100%" value="' + esc(c ? c.name : '') + '"></div>' +
-            '<div class="field row2"><div><label class="fl">类型</label><select class="sel" id="chType" style="width:100%">' +
-            [['openai', 'OpenAI 兼容'], ['anthropic', 'Anthropic (Claude)'], ['gemini', 'Google Gemini'], ['mock', '内置演示']].map(x => '<option value="' + x[0] + '"' + (c && c.type === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') +
+            '<div class="field"><label class="fl">供应商预设（选择后自动填类型与地址）</label><select class="sel" id="chPreset" style="width:100%">' +
+            '<option value="">— 手动配置 —</option>' + (state.cache.providers || []).map(x => '<option value="' + x.id + '">' + esc(x.label) + '</option>').join('') + '</select></div>' +
+            '<div class="field row2"><div><label class="fl">协议类型</label><select class="sel" id="chType" style="width:100%">' +
+            [['openai', 'OpenAI 兼容'], ['azure', 'Azure OpenAI'], ['anthropic', 'Anthropic (Claude)'], ['gemini', 'Google Gemini'], ['vertex', 'Google Vertex AI'], ['bedrock', 'AWS Bedrock'], ['cohere', 'Cohere'], ['ollama', 'Ollama'], ['mock', '内置演示']].map(x => '<option value="' + x[0] + '"' + (c && c.type === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') +
             '</select></div><div><label class="fl">权重</label><input class="inp" id="chWeight" type="number" min="1" style="width:100%" value="' + esc(c ? c.weight : 1) + '"></div></div>' +
+            '<div class="field row2"><div><label class="fl">Azure api-version</label><input class="inp" id="chApiVer" style="width:100%" placeholder="2024-02-01" value="' + esc(c ? (c.api_version || '') : '') + '"></div>' +
+            '<div><label class="fl">Bedrock region / 密钥</label><input class="inp" id="chRegion" style="width:100%" placeholder="us-east-1" value="' + esc(c ? (c.region || '') : '') + '"></div></div>' +
+            '<div class="field row2"><div><label class="fl">Vertex project</label><input class="inp" id="chProject" style="width:100%" placeholder="my-gcp-project" value="' + esc(c ? (c.project || '') : '') + '"></div>' +
+            '<div><label class="fl">Vertex location</label><input class="inp" id="chLocation" style="width:100%" placeholder="us-central1" value="' + esc(c ? (c.location || '') : '') + '"></div></div>' +
             '<div class="field"><label class="fl">上游地址</label><input class="inp" id="chBase" style="width:100%" placeholder="https://api.openai.com / https://api.anthropic.com / https://generativelanguage.googleapis.com" value="' + esc(c ? c.base_url : '') + '"><div class="hint">Anthropic 填 https://api.anthropic.com（自动拼接 /v1/messages）；Gemini 填 https://generativelanguage.googleapis.com（自动拼接 /v1beta/models/{模型}:generateContent）</div></div>' +
             '<div class="field"><label class="fl">上游 API Key</label><input class="inp" id="chKey" style="width:100%" value="' + esc(c ? c.api_key : '') + '" placeholder="sk-..."></div>' +
             '<div class="field row2"><div><label class="fl">优先级（大者优先）</label><input class="inp" id="chPriority" type="number" style="width:100%" value="' + esc(c ? (c.priority || 0) : 0) + '"></div>' +
@@ -1601,6 +1614,10 @@
                 models: $('#chModels').value.split(',').map(s2 => s2.trim()).filter(Boolean),
                 groups: $('#chGroups').value.split(',').map(s2 => s2.trim()).filter(Boolean),
                 model_map: mapObj,
+                api_version: $('#chApiVer').value.trim(),
+                region: $('#chRegion').value.trim(),
+                project: $('#chProject').value.trim(),
+                location: $('#chLocation').value.trim(),
                 priority: Number($('#chPriority').value) || 0,
                 timeout_ms: Number($('#chTimeout').value) || 60000,
                 weight: Number($('#chWeight').value) || 1, enabled: $('#chEnabled').checked,
@@ -1626,7 +1643,10 @@
         return;
       }
       if (act === 'ch-toggle') {
-        const d = await api('/channels');
+        if (!state.cache.providers) {
+        try { state.cache.providers = (await api('/providers')).items || []; } catch (e) { state.cache.providers = []; }
+      }
+      const d = await api('/channels');
         const c = (d.items || []).find(x => x.id === id);
         if (!c) return;
         try { await api('/channels/' + id, { method: 'PUT', body: { enabled: c.enabled === false } }); toast('已切换'); route(); }
@@ -1929,6 +1949,7 @@
                 register_enabled: $('#pfRegister').checked,
                 new_user_points: Number($('#pfNewPoints').value) || 0,
                 invite_bonus: Number($('#pfInvite').value) || 0,
+                referral_rate: Number($('#pfRefRate').value) || 0,
                 default_rpm: Number($('#pfRpm').value) || 0,
                 default_tpm: Number($('#pfTpm').value) || 0,
                 announcement: $('#pfAnn').value,

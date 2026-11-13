@@ -327,6 +327,10 @@ async function handleUserApi(req, res, url) {
     return sendJson(res, 200, { ok: true, items: list });
   }
 
+  if (p === '/api/user/invite' && method === 'GET') {
+    return sendJson(res, 200, Object.assign({ ok: true }, platform.inviteStats(me)));
+  }
+
   if (p === '/api/user/notifications' && method === 'GET') {
     const items = platform.listNotifications(me.id, url.searchParams.get('limit'));
     return sendJson(res, 200, { ok: true, items, unread: items.filter(n => !n.read).length });
@@ -1272,6 +1276,11 @@ const api = async (req, res, url) => {
       base_url: String(body.base_url || ''), api_key: String(body.api_key || ''),
       models: Array.isArray(body.models) ? body.models : (String(body.models || '*').split(',').map(s2 => s2.trim()).filter(Boolean)),
       model_map: body.model_map && typeof body.model_map === 'object' ? body.model_map : {},
+      api_version: body.api_version || '',
+      project: body.project || '',
+      location: body.location || '',
+      region: body.region || '',
+      api_secret: body.api_secret || '',
       groups: Array.isArray(body.groups) ? body.groups : String(body.groups || '').split(',').map(s2 => s2.trim()).filter(Boolean),
       priority: Number(body.priority) || 0,
       timeout_ms: Number(body.timeout_ms) || 60000,
@@ -1301,7 +1310,8 @@ const api = async (req, res, url) => {
     const ch = (d.platform && d.platform.channels || []).find(c => c.id === chRe[1]);
     if (!ch) return sendJson(res, 404, { error: '渠道不存在' });
     if (method === 'PUT') {
-      ['name', 'type', 'base_url', 'api_key', 'enabled', 'weight', 'note', 'status', 'priority', 'timeout_ms'].forEach(f => { if (body[f] != null) ch[f] = body[f]; });
+      ['name', 'type', 'base_url', 'api_key', 'enabled', 'weight', 'note', 'status', 'priority', 'timeout_ms',
+        'api_version', 'project', 'location', 'region', 'api_secret'].forEach(f => { if (body[f] != null) ch[f] = body[f]; });
       if (body.model_map != null && typeof body.model_map === 'object') ch.model_map = body.model_map;
       if (body.groups != null) ch.groups = Array.isArray(body.groups) ? body.groups : String(body.groups).split(',').map(s2 => s2.trim()).filter(Boolean);
       if (body.models != null) ch.models = Array.isArray(body.models) ? body.models : String(body.models).split(',').map(s2 => s2.trim()).filter(Boolean);
@@ -1370,6 +1380,10 @@ const api = async (req, res, url) => {
       store.save();
       return sendJson(res, 200, { ok: true, thread: t });
     }
+  }
+
+  if (p === '/api/admin/providers' && method === 'GET') {
+    return sendJson(res, 200, { items: adapters.PRESETS });
   }
 
   /* ---- 用户分组与倍率 ---- */

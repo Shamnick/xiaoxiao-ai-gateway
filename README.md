@@ -47,6 +47,8 @@
 | **音频端点** | `POST /v1/audio/speech`（返回 WAV，支持上游转发）、`POST /v1/audio/transcriptions`（multipart 解析，按文件大小计费） |
 | **Rerank** | `POST /v1/rerank`（query + documents → relevance_score 排序，支持 top_n） |
 | **批量兑换码** | 后台一键生成 1-200 个码（前缀 + 面值），用户中心直接兑换，重复兑换自动拒绝 |
+| **邀请返利** | 邀请码注册双向奖励 + 被邀请人**每次充值按比例返利**给邀请人（默认 10%，后台可调），用户中心展示邀请人/充值/返利明细 |
+| **Rerank 上游** | 支持 Cohere `/v2/rerank`、Jina / 通用 `/v1/rerank`，无渠道时回退本地打分 |
 | **多协议上游** | OpenAI 兼容 / **Anthropic（Claude Messages）** / **Google Gemini**，对外统一 OpenAI 格式；请求、响应、SSE 流式三层转换 |
 | **流式透传** | 真实上游 `stream:true` 时逐块转发（不再整包解析），Anthropic/Gemini 的 SSE 事件实时转换为 OpenAI chunk |
 | **公开排行榜** | 近 30 天按模型聚合调用量/消耗（`/leaderboard`） |
@@ -182,8 +184,15 @@ GET /v1/models
 | 渠道类型 | 上游地址示例 | 自动拼接 |
 |---|---|---|
 | `openai` | `https://api.openai.com` | `/v1/chat/completions` |
+| `azure` | `https://YOUR-RESOURCE.openai.azure.com` | `/openai/deployments/{model}/chat/completions?api-version=`（`api-key` 头） |
 | `anthropic` | `https://api.anthropic.com` | `/v1/messages`（`x-api-key` + `anthropic-version`） |
 | `gemini` | `https://generativelanguage.googleapis.com` | `/v1beta/models/{model}:generateContent?key=` |
+| `vertex` | `https://{location}-aiplatform.googleapis.com` | `/v1/projects/{project}/locations/{location}/publishers/google/models/{model}:generateContent` |
+| `bedrock` | `https://bedrock-runtime.{region}.amazonaws.com` | `/model/{model}/converse`（**AWS SigV4 签名**） |
+| `cohere` | `https://api.cohere.com` | `/v2/chat` |
+| `ollama` | `http://127.0.0.1:11434` | `/api/chat` |
+
+后台「上游渠道」内置 **24 个供应商预设**（OpenAI / Azure / Claude / Gemini / Vertex / Bedrock / Cohere / Ollama / DeepSeek / Moonshot / 智谱 / 通义 / 百川 / MiniMax / 阶跃 / 硅基流动 / Groq / Mistral / xAI / Together / Fireworks / OpenRouter / vLLM / LM Studio），选完自动填协议与地址。
 
 转换内容：system 消息分离、messages 角色映射、`max_tokens` / `temperature` / `top_p` 透传、模型映射、usage 字段归一（`input_tokens`→`prompt_tokens`、`promptTokenCount`→`prompt_tokens`）、SSE 事件流转换。验证脚本：`node tools/test-adapters.js`（13 项）+ 流式转换测试（3 项）。
 
@@ -343,7 +352,7 @@ POST /v1/rerank                  { "model": "rerank-v1", "query": "...", "docume
 | 部署 | **Docker / docker-compose / 直接 node** | Docker / 二进制 |
 | 数据存储 | 单文件 JSON（可直接拷走） | MySQL / PostgreSQL / SQLite |
 | 对外 API | OpenAI 兼容（chat/embeddings/images/models） | OpenAI / Claude / Gemini / Rerank 等多协议 |
-| 上游协议 | **OpenAI 兼容 / Anthropic / Gemini 三种原生适配** | 30+ 供应商协议 |
+| 上游协议 | **8 种协议原生适配**（OpenAI/Azure/Anthropic/Gemini/Vertex/Bedrock/Cohere/Ollama）+ 24 个供应商预设 | 30+ 供应商协议 |
 | 计费 | 固定请求费 + token 单价 + **分组倍率** | 模型倍率 + 分组倍率 + 补全倍率 |
 | 路由 | 优先级 + 权重加权 + 失败回退 + **熔断** | 优先级 + 权重 + 重试 |
 | 渠道 | 模型映射、**渠道分组**、优先级、超时、批量检测、健康状态 | 模型重定向、渠道分组、多类型适配（30+） |
