@@ -431,6 +431,39 @@ function computeCost(model, usage) {
 function modelPrice(model) { return Number(modelPricing(model).request) || 0.01; }
 
 /* ------------------------------ 日志 ------------------------------ */
+const BODY_LIMIT = 8000;
+
+/** 记录用截断：超长内容保留头尾，避免数据库膨胀 */
+function capBody(v) {
+  if (v == null) return '';
+  let str = typeof v === 'string' ? v : safeJson(v);
+  if (str.length <= BODY_LIMIT) return str;
+  return str.slice(0, BODY_LIMIT - 200) + '\n…（已截断，共 ' + str.length + ' 字符）';
+}
+
+function safeJson(v) {
+  try { return JSON.stringify(v, null, 2); } catch (e) { return String(v); }
+}
+
+/** 简单脱敏：api key / 密码类字段 */
+function redact(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  const out = Array.isArray(obj) ? [] : {};
+  Object.keys(obj).forEach(k => {
+    const v = obj[k];
+    if (/^(api_key|api_secret|authorization|password|key|secret|token)$/i.test(k)) out[k] = '***';
+    else if (v && typeof v === 'object') out[k] = redact(v);
+    else out[k] = v;
+  });
+  return out;
+}
+
+function logBodiesEnabled() {
+  const { db } = data();
+  const v = db.settings && db.settings.platform && db.settings.platform.log_bodies;
+  return v === undefined ? true : !!v;
+}
+
 let SAVE_TIMER = null;
 /** 合并写盘：200ms 内的多次变更只落盘一次，兼顾吞吐与持久化 */
 function scheduleSave() {
@@ -445,7 +478,7 @@ function scheduleSave() {
 function addLog(row) {
   const { p } = data();
   p.logs.unshift(Object.assign({ id: nextId(p, 'l'), at: now() }, row));
-  if (p.logs.length > 5000) p.logs.length = 5000;
+  if (p.logs.length > 2000) p.logs.length = 2000;
   scheduleSave();
 }
 
@@ -540,7 +573,7 @@ async function relayChat(secret, body, clientIp) {
   const candidates = routeCandidates(model, user.group);
   let payload = null, usage = null, usedChannel = null, lastErr = '';
 
-  const settle = (u, ch) => {
+  const settle = (u, ch, respText) => {
     const pt = Number(u && u.prompt_tokens) || 0;
     const ct = Number(u && u.completion_tokens) || 0;
     const baseCost = computeCost(model, { prompt_tokens: pt, completion_tokens: ct });
@@ -552,13 +585,20 @@ async function relayChat(secret, body, clientIp) {
       user.balance = Number((Number(user.balance) - cost).toFixed(6));
     }
     key.last_used_at = now();
-    addLog({
+    const withBodies = logBodiesEnabled();
+    addLog(Object.assign({
       user_id: user.id, key_id: key.id, model,
       status: 'success', cost, ms: Date.now() - started,
       prompt_tokens: pt, completion_tokens: ct,
       channel: ch ? ch.name : 'unknown',
       stream: !!stream,
-    });
+    }, withBodies ? {
+      request_body: capBody(redact(body)),
+      response_body: capBody(respText || ''),
+      req_bytes: Buffer.byteLength(safeJson(body)),
+      resp_bytes: Buffer.byteLength(String(respText || '')),
+      client_ip: clientIp || '',
+    } : {}));
     scheduleSave();
     return cost;
   };
@@ -609,16 +649,17 @@ async function relayChat(secret, body, clientIp) {
 
   if (!payload) {
     if (key.quota <= 0) user.frozen = Number(Math.max(0, (Number(user.frozen) || 0) - estCost).toFixed(6));
-    addLog({ user_id: user.id, key_id: key.id, model, status: 'error', cost: 0, ms: Date.now() - started, error: (lastErr || '无可用渠道').slice(0, 200) });
+    addLog({ user_id: user.id, key_id: key.id, model, status: 'error', cost: 0, ms: Date.now() - started, error: (lastErr || '无可用渠道').slice(0, 200),
+      request_body: logBodiesEnabled() ? capBody(redact(body)) : '', client_ip: clientIp || '' });
     return { ok: false, status: 502, error: lastErr || '无可用渠道', type: 'upstream_error' };
   }
 
   if (Array.isArray(payload)) {
-    const cost = settle(usage, usedChannel);
+    const cost = settle(usage, usedChannel, payload.join(''));
     return { ok: true, data: payload, stream: true, usage, cost, channel: usedChannel ? usedChannel.name : '' };
   }
 
-  const cost = settle(usage, usedChannel);
+  const cost = settle(usage, usedChannel, safeJson(payload));
   return { ok: true, data: payload, stream: false, usage, cost, channel: usedChannel ? usedChannel.name : '' };
 }
 
@@ -1110,6 +1151,7 @@ function restoreBackup(name) {
 }
 
 module.exports = {
+  capBody, redact, logBodiesEnabled,
   googleAuth,
   inviteStats, rerankUpstream,
   DEFAULT_MAIL_TEMPLATES, mailTemplate, renderTemplate,

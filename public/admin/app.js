@@ -754,15 +754,16 @@
         '<td class="num">' + (Number(l.cost) || 0).toFixed(3) + '</td>' +
         '<td class="num">' + (l.ms || 0) + 'ms</td>' +
         '<td>' + (l.status === 'success' ? '<span class="badge on">成功</span>' : '<span class="badge danger">失败</span>') + '</td>' +
-        '<td class="cell-sub">' + esc((l.error || '') + (l.stream ? 'stream' : '')) + '</td></tr>').join('');
+        '<td class="cell-sub">' + esc((l.error || '') + (l.stream ? 'stream' : '')) + '</td>' +
+        '<td><button class="link-btn" data-act="log-detail" data-id="' + esc(l.id) + '">详情</button></td></tr>').join('');
       return '<div class="card"><div class="card-head"><h3>调用日志</h3><span class="sub">共 ' + d.total + ' 条</span></div><div class="card-pad">' +
         '<div class="toolbar"><input class="inp search-inp" id="logQ" placeholder="搜索模型 / 用户 / 错误" value="' + esc(s.q || '') + '">' +
         '<select class="sel" id="logStatus"><option value="">全部状态</option>' +
         [['success', '成功'], ['error', '失败']].map(x => '<option value="' + x[0] + '"' + (s.status === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') +
         '</select><button class="btn btn-sm" data-act="log-query">查询</button>' +
         '<a class="btn btn-sm" href="/api/admin/logs/export" target="_blank" rel="noopener">导出 CSV</a></div>' +
-        '<div class="table-wrap"><table class="tbl"><thead><tr><th>时间</th><th>用户</th><th>模型</th><th class="num">输入/输出 token</th><th class="num">扣费</th><th class="num">耗时</th><th>状态</th><th>备注</th></tr></thead>' +
-        '<tbody>' + (rows || '<tr><td colspan="8">' + emptyHTML('还没有调用记录') + '</td></tr>') + '</tbody></table></div>' +
+        '<div class="table-wrap"><table class="tbl"><thead><tr><th>时间</th><th>用户</th><th>模型</th><th class="num">输入/输出 token</th><th class="num">扣费</th><th class="num">耗时</th><th>状态</th><th>备注</th><th style="width:70px">操作</th></tr></thead>' +
+        '<tbody>' + (rows || '<tr><td colspan="9">' + emptyHTML('还没有调用记录') + '</td></tr>') + '</tbody></table></div>' +
         pagerHTML(d) + '</div></div>';
     },
   };
@@ -1095,6 +1096,7 @@
         '<div class="field"><label class="fl">充值返利比例（%）：被邀请人每次充值，邀请人按此比例获得积分</label><input class="inp" id="pfRefRate" type="number" min="0" max="100" style="width:100%" value="' + esc((s.platform && s.platform.referral_rate) != null ? s.platform.referral_rate : 10) + '"></div>' +
         '<div class="field row2"><div><label class="fl">默认 RPM 限制（0 = 不限）</label><input class="inp" id="pfRpm" type="number" style="width:100%" value="' + esc((s.platform && s.platform.default_rpm) || 60) + '"></div>' +
         '<div><label class="fl">默认 TPM 限制</label><input class="inp" id="pfTpm" type="number" style="width:100%" value="' + esc((s.platform && s.platform.default_tpm) || 200000) + '"></div></div>' +
+        '<div class="field"><label class="switch"><input type="checkbox" id="pfLogBodies"' + (!s.platform || s.platform.log_bodies !== false ? ' checked' : '') + '><i></i>记录请求体 / 响应体（日志详情可查，占用更多存储）</label></div>' +
         '<div class="field"><label class="switch"><input type="checkbox" id="pfRegister"' + (!s.platform || s.platform.register_enabled !== false ? ' checked' : '') + '><i></i>开放注册</label></div>' +
         '<div class="field"><label class="fl">站内公告（显示在用户中心顶部，可留空）</label><textarea class="inp" id="pfAnn" style="width:100%;min-height:64px">' + esc((s.platform && s.platform.announcement) || '') + '</textarea></div>' +
         '<div class="divider"></div><h4 style="margin:0 0 8px">SMTP 邮件（可选）</h4>' +
@@ -1665,6 +1667,35 @@
       }
 
       /* ----- 中转运营：日志 ----- */
+      if (act === 'log-detail') {
+        const d = await api('/logs?size=200');
+        const l = (d.items || []).find(x => x.id === id);
+        if (!l) return toast('日志不存在', 'err');
+        const pretty = (t) => {
+          if (!t) return '<div class="help">未记录（日志体积开关已关闭）</div>';
+          try { return '<pre class="log-pre">' + esc(JSON.stringify(JSON.parse(t), null, 2)) + '</pre>'; }
+          catch (e) { return '<pre class="log-pre">' + esc(t) + '</pre>'; }
+        };
+        openModal({
+          title: '调用详情 · ' + l.model,
+          wide: true,
+          body: '<div class="kv" style="margin-bottom:12px">' +
+              '<dt>时间</dt><dd>' + fmtDate(l.at) + '</dd>' +
+              '<dt>用户 / Key</dt><dd>' + esc(l.username || l.user_id) + ' / ' + esc(l.key_id || '-') + '</dd>' +
+              '<dt>渠道</dt><dd>' + esc(l.channel || '-') + '</dd>' +
+              '<dt>耗时 / 状态</dt><dd>' + (l.ms || 0) + 'ms · ' + (l.status === 'success' ? '成功' : '失败') + '</dd>' +
+              '<dt>tokens</dt><dd>输入 ' + (l.prompt_tokens || 0) + ' · 输出 ' + (l.completion_tokens || 0) + '</dd>' +
+              '<dt>扣费</dt><dd>' + (Number(l.cost) || 0).toFixed(6) + ' 积分</dd>' +
+              '<dt>客户端 IP</dt><dd>' + esc(l.client_ip || '-') + '</dd>' +
+              '<dt>字节数</dt><dd>请求 ' + (l.req_bytes || 0) + ' B · 响应 ' + (l.resp_bytes || 0) + ' B</dd>' +
+              (l.error ? '<dt>错误</dt><dd style="color:#c0392b">' + esc(l.error) + '</dd>' : '') +
+            '</div>' +
+            '<h4 style="margin:14px 0 6px">请求体</h4>' + pretty(l.request_body) +
+            '<h4 style="margin:14px 0 6px">响应体</h4>' + pretty(l.response_body),
+          footer: '<button class="btn" data-act="modal-close">关闭</button>',
+        });
+        return;
+      }
       if (act === 'log-query') {
         const s = vs('logs');
         s.q = $('#logQ').value.trim(); s.status = $('#logStatus').value; s.page = 1;
@@ -1949,6 +1980,7 @@
               refill_url: $('#sRefill').value, user_center: $('#sUser').value,
               notice_enabled: $('#sNotice').checked, maintenance: $('#sMaint').checked,
               platform: {
+                log_bodies: $('#pfLogBodies').checked,
                 register_enabled: $('#pfRegister').checked,
                 new_user_points: Number($('#pfNewPoints').value) || 0,
                 invite_bonus: Number($('#pfInvite').value) || 0,

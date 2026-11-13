@@ -429,6 +429,7 @@ async function handleV1(req, res, url) {
       const dec = new TextDecoder();
       let buf = '';
       let usage = null;
+      let accText = '';
       try {
         for (;;) {
           const { done, value } = await reader.read();
@@ -436,6 +437,7 @@ async function handleV1(req, res, url) {
           const text = dec.decode(value, { stream: true });
           if (isOpenAI) {
             res.write(text);
+            accText += text;
             buf += text;
             const hits = buf.match(/"usage"\s*:\s*\{[^{}]*\}/g);
             if (hits && hits.length) {
@@ -458,7 +460,7 @@ async function handleV1(req, res, url) {
       } catch (e) { /* 客户端断开或上游异常，按已产生内容结算 */ }
       finally {
         try { res.end(); } catch (e) { /* ignore */ }
-        r.settle(isOpenAI ? (usage || { prompt_tokens: 0, completion_tokens: 0 }) : r.ctx.usage);
+        r.settle(isOpenAI ? (usage || { prompt_tokens: 0, completion_tokens: 0 }) : r.ctx.usage, accText);
       }
       return;
     }
@@ -1543,7 +1545,7 @@ const api = async (req, res, url) => {
     const d = store.load();
     const s2 = d.settings && d.settings.platform ? d.settings.platform : {};
     return sendJson(res, 200, Object.assign({
-      register_enabled: true, invite_bonus: 5, new_user_points: 0, low_balance_threshold: 10,
+      register_enabled: true, invite_bonus: 5, new_user_points: 0, low_balance_threshold: 10, log_bodies: true,
       smtp: { host: '', port: 465, secure: true, user: '', pass: '', from: '' },
       default_rpm: 60, default_tpm: 200000, free_trial_points: 0,
       announcement: '', maintenance_notice: '',
