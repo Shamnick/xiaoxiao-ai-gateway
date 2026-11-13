@@ -1346,7 +1346,13 @@ const api = async (req, res, url) => {
     const status = url.searchParams.get('status') || '';
     let list = ((d.platform && d.platform.logs) || []).slice();
     if (status) list = list.filter(l => l.status === status);
-    if (q) list = list.filter(l => textMatch(l, q, ['model', 'key_id', 'user_id', 'error']));
+    const scope = url.searchParams.get('scope') || 'all';
+    if (q) {
+      const fields = scope === 'request' ? ['request_body']
+        : scope === 'response' ? ['response_body']
+        : ['model', 'key_id', 'user_id', 'error', 'channel', 'request_body', 'response_body', 'client_ip'];
+      list = list.filter(l => textMatch(l, q, fields));
+    }
     const users = {};
     (d.users || []).forEach(u => { users[u.id] = u.username; });
     list = list.map(l => Object.assign({}, l, { username: users[l.user_id] || l.user_id }));
@@ -1536,6 +1542,10 @@ const api = async (req, res, url) => {
     const list = platform.alerts();
     return sendJson(res, 200, { items: list.slice(0, 100), unread: list.filter(a => !a.read).length });
   }
+  if (p === '/api/admin/alerts/test-push' && method === 'POST') {
+    const r = await platform.pushAlert({ level: 'info', title: '这是一条测试告警', detail: '收到即表示告警推送通道可用。', at: nowIso() });
+    return sendJson(res, 200, r);
+  }
   if (p === '/api/admin/alerts/read' && method === 'POST') {
     const list = platform.alerts();
     if (body.id) { const a = list.find(x => x.id === body.id); if (a) a.read = true; }
@@ -1644,6 +1654,29 @@ const api = async (req, res, url) => {
     store.audit(admin.username, 'platform-settings', '平台设置', '更新平台参数');
     store.save();
     return sendJson(res, 200, { ok: true, settings: d.settings.platform });
+  }
+
+  /* ---- 渠道余额 ---- */
+  if (p.startsWith('/api/admin/channels/') && p.endsWith('/balance') && method === 'POST') {
+    const id = p.slice('/api/admin/channels/'.length).replace('/balance', '');
+    const d = store.load();
+    const ch = ((d.platform && d.platform.channels) || []).find(c => c.id === id);
+    if (!ch) return sendJson(res, 404, { error: '渠道不存在' });
+    const r = await platform.queryChannelBalance(ch);
+    if (r.supported) { ch.balance = r; ch.balance_at = nowIso(); store.save(); }
+    return sendJson(res, 200, r);
+  }
+  if (p === '/api/admin/channels/balance-all' && method === 'POST') {
+    const d = store.load();
+    const list = ((d.platform && d.platform.channels) || []).filter(c => c.base_url);
+    const out = [];
+    for (const c of list) {
+      const r = await platform.queryChannelBalance(c);
+      if (r.supported) { c.balance = r; c.balance_at = nowIso(); }
+      out.push({ id: c.id, name: c.name, supported: r.supported, remaining: r.remaining, error: r.error });
+    }
+    store.save();
+    return sendJson(res, 200, { results: out });
   }
 
   /* ---- 通知与邮件 ---- */

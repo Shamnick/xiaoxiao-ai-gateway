@@ -1106,6 +1106,37 @@ function searchArchive(month, q, limit) {
   return out;
 }
 
+/* ------------------------------ 渠道余额 ------------------------------ */
+/** 查询上游余额：目前仅 OpenAI 系（含中转）提供 billing 接口，其它厂商返回 supported=false */
+async function queryChannelBalance(ch) {
+  if (!ch || !ch.base_url) return { supported: false, error: '未配置上游地址' };
+  if (ch.type === 'mock') return { supported: false, error: '内置渠道无需余额' };
+  const base = String(ch.base_url).replace(/\/$/, '');
+  try {
+    const r = await fetch(base + '/dashboard/billing/subscription', {
+      headers: ch.type === 'azure' ? { 'api-key': ch.api_key || '' } : { authorization: 'Bearer ' + (ch.api_key || '') },
+      signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined,
+    });
+    if (!r.ok) return { supported: false, error: '上游未提供余额接口（HTTP ' + r.status + '）' };
+    const d = await r.json().catch(() => null);
+    if (!d || d.hard_limit_usd == null) return { supported: false, error: '返回格式非标准 billing 接口' };
+    const limit = Number(d.hard_limit_usd) || 0;
+    let used = 0;
+    try {
+      const u = await fetch(base + '/dashboard/billing/usage?start_date=' + new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10) +
+        '&end_date=' + new Date().toISOString().slice(0, 10), {
+        headers: { authorization: 'Bearer ' + (ch.api_key || '') },
+        signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined,
+      });
+      const ud = await u.json().catch(() => null);
+      if (ud && ud.total_usage != null) used = Number(ud.total_usage) / 100;
+    } catch (e) { /* ignore */ }
+    return { supported: true, remaining: Number(Math.max(0, limit - used).toFixed(2)), total: limit, used: Number(used.toFixed(2)), currency: 'USD', unit: '美元' };
+  } catch (e) {
+    return { supported: false, error: e.message };
+  }
+}
+
 /* ------------------------------ 告警 ------------------------------ */
 function alerts() {
   const { p } = data();
@@ -1123,7 +1154,35 @@ function addAlert(level, title, detail, key) {
   list.unshift(a);
   if (list.length > 200) list.length = 200;
   scheduleSave();
+  pushAlert(a).catch(() => {});
   return a;
+}
+
+/** 告警外发：邮件 + Webhook（钉钉/飞书/Slack 通用 text 字段） */
+async function pushAlert(a) {
+  const { db } = data();
+  const cfg = (db.settings && db.settings.platform) || {};
+  const results = { email: null, webhook: null };
+  const emoji = a.level === 'critical' ? '🚨' : (a.level === 'warning' ? '⚠️' : 'ℹ️');
+  const text = emoji + ' 【小小科技】' + a.title + '\n' + (a.detail || '') + '\n时间：' + (a.at || now());
+
+  if (cfg.alert_webhook) {
+    try {
+      const r = await fetch(cfg.alert_webhook, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ msgtype: 'text', text: { content: text }, content: text, text_content: text }),
+        signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined,
+      });
+      results.webhook = { ok: r.ok, status: r.status };
+    } catch (e) { results.webhook = { ok: false, error: e.message }; }
+  }
+  if (cfg.alert_email && cfg.smtp && cfg.smtp.host) {
+    try {
+      const r = await mailer.sendMail(cfg.smtp, { to: cfg.alert_email, subject: '【小小科技告警】' + a.title, text });
+      results.email = { ok: !!r.ok, error: r.error || '' };
+    } catch (e) { results.email = { ok: false, error: e.message }; }
+  }
+  return { ok: true, results };
 }
 
 /** 每分钟检查：近 10 分钟失败率 / 余额不足 / 渠道熔断 */
@@ -1351,6 +1410,7 @@ function restoreBackup(name) {
 }
 
 module.exports = {
+  queryChannelBalance, pushAlert,
   archiveLogs, listArchives, searchArchive, alerts, addAlert, alertTick,
   capBody, redact, logBodiesEnabled,
   googleAuth,

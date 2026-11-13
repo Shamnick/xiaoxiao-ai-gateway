@@ -790,17 +790,20 @@
         '<td class="mono cell-sub">' + esc(c.base_url || '（内置）') + '</td>' +
         '<td>' + ((c.models || []).slice(0, 3).map(m => '<span class="chip">' + esc(m) + '</span>').join('') || '—') + '</td>' +
         '<td class="num">' + esc(c.weight || 1) + '</td>' +
+        '<td class="num cell-sub">' + (c.balance && c.balance.supported ? ('$' + c.balance.remaining) : '—') + '</td>' +
         '<td>' + (c.enabled === false ? '<span class="badge off">停用</span>' :
           (c.status === 'down' ? '<span class="badge danger">熔断中</span>' :
            c.status === 'warn' ? '<span class="badge warn">异常</span>' :
            '<span class="badge on">正常</span>')) +
           '<div class="cell-sub mono">' + (c.last_check ? fmtDate(c.last_check).slice(5) : '未检测') + (c.latency_ms ? ' · ' + c.latency_ms + 'ms' : '') + '</div></td>' +
         '<td><div class="acts"><button class="link-btn" data-act="ch-check" data-id="' + esc(c.id) + '">检测</button>' +
+        '<button class="link-btn" data-act="ch-balance" data-id="' + esc(c.id) + '">查余额</button>' +
         '<button class="link-btn" data-act="ch-edit" data-id="' + esc(c.id) + '">编辑</button>' +
         '<button class="link-btn" data-act="ch-toggle" data-id="' + esc(c.id) + '">' + (c.enabled === false ? '启用' : '停用') + '</button>' +
         '<button class="link-btn danger" data-act="ch-del" data-id="' + esc(c.id) + '">删除</button></div></td></tr>').join('');
       return '<div class="card"><div class="card-head"><h3>上游渠道</h3><span class="sub">调用 /v1/chat/completions 时按模型匹配渠道转发；未匹配则走内置演示渠道</span>' +
-        '<div class="right"><button class="btn btn-sm" data-act="ch-check-all">全部检测</button>' +
+        '<div class="right"><button class="btn btn-sm" data-act="ch-balance-all">查全部余额</button>' +
+        '<button class="btn btn-sm" data-act="ch-check-all">全部检测</button>' +
         '<button class="btn btn-sm btn-primary" data-act="ch-new">+ 新增渠道</button></div></div>' +
         '<div class="table-wrap"><table class="tbl"><thead><tr><th>渠道</th><th>类型</th><th>上游地址</th><th>模型</th><th class="num">权重</th><th>状态</th><th style="width:180px">操作</th></tr></thead>' +
         '<tbody>' + (rows || '<tr><td colspan="7">' + emptyHTML('还没有渠道') + '</td></tr>') + '</tbody></table></div>' +
@@ -814,7 +817,7 @@
     title: '调用日志',
     async render() {
       const s = vs('logs');
-      const d = await api('/logs?' + new URLSearchParams({ page: s.page, size: s.size, q: s.q || '', status: s.status || '', from: s.from || '', to: s.to || '', channel: s.channel || '' }));
+      const d = await api('/logs?' + new URLSearchParams({ page: s.page, size: s.size, q: s.q || '', status: s.status || '', from: s.from || '', to: s.to || '', channel: s.channel || '', scope: s.scope || 'all' }));
       const st = await api('/logs/stats?days=' + (s.days || 7));
       const chOptions = (st.by_channel || []).map(c => '<option value="' + esc(c.channel) + '"' + (s.channel === c.channel ? ' selected' : '') + '>' + esc(c.channel) + '（' + c.calls + '）</option>').join('');
       const trend = renderChannelTrend(st.by_day || [], st.by_channel || []);
@@ -846,6 +849,9 @@
         '<input class="inp" type="date" id="logFrom" value="' + esc(s.from || '') + '" style="width:150px">' +
         '<span class="cell-sub">至</span><input class="inp" type="date" id="logTo" value="' + esc(s.to || '') + '" style="width:150px">' +
         '<select class="sel" id="logChannel"><option value="">全部渠道</option>' + chOptions + '</select>' +
+        '<select class="sel" id="logScope">' +
+        [['all', '全部字段'], ['request', '仅请求体'], ['response', '仅响应体']].map(x => '<option value="' + x[0] + '"' + ((s.scope || 'all') === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') +
+        '</select>' +
         '<select class="sel" id="logDays"><option value="7"' + (String(s.days || 7) === '7' ? ' selected' : '') + '>近 7 天</option><option value="30"' + (String(s.days) === '30' ? ' selected' : '') + '>近 30 天</option></select>' +
         '<button class="btn btn-sm" data-act="log-query">查询</button>' +
         '<a class="btn btn-sm" href="/api/admin/logs/export" target="_blank" rel="noopener">导出 CSV</a></div>' +
@@ -1197,6 +1203,10 @@
         '<div style="display:flex;align-items:flex-end;gap:8px"><label class="switch"><input type="checkbox" id="smSecure"' + (smtp.secure !== false ? ' checked' : '') + '><i></i>SSL(465)</label>' +
         '<button class="btn btn-sm" data-act="mail-test">发测试邮件</button></div></div>' +
         '<div class="hint">配置后：注册欢迎、充值到账会同时发邮件；不配置则只写站内通知，不影响主流程。</div>' +
+        '<div class="divider"></div><h4 style="margin:0 0 8px">告警推送（可选）</h4>' +
+        '<div class="field row2"><div><label class="fl">告警邮箱</label><input class="inp" id="pfAlertEmail" style="width:100%" placeholder="ops@example.com" value="' + esc(s.platform && s.platform.alert_email || '') + '"></div>' +
+        '<div><label class="fl">Webhook（钉钉/飞书/Slack 通用 JSON）</label><input class="inp" id="pfAlertHook" style="width:100%" placeholder="https://oapi.dingtalk.com/robot/send?access_token=..." value="' + esc(s.platform && s.platform.alert_webhook || '') + '"></div></div>' +
+        '<div class="field"><button class="btn btn-sm" data-act="alert-push-test">发送测试告警</button><span class="hint" style="margin-left:10px">会同时尝试邮件与 Webhook</span></div>' +
         '<div class="warn-box">修改外链会全局替换前台页面中的旧地址（客服 / 续杯 / 用户中心）。</div>' +
         '<div class="toolbar" style="margin-top:14px"><button class="btn btn-primary" data-act="settings-save">保存设置</button>' +
         '<a class="btn" href="/" target="_blank" rel="noopener">打开前台</a></div>' +
@@ -1369,6 +1379,15 @@
         if (!to) return;
         try { const d = await api('/mail/test', { method: 'POST', body: { to } }); toast(d.ok ? '已发送，请查收' : ('失败：' + (d.error || '')), d.ok ? '' : 'err'); }
         catch (err) { toast(err.message, 'err'); }
+        return;
+      }
+      if (act === 'alert-push-test') {
+        toast('发送中…');
+        try {
+          const r = await api('/alerts/test-push', { method: 'POST' });
+          const e = r.results && r.results.email, w = r.results && r.results.webhook;
+          toast('邮件：' + (e ? (e.ok ? '成功' : '失败 ' + (e.error || '')) : '未配置') + ' · Webhook：' + (w ? (w.ok ? '成功' : '失败') : '未配置'));
+        } catch (err) { toast(err.message, 'err'); }
         return;
       }
       if (act === 'alert-check') {
@@ -1662,6 +1681,25 @@
       }
 
       /* ----- 渠道批量检测 ----- */
+      if (act === 'ch-balance') {
+        toast('查询中…');
+        try {
+          const d = await api('/channels/' + id + '/balance', { method: 'POST' });
+          toast(d.supported ? ('余额 $' + d.remaining + '（已用 $' + d.used + '）') : ('不支持：' + (d.error || '')), d.supported ? '' : 'err');
+          route();
+        } catch (err) { toast(err.message, 'err'); }
+        return;
+      }
+      if (act === 'ch-balance-all') {
+        toast('查询全部渠道余额…');
+        try {
+          const d = await api('/channels/balance-all', { method: 'POST' });
+          const okN = (d.results || []).filter(r => r.supported).length;
+          toast('完成：' + okN + ' 个渠道可查余额');
+          route();
+        } catch (err) { toast(err.message, 'err'); }
+        return;
+      }
       if (act === 'ch-check-all') {
         toast('正在检测全部渠道…');
         try {
@@ -1827,6 +1865,7 @@
         s.to = $('#logTo').value;
         s.channel = $('#logChannel').value;
         s.days = Number($('#logDays').value) || 7;
+        s.scope = $('#logScope').value;
         s.page = 1;
         return route();
       }
@@ -2115,6 +2154,8 @@
                 invite_bonus: Number($('#pfInvite').value) || 0,
                 referral_rate: Number($('#pfRefRate').value) || 0,
                 alert_fail_rate: Number($('#pfAlertRate').value) || 30,
+                alert_email: $('#pfAlertEmail').value.trim(),
+                alert_webhook: $('#pfAlertHook').value.trim(),
                 default_rpm: Number($('#pfRpm').value) || 0,
                 default_tpm: Number($('#pfTpm').value) || 0,
                 announcement: $('#pfAnn').value,
