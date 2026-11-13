@@ -116,6 +116,7 @@ function register(username, password, email, inviteCode) {
 function login(username, password) {
   seedPlatformUsers();
   const { db } = data();
+  password = String(password == null ? '' : password).trim();
   const u = db.users.find(x => String(x.username).toLowerCase() === String(username || '').trim().toLowerCase());
   if (!u) return { error: '账号或密码错误' };
   if (u.status === 'banned') return { error: '账号已被封禁' };

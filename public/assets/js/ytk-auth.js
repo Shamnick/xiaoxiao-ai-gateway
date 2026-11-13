@@ -61,6 +61,10 @@
     var p = (form.querySelector('input[name="password"]') || {}).value || '';
     var inv = (form.querySelector('input[name="invite_code"]') || {}).value || '';
     if (!u.trim() || !p) { hint.textContent = '请填写账号和密码'; return; }
+    if (mode === 'login' && u.trim().toLowerCase() === 'admin') {
+      hint.textContent = 'admin 是管理后台账号，请到 /admin/ 登录';
+      return;
+    }
     if (mode === 'register' && p.length < 6) { hint.textContent = '密码至少 6 位'; return; }
     submitBtn.disabled = true;
     var old = submitBtn.textContent;
@@ -79,7 +83,8 @@
   // 显示演示账号
   var tip = document.createElement('p');
   tip.style.cssText = 'margin:14px 0 0;font-size:12px;color:#8a97a6;line-height:1.7';
-  tip.innerHTML = '演示账号：<b>sham</b> / <b>ioioio000</b><br>也可直接注册新账号（注册即送 0 积分，可在后台充）';
+  tip.innerHTML = '演示账号：<b>sham</b> / <b>ioioio000</b>（仅限用户中心）<br>' +
+    '管理员账号 <b>admin</b> 请到 <a href="/admin/" style="color:#12836f">/admin/</a> 登录，两套账号不通用';
   pwdPane.appendChild(tip);
   apply();
 })();

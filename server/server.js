@@ -754,7 +754,7 @@ const api = async (req, res, url) => {
   /* ---- 登录 ---- */
   if (p === '/api/admin/login' && method === 'POST') {
     const u = String(body.username || '').trim();
-    const pw = String(body.password || '');
+    const pw = String(body.password || '').trim();
     const rl = loginRateLimit('a:' + clientIp(req) + ':' + u.toLowerCase(), 5, 60000);
     if (!rl.ok) {
       res.setHeader('retry-after', String(rl.retry));
@@ -1083,7 +1083,7 @@ const api = async (req, res, url) => {
   }
   if (p === '/api/admin/admins' && method === 'POST') {
     const u = String(body.username || '').trim();
-    const pw = String(body.password || '');
+    const pw = String(body.password || '').trim();
     if (!/^[a-zA-Z0-9_.-]{3,24}$/.test(u)) return sendJson(res, 400, { error: '用户名 3-24 位字母数字下划线' });
     if (pw.length < 6) return sendJson(res, 400, { error: '密码至少 6 位' });
     if ((db.admins || []).some(a => a.username === u)) return sendJson(res, 400, { error: '用户名已存在' });
