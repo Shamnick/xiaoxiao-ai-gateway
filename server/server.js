@@ -1517,6 +1517,37 @@ const api = async (req, res, url) => {
     });
   }
 
+  /* ---- 日志归档 ---- */
+  if (p === '/api/admin/logs/archives' && method === 'GET') {
+    return sendJson(res, 200, { items: platform.listArchives(), keep: 2000 });
+  }
+  if (p === '/api/admin/logs/archive' && method === 'GET') {
+    const month = url.searchParams.get('month') || '';
+    const items = platform.searchArchive(month, url.searchParams.get('q') || '', Number(url.searchParams.get('limit')) || 100);
+    return sendJson(res, 200, { month, items, total: items.length });
+  }
+  if (p === '/api/admin/logs/archive' && method === 'POST') {
+    const r = platform.archiveLogs(Number(body.keep) || 2000);
+    return sendJson(res, 200, Object.assign({ ok: !r.error }, r));
+  }
+
+  /* ---- 告警 ---- */
+  if (p === '/api/admin/alerts' && method === 'GET') {
+    const list = platform.alerts();
+    return sendJson(res, 200, { items: list.slice(0, 100), unread: list.filter(a => !a.read).length });
+  }
+  if (p === '/api/admin/alerts/read' && method === 'POST') {
+    const list = platform.alerts();
+    if (body.id) { const a = list.find(x => x.id === body.id); if (a) a.read = true; }
+    else list.forEach(a => { a.read = true; });
+    store.save();
+    return sendJson(res, 200, { ok: true });
+  }
+  if (p === '/api/admin/alerts/check' && method === 'POST') {
+    const r = platform.alertTick();
+    return sendJson(res, 200, { ok: true, alerts: platform.alerts().slice(0, 20), unread: platform.alerts().filter(a => !a.read).length });
+  }
+
   /* ---- 日志导出 CSV ---- */
   if (p === '/api/admin/logs/stats' && method === 'GET') {
     const days = Math.min(90, Number(url.searchParams.get('days')) || 7);
@@ -1532,8 +1563,9 @@ const api = async (req, res, url) => {
       byModel[l.model] = byModel[l.model] || { model: l.model, calls: 0, cost: 0 };
       byModel[l.model].calls++; byModel[l.model].cost += Number(l.cost) || 0;
       const day = String(l.at).slice(0, 10);
-      byDay[day] = byDay[day] || { day, calls: 0, cost: 0, errors: 0 };
+      byDay[day] = byDay[day] || { day, calls: 0, cost: 0, errors: 0, channels: {} };
       byDay[day].calls++; byDay[day].cost += Number(l.cost) || 0;
+      byDay[day].channels[ch] = (byDay[day].channels[ch] || 0) + 1;
       if (l.status !== 'success') byDay[day].errors++;
       cost += Number(l.cost) || 0;
       tokens += (l.prompt_tokens || 0) + (l.completion_tokens || 0);
@@ -1955,6 +1987,11 @@ server.listen(PORT, HOST, () => {
 
 setTimeout(() => platform.healthTick().catch(() => {}), 4000);
 setInterval(() => platform.healthTick().catch(() => {}), 60000).unref();
+
+// 告警检查：每分钟；日志归档：每 30 分钟
+setInterval(() => { try { platform.alertTick(); } catch (e) { /* ignore */ } }, 60000).unref();
+setTimeout(() => { try { platform.archiveLogs(); } catch (e) { /* ignore */ } }, 30000);
+setInterval(() => { try { platform.archiveLogs(); } catch (e) { /* ignore */ } }, 30 * 60000).unref();
 
 userServer.listen(USER_PORT, HOST, () => {
   console.log('  用户中心: http://' + HOST + ':' + USER_PORT + '/   (或 http://user.localhost:' + PORT + '/)');

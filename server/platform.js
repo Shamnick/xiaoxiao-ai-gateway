@@ -289,6 +289,7 @@ function keyIpAllowed(key, ip) {
 
 /* ------------------------------ 限流 ------------------------------ */
 const RATE = new Map();
+const AUTH_FAIL_HITS = new Map();
 function rateLimit(key, tokens) {
   const now = Date.now();
   const win = 60000;
@@ -534,7 +535,21 @@ async function relayChat(secret, body, clientIp, opts) {
   const { db } = data();
   const started = Date.now();
   const key = findKeyBySecret(secret);
-  if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  if (!key) {
+    const k = 'authfail:' + String(clientIp || '') + ':' + Math.floor(Date.now() / 60000);
+    const n = (AUTH_FAIL_HITS.get(k) || 0) + 1;
+    AUTH_FAIL_HITS.set(k, n);
+    if (AUTH_FAIL_HITS.size > 500) AUTH_FAIL_HITS.clear();
+    if (n <= 5) {
+      addLog({
+        user_id: 'anonymous', key_id: '', model: String((body && body.model) || '').slice(0, 60),
+        status: 'error', cost: 0, ms: Date.now() - started,
+        error: '无效的 API Key（' + String(secret || '').slice(0, 8) + '…）',
+        kind: 'auth_fail', client_ip: clientIp || '',
+      });
+    }
+    return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  }
   if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
   if (!keyIpAllowed(key, clientIp)) {
     addLog({ user_id: key.user_id, key_id: key.id, model: body.model || '', status: 'error', cost: 0, ms: 0, error: 'IP 不在白名单：' + (clientIp || 'unknown') });
@@ -711,7 +726,21 @@ async function relayEmbeddings(secret, body, clientIp) {
   const { db } = data();
   const started = Date.now();
   const key = findKeyBySecret(secret);
-  if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  if (!key) {
+    const k = 'authfail:' + String(clientIp || '') + ':' + Math.floor(Date.now() / 60000);
+    const n = (AUTH_FAIL_HITS.get(k) || 0) + 1;
+    AUTH_FAIL_HITS.set(k, n);
+    if (AUTH_FAIL_HITS.size > 500) AUTH_FAIL_HITS.clear();
+    if (n <= 5) {
+      addLog({
+        user_id: 'anonymous', key_id: '', model: String((body && body.model) || '').slice(0, 60),
+        status: 'error', cost: 0, ms: Date.now() - started,
+        error: '无效的 API Key（' + String(secret || '').slice(0, 8) + '…）',
+        kind: 'auth_fail', client_ip: clientIp || '',
+      });
+    }
+    return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  }
   if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
   if (!keyIpAllowed(key, clientIp)) {
     addLog({ user_id: key.user_id, key_id: key.id, model: body.model || '', status: 'error', cost: 0, ms: 0, error: 'IP 不在白名单：' + (clientIp || 'unknown') });
@@ -754,7 +783,21 @@ async function relayImages(secret, body, clientIp) {
   const { db } = data();
   const started = Date.now();
   const key = findKeyBySecret(secret);
-  if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  if (!key) {
+    const k = 'authfail:' + String(clientIp || '') + ':' + Math.floor(Date.now() / 60000);
+    const n = (AUTH_FAIL_HITS.get(k) || 0) + 1;
+    AUTH_FAIL_HITS.set(k, n);
+    if (AUTH_FAIL_HITS.size > 500) AUTH_FAIL_HITS.clear();
+    if (n <= 5) {
+      addLog({
+        user_id: 'anonymous', key_id: '', model: String((body && body.model) || '').slice(0, 60),
+        status: 'error', cost: 0, ms: Date.now() - started,
+        error: '无效的 API Key（' + String(secret || '').slice(0, 8) + '…）',
+        kind: 'auth_fail', client_ip: clientIp || '',
+      });
+    }
+    return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  }
   if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
   if (!keyIpAllowed(key, clientIp)) {
     addLog({ user_id: key.user_id, key_id: key.id, model: body.model || '', status: 'error', cost: 0, ms: 0, error: 'IP 不在白名单：' + (clientIp || 'unknown') });
@@ -809,7 +852,21 @@ async function relaySpeech(secret, body, clientIp) {
   const { db } = data();
   const started = Date.now();
   const key = findKeyBySecret(secret);
-  if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  if (!key) {
+    const k = 'authfail:' + String(clientIp || '') + ':' + Math.floor(Date.now() / 60000);
+    const n = (AUTH_FAIL_HITS.get(k) || 0) + 1;
+    AUTH_FAIL_HITS.set(k, n);
+    if (AUTH_FAIL_HITS.size > 500) AUTH_FAIL_HITS.clear();
+    if (n <= 5) {
+      addLog({
+        user_id: 'anonymous', key_id: '', model: String((body && body.model) || '').slice(0, 60),
+        status: 'error', cost: 0, ms: Date.now() - started,
+        error: '无效的 API Key（' + String(secret || '').slice(0, 8) + '…）',
+        kind: 'auth_fail', client_ip: clientIp || '',
+      });
+    }
+    return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  }
   if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
   if (!keyIpAllowed(key, clientIp)) return { ok: false, status: 403, error: 'IP 不在白名单内', type: 'ip_forbidden' };
   const user = findUser(key.user_id);
@@ -873,7 +930,21 @@ async function relayTranscription(secret, raw, contentType, clientIp) {
   const { db } = data();
   const started = Date.now();
   const key = findKeyBySecret(secret);
-  if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  if (!key) {
+    const k = 'authfail:' + String(clientIp || '') + ':' + Math.floor(Date.now() / 60000);
+    const n = (AUTH_FAIL_HITS.get(k) || 0) + 1;
+    AUTH_FAIL_HITS.set(k, n);
+    if (AUTH_FAIL_HITS.size > 500) AUTH_FAIL_HITS.clear();
+    if (n <= 5) {
+      addLog({
+        user_id: 'anonymous', key_id: '', model: String((body && body.model) || '').slice(0, 60),
+        status: 'error', cost: 0, ms: Date.now() - started,
+        error: '无效的 API Key（' + String(secret || '').slice(0, 8) + '…）',
+        kind: 'auth_fail', client_ip: clientIp || '',
+      });
+    }
+    return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  }
   if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
   if (!keyIpAllowed(key, clientIp)) return { ok: false, status: 403, error: 'IP 不在白名单内', type: 'ip_forbidden' };
   const user = findUser(key.user_id);
@@ -913,7 +984,21 @@ async function relayRerank(secret, body, clientIp) {
   const { db } = data();
   const started = Date.now();
   const key = findKeyBySecret(secret);
-  if (!key) return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  if (!key) {
+    const k = 'authfail:' + String(clientIp || '') + ':' + Math.floor(Date.now() / 60000);
+    const n = (AUTH_FAIL_HITS.get(k) || 0) + 1;
+    AUTH_FAIL_HITS.set(k, n);
+    if (AUTH_FAIL_HITS.size > 500) AUTH_FAIL_HITS.clear();
+    if (n <= 5) {
+      addLog({
+        user_id: 'anonymous', key_id: '', model: String((body && body.model) || '').slice(0, 60),
+        status: 'error', cost: 0, ms: Date.now() - started,
+        error: '无效的 API Key（' + String(secret || '').slice(0, 8) + '…）',
+        kind: 'auth_fail', client_ip: clientIp || '',
+      });
+    }
+    return { ok: false, status: 401, error: '无效的 API Key', type: 'invalid_api_key' };
+  }
   if (key.enabled === false) return { ok: false, status: 403, error: 'API Key 已被停用', type: 'key_disabled' };
   if (!keyIpAllowed(key, clientIp)) return { ok: false, status: 403, error: 'IP 不在白名单内', type: 'ip_forbidden' };
   const user = findUser(key.user_id);
@@ -954,6 +1039,117 @@ async function relayRerank(secret, body, clientIp) {
   addLog({ user_id: user.id, key_id: key.id, model, status: 'success', cost, ms: Date.now() - started, prompt_tokens: 0, completion_tokens: 0, kind: 'rerank' });
   scheduleSave();
   return { ok: true, data: { id: 'rerank-' + Date.now(), model, results, usage: { documents: docs.length } } };
+}
+
+/* ------------------------------ 日志归档 ------------------------------ */
+const fsx = require('fs');
+const pathx = require('path');
+const LOG_DIR = pathx.join(__dirname, '..', 'logs');
+const LOG_KEEP = 2000;
+
+/** 超出保留量的日志按月份归档到 logs/archive-YYYY-MM.jsonl（不丢数据，只是移出主库） */
+function archiveLogs(force) {
+  const { p } = data();
+  if (!Array.isArray(p.logs)) return { archived: 0 };
+  const keep = Number(force) || LOG_KEEP;
+  if (p.logs.length <= keep) return { archived: 0, kept: p.logs.length };
+  const overflow = p.logs.splice(keep);
+  const buckets = {};
+  overflow.forEach(l => {
+    const m = String(l.at || '').slice(0, 7) || 'unknown';
+    (buckets[m] = buckets[m] || []).push(l);
+  });
+  try {
+    if (!fsx.existsSync(LOG_DIR)) fsx.mkdirSync(LOG_DIR, { recursive: true });
+    Object.keys(buckets).forEach(m => {
+      const file = pathx.join(LOG_DIR, 'archive-' + m + '.jsonl');
+      fsx.appendFileSync(file, buckets[m].map(x => JSON.stringify(x)).join('\n') + '\n');
+    });
+  } catch (e) {
+    // 写盘失败则回填，绝不丢日志
+    p.logs = p.logs.concat(overflow);
+    return { archived: 0, error: e.message };
+  }
+  scheduleSave();
+  return { archived: overflow.length, kept: p.logs.length, months: Object.keys(buckets) };
+}
+
+function listArchives() {
+  try {
+    if (!fsx.existsSync(LOG_DIR)) return [];
+    return fsx.readdirSync(LOG_DIR)
+      .filter(f => /^archive-\d{4}-\d{2}\.jsonl$/.test(f))
+      .map(f => {
+        const full = pathx.join(LOG_DIR, f);
+        const st = fsx.statSync(full);
+        let lines = 0;
+        try { lines = fsx.readFileSync(full, 'utf8').split('\n').filter(Boolean).length; } catch (e) {}
+        return { name: f, size: st.size, lines, mtime: st.mtime.toISOString(), month: f.replace('archive-', '').replace('.jsonl', '') };
+      })
+      .sort((a, b) => b.month.localeCompare(a.month));
+  } catch (e) { return []; }
+}
+
+/** 从归档里检索（按月，最多读 20000 行） */
+function searchArchive(month, q, limit) {
+  const file = pathx.join(LOG_DIR, 'archive-' + String(month || '').replace(/[^0-9-]/g, '') + '.jsonl');
+  if (!fsx.existsSync(file)) return [];
+  const out = [];
+  const kw = String(q || '').toLowerCase();
+  const lines = fsx.readFileSync(file, 'utf8').split('\n');
+  for (let i = lines.length - 1; i >= 0 && out.length < (Number(limit) || 100); i--) {
+    if (!lines[i]) continue;
+    if (out.length >= 20000) break;
+    if (kw && lines[i].toLowerCase().indexOf(kw) === -1) continue;
+    try { out.push(JSON.parse(lines[i])); } catch (e) { /* skip */ }
+  }
+  return out;
+}
+
+/* ------------------------------ 告警 ------------------------------ */
+function alerts() {
+  const { p } = data();
+  if (!p.alerts) p.alerts = [];
+  return p.alerts;
+}
+
+function addAlert(level, title, detail, key) {
+  const list = alerts();
+  if (key) {
+    const dup = list.find(a => a.key === key && !a.read && Date.now() - new Date(a.at).getTime() < 30 * 60000);
+    if (dup) { dup.count = (dup.count || 1) + 1; dup.at = now(); scheduleSave(); return dup; }
+  }
+  const a = { id: 'al' + Date.now().toString(36), level: level || 'warning', title, detail, key: key || '', read: false, count: 1, at: now() };
+  list.unshift(a);
+  if (list.length > 200) list.length = 200;
+  scheduleSave();
+  return a;
+}
+
+/** 每分钟检查：近 10 分钟失败率 / 余额不足 / 渠道熔断 */
+function alertTick() {
+  const { p, db } = data();
+  const since = Date.now() - 10 * 60000;
+  const recent = (p.logs || []).filter(l => new Date(l.at).getTime() >= since && l.model !== '充值' && l.kind !== 'recharge');
+  if (recent.length >= 10) {
+    const errors = recent.filter(l => l.status !== 'success').length;
+    const rate = errors / recent.length;
+    const thr = Number((db.settings && db.settings.platform && db.settings.platform.alert_fail_rate) || 30) / 100;
+    if (rate >= thr) {
+      addAlert('critical', '调用失败率异常',
+        '近 10 分钟 ' + recent.length + ' 次调用中失败 ' + errors + ' 次（' + Math.round(rate * 100) + '%），阈值 ' + Math.round(thr * 100) + '%。',
+        'fail-rate');
+    }
+  }
+  const down = (p.channels || []).filter(c => c.status === 'down');
+  if (down.length) {
+    addAlert('warning', down.length + ' 个上游渠道熔断中', down.map(c => c.name).join('、'), 'channel-down');
+  }
+  const lowBalance = (db.users || []).filter(u => Number(u.balance || 0) < 1 && u.status === 'active').length;
+  if (lowBalance >= 10) {
+    addAlert('info', lowBalance + ' 个用户余额不足 1 积分', '可能影响付费转化，可在用户管理查看。', 'low-balance');
+  }
+  return { ok: true };
 }
 
 /* ------------------------------ 邀请体系 ------------------------------ */
@@ -1155,6 +1351,7 @@ function restoreBackup(name) {
 }
 
 module.exports = {
+  archiveLogs, listArchives, searchArchive, alerts, addAlert, alertTick,
   capBody, redact, logBodiesEnabled,
   googleAuth,
   inviteStats, rerankUpstream,

@@ -161,6 +161,7 @@
     {
       group: '系统', items: [
         { id: 'settings', label: '站点设置', icon: '⚙' },
+        { id: 'alerts', label: '告警中心', icon: '⚑' },
         { id: 'backups', label: '备份与恢复', icon: '⛁' },
         { id: 'security', label: '账号与安全', icon: '⚿' },
         { id: 'audit', label: '操作日志', icon: '⟲' },
@@ -236,11 +237,21 @@
     async render() {
       const d = await api('/overview');
       state.cache.overview = d;
+      let alertBar = '';
+      try {
+        const al = await api('/alerts');
+        if (al.unread > 0) {
+          const top = (al.items || []).filter(a => !a.read)[0];
+          alertBar = '<div class="warn-box" style="margin-bottom:14px;display:flex;align-items:center;gap:10px">' +
+            '<b>' + al.unread + ' 条未读告警</b><span class="grow">' + esc(top ? top.title : '') + '</span>' +
+            '<a class="link-btn" href="#/alerts">查看 →</a></div>';
+        }
+      } catch (e) { /* ignore */ }
       const trend = d.trend || [];
       const maxPv = Math.max(1, ...trend.map(t => t.pv));
       const brands = d.top_models || [];
       const maxB = Math.max(1, ...brands.map(b => b.count));
-      return '' +
+      return alertBar + '' +
         '<div class="grid g4">' +
         statCard('accent', '模型总数', num(d.models), '已上架 ' + d.models_online + ' · 品牌 ' + d.brands) +
         statCard('ok', '今日访问', num(d.pv_today), '近 14 天趋势见右图') +
@@ -297,6 +308,40 @@
       ];
       box.innerHTML = '<dl class="kv">' + kv.map(([k, v]) => '<dt>' + k + '</dt><dd>' + esc(v) + '</dd>').join('') + '</dl>';
     }).catch(e => { box.innerHTML = '<div class="help">加载失败：' + esc(e.message) + '</div>'; });
+  }
+
+  /** 渠道趋势折线（纯 SVG，多线叠加） */
+  function renderChannelTrend(byDay, byChannel) {
+    if (!byDay.length) return '';
+    const chs = (byChannel || []).slice(0, 5).map(c => c.channel);
+    const colors = ['#0e9f8a', '#2f7be0', '#c9971a', '#8e44ad', '#c0392b'];
+    const W = 900, H = 180, padL = 40, padB = 26, padT = 12;
+    const max = Math.max(1, ...byDay.map(d => d.calls));
+    const stepX = byDay.length > 1 ? (W - padL - 10) / (byDay.length - 1) : 0;
+    const y = v => padT + (H - padT - padB) * (1 - v / max);
+    const lines = chs.map((ch, i) => {
+      const pts = byDay.map((d, idx) => {
+        const x = padL + idx * stepX;
+        const v = (d.channels && d.channels[ch]) || 0;
+        return x.toFixed(1) + ',' + y(v).toFixed(1);
+      }).join(' ');
+      return '<polyline fill="none" stroke="' + colors[i % colors.length] + '" stroke-width="2" points="' + pts + '"/>';
+    }).join('');
+    const gridY = [0, 0.5, 1].map(p2 => {
+      const yy = y(max * p2).toFixed(1);
+      return '<line x1="' + padL + '" y1="' + yy + '" x2="' + (W - 10) + '" y2="' + yy + '" stroke="#eef2f7"/>' +
+        '<text x="4" y="' + (Number(yy) + 4) + '" font-size="10" fill="#8a97a6">' + Math.round(max * p2) + '</text>';
+    }).join('');
+    const xLabels = byDay.map((d, idx) => {
+      if (byDay.length > 8 && idx % Math.ceil(byDay.length / 8) !== 0) return '';
+      return '<text x="' + (padL + idx * stepX) + '" y="' + (H - 8) + '" font-size="10" fill="#8a97a6" text-anchor="middle">' + esc(String(d.day).slice(5)) + '</text>';
+    }).join('');
+    const legend = chs.map((ch, i) =>
+      '<span style="display:inline-flex;align-items:center;gap:6px;margin-right:14px;font-size:12px;color:#5b6b7d">' +
+      '<i style="width:10px;height:10px;border-radius:3px;background:' + colors[i % colors.length] + ';display:inline-block"></i>' + esc(ch) + '</span>').join('');
+    return '<div class="card" style="margin-bottom:14px"><div class="card-head"><h3>渠道调用趋势</h3><span class="sub">按天统计（Top 5 渠道）</span></div>' +
+      '<div class="card-pad">' + legend + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:180px;margin-top:8px">' +
+      gridY + lines + xLabels + '</svg></div></div>';
   }
 
   function statCard(cls, lab, val, sub) {
@@ -685,6 +730,30 @@
     },
   };
 
+  /* ---------------- 系统：告警中心 ---------------- */
+  VIEWS.alerts = {
+    id: 'alerts',
+    title: '告警中心',
+    async render() {
+      const d = await api('/alerts');
+      const rows = (d.items || []).map(a => {
+        const color = a.level === 'critical' ? 'danger' : (a.level === 'warning' ? 'warn' : 'on');
+        const label = a.level === 'critical' ? '严重' : (a.level === 'warning' ? '警告' : '提示');
+        return '<tr><td><span class="badge ' + color + '">' + label + '</span></td>' +
+          '<td class="cell-main">' + esc(a.title) + (a.count > 1 ? ' <span class="cell-sub">×' + a.count + '</span>' : '') +
+          '<div class="cell-sub">' + esc(a.detail || '') + '</div></td>' +
+          '<td class="mono cell-sub">' + fmtDate(a.at) + '</td>' +
+          '<td>' + (a.read ? '<span class="cell-sub">已读</span>' : '<span class="badge warn">未读</span>') + '</td></tr>';
+      }).join('');
+      return '<div class="card"><div class="card-head"><h3>告警</h3><span class="sub">未读 ' + d.unread + ' 条 · 每分钟自动检查失败率/熔断/低余额</span>' +
+        '<div class="right"><button class="btn btn-sm" data-act="alert-check">立即检查</button>' +
+        '<button class="btn btn-sm" data-act="alert-read">全部已读</button></div></div>' +
+        '<div class="table-wrap"><table class="tbl"><thead><tr><th style="width:70px">级别</th><th>内容</th><th style="width:150px">时间</th><th style="width:60px">状态</th></tr></thead>' +
+        '<tbody>' + (rows || '<tr><td colspan="4">' + emptyHTML('暂无告警', '系统运行正常') + '</td></tr>') + '</tbody></table></div>' +
+        '<div class="card-pad help">触发条件：近 10 分钟调用量 ≥ 20 且失败率超过阈值（默认 30%，可在平台设置调整）；或有渠道熔断；或超过 10 个用户余额不足。</div></div>';
+    },
+  };
+
   /* ---------------- 系统：备份与恢复 ---------------- */
   VIEWS.backups = {
     id: 'backups',
@@ -748,7 +817,8 @@
       const d = await api('/logs?' + new URLSearchParams({ page: s.page, size: s.size, q: s.q || '', status: s.status || '', from: s.from || '', to: s.to || '', channel: s.channel || '' }));
       const st = await api('/logs/stats?days=' + (s.days || 7));
       const chOptions = (st.by_channel || []).map(c => '<option value="' + esc(c.channel) + '"' + (s.channel === c.channel ? ' selected' : '') + '>' + esc(c.channel) + '（' + c.calls + '）</option>').join('');
-      const statCards = '<div class="kpi-row" style="margin-bottom:14px">' +
+      const trend = renderChannelTrend(st.by_day || [], st.by_channel || []);
+      const statCards = trend + '<div class="kpi-row" style="margin-bottom:14px">' +
         '<div class="kpi"><div class="kpi-label">近 ' + st.days + ' 天调用</div><div class="kpi-value">' + st.calls + '</div></div>' +
         '<div class="kpi"><div class="kpi-label">花费</div><div class="kpi-value">' + Number(st.cost).toFixed(2) + '</div></div>' +
         '<div class="kpi"><div class="kpi-label">成功率</div><div class="kpi-value">' + (st.calls ? Math.round(st.by_status.success / st.calls * 100) : 100) + '%</div></div>' +
@@ -1111,6 +1181,7 @@
         '<div class="divider"></div>' +
         '<div class="field row2"><div><label class="fl">新用户赠送积分</label><input class="inp" id="pfNewPoints" type="number" style="width:100%" value="' + esc((s.platform && s.platform.new_user_points) || 0) + '"></div>' +
         '<div><label class="fl">邀请奖励积分</label><input class="inp" id="pfInvite" type="number" style="width:100%" value="' + esc((s.platform && s.platform.invite_bonus) || 5) + '"></div></div>' +
+        '<div class="field"><label class="fl">告警失败率阈值（%）：近 10 分钟调用量 ≥10 时触发</label><input class="inp" id="pfAlertRate" type="number" min="1" max="100" style="width:100%" value="' + esc((s.platform && s.platform.alert_fail_rate) != null ? s.platform.alert_fail_rate : 30) + '"></div>' +
         '<div class="field"><label class="fl">充值返利比例（%）：被邀请人每次充值，邀请人按此比例获得积分</label><input class="inp" id="pfRefRate" type="number" min="0" max="100" style="width:100%" value="' + esc((s.platform && s.platform.referral_rate) != null ? s.platform.referral_rate : 10) + '"></div>' +
         '<div class="field row2"><div><label class="fl">默认 RPM 限制（0 = 不限）</label><input class="inp" id="pfRpm" type="number" style="width:100%" value="' + esc((s.platform && s.platform.default_rpm) || 60) + '"></div>' +
         '<div><label class="fl">默认 TPM 限制</label><input class="inp" id="pfTpm" type="number" style="width:100%" value="' + esc((s.platform && s.platform.default_tpm) || 200000) + '"></div></div>' +
@@ -1298,6 +1369,17 @@
         if (!to) return;
         try { const d = await api('/mail/test', { method: 'POST', body: { to } }); toast(d.ok ? '已发送，请查收' : ('失败：' + (d.error || '')), d.ok ? '' : 'err'); }
         catch (err) { toast(err.message, 'err'); }
+        return;
+      }
+      if (act === 'alert-check') {
+        toast('检查中…');
+        try { const d = await api('/alerts/check', { method: 'POST' }); toast('检查完成，未读 ' + d.unread + ' 条'); route(); }
+        catch (e) { toast(e.message, 'err'); }
+        return;
+      }
+      if (act === 'alert-read') {
+        try { await api('/alerts/read', { method: 'POST', body: {} }); toast('已全部标记为已读'); route(); }
+        catch (e) { toast(e.message, 'err'); }
         return;
       }
       if (act === 'sys-refresh') { loadSystem(); toast('已刷新'); return; }
@@ -2032,6 +2114,7 @@
                 new_user_points: Number($('#pfNewPoints').value) || 0,
                 invite_bonus: Number($('#pfInvite').value) || 0,
                 referral_rate: Number($('#pfRefRate').value) || 0,
+                alert_fail_rate: Number($('#pfAlertRate').value) || 30,
                 default_rpm: Number($('#pfRpm').value) || 0,
                 default_tpm: Number($('#pfTpm').value) || 0,
                 announcement: $('#pfAnn').value,
