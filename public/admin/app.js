@@ -745,7 +745,18 @@
     title: '调用日志',
     async render() {
       const s = vs('logs');
-      const d = await api('/logs?' + new URLSearchParams({ page: s.page, size: s.size, q: s.q || '', status: s.status || '' }));
+      const d = await api('/logs?' + new URLSearchParams({ page: s.page, size: s.size, q: s.q || '', status: s.status || '', from: s.from || '', to: s.to || '', channel: s.channel || '' }));
+      const st = await api('/logs/stats?days=' + (s.days || 7));
+      const chOptions = (st.by_channel || []).map(c => '<option value="' + esc(c.channel) + '"' + (s.channel === c.channel ? ' selected' : '') + '>' + esc(c.channel) + '（' + c.calls + '）</option>').join('');
+      const statCards = '<div class="kpi-row" style="margin-bottom:14px">' +
+        '<div class="kpi"><div class="kpi-label">近 ' + st.days + ' 天调用</div><div class="kpi-value">' + st.calls + '</div></div>' +
+        '<div class="kpi"><div class="kpi-label">花费</div><div class="kpi-value">' + Number(st.cost).toFixed(2) + '</div></div>' +
+        '<div class="kpi"><div class="kpi-label">成功率</div><div class="kpi-value">' + (st.calls ? Math.round(st.by_status.success / st.calls * 100) : 100) + '%</div></div>' +
+        '<div class="kpi"><div class="kpi-label">平均耗时</div><div class="kpi-value">' + st.avg_ms + 'ms</div></div>' +
+        '</div>' +
+        '<div class="table-wrap" style="margin-bottom:14px"><table class="tbl"><thead><tr><th>渠道</th><th class="num">调用</th><th class="num">失败</th><th class="num">花费</th><th class="num">平均耗时</th></tr></thead><tbody>' +
+        ((st.by_channel || []).map(c => '<tr><td>' + esc(c.channel) + '</td><td class="num">' + c.calls + '</td><td class="num">' + c.errors + '</td><td class="num">' + Number(c.cost).toFixed(3) + '</td><td class="num">' + c.avg_ms + 'ms</td></tr>').join('') || '<tr><td colspan="5">' + emptyHTML('近 ' + st.days + ' 天没有调用') + '</td></tr>') +
+        '</tbody></table></div>';
       const rows = (d.items || []).map(l =>
         '<tr><td class="mono cell-sub">' + fmtDate(l.at) + '</td>' +
         '<td class="mono">' + esc(l.username || l.user_id) + '</td>' +
@@ -755,14 +766,21 @@
         '<td class="num">' + (l.ms || 0) + 'ms</td>' +
         '<td>' + (l.status === 'success' ? '<span class="badge on">成功</span>' : '<span class="badge danger">失败</span>') + '</td>' +
         '<td class="cell-sub">' + esc((l.error || '') + (l.stream ? 'stream' : '')) + '</td>' +
-        '<td><button class="link-btn" data-act="log-detail" data-id="' + esc(l.id) + '">详情</button></td></tr>').join('');
+        '<td><div class="acts"><button class="link-btn" data-act="log-detail" data-id="' + esc(l.id) + '">详情</button>' +
+        '<button class="link-btn" data-act="log-replay" data-id="' + esc(l.id) + '">重放</button></div></td></tr>').join('');
       return '<div class="card"><div class="card-head"><h3>调用日志</h3><span class="sub">共 ' + d.total + ' 条</span></div><div class="card-pad">' +
         '<div class="toolbar"><input class="inp search-inp" id="logQ" placeholder="搜索模型 / 用户 / 错误" value="' + esc(s.q || '') + '">' +
         '<select class="sel" id="logStatus"><option value="">全部状态</option>' +
         [['success', '成功'], ['error', '失败']].map(x => '<option value="' + x[0] + '"' + (s.status === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') +
-        '</select><button class="btn btn-sm" data-act="log-query">查询</button>' +
+        '</select>' +
+        '<input class="inp" type="date" id="logFrom" value="' + esc(s.from || '') + '" style="width:150px">' +
+        '<span class="cell-sub">至</span><input class="inp" type="date" id="logTo" value="' + esc(s.to || '') + '" style="width:150px">' +
+        '<select class="sel" id="logChannel"><option value="">全部渠道</option>' + chOptions + '</select>' +
+        '<select class="sel" id="logDays"><option value="7"' + (String(s.days || 7) === '7' ? ' selected' : '') + '>近 7 天</option><option value="30"' + (String(s.days) === '30' ? ' selected' : '') + '>近 30 天</option></select>' +
+        '<button class="btn btn-sm" data-act="log-query">查询</button>' +
         '<a class="btn btn-sm" href="/api/admin/logs/export" target="_blank" rel="noopener">导出 CSV</a></div>' +
-        '<div class="table-wrap"><table class="tbl"><thead><tr><th>时间</th><th>用户</th><th>模型</th><th class="num">输入/输出 token</th><th class="num">扣费</th><th class="num">耗时</th><th>状态</th><th>备注</th><th style="width:70px">操作</th></tr></thead>' +
+        statCards +
+        '<div class="table-wrap"><table class="tbl"><thead><tr><th>时间</th><th>用户</th><th>模型</th><th class="num">输入/输出 token</th><th class="num">扣费</th><th class="num">耗时</th><th>状态</th><th>备注</th><th style="width:120px">操作</th></tr></thead>' +
         '<tbody>' + (rows || '<tr><td colspan="9">' + emptyHTML('还没有调用记录') + '</td></tr>') + '</tbody></table></div>' +
         pagerHTML(d) + '</div></div>';
     },
@@ -1667,6 +1685,29 @@
       }
 
       /* ----- 中转运营：日志 ----- */
+      if (act === 'log-replay') {
+        const ok2 = await askConfirm('将使用原用户的 Key 重新发起这次请求（不计费），确认？', '重放请求', '重放');
+        if (!ok2) return;
+        toast('重放中…');
+        try {
+          const r = await api('/logs/' + id + '/replay', { method: 'POST' });
+          if (!r.ok) return toast('重放失败：' + r.error, 'err');
+          const txt = (r.response && r.response.choices && r.response.choices[0] && r.response.choices[0].message)
+            ? r.response.choices[0].message.content : JSON.stringify(r.response).slice(0, 200);
+          openModal({
+            title: '重放结果 · ' + r.channel,
+            wide: true,
+            body: '<div class="kv" style="margin-bottom:10px">' +
+              '<dt>耗时</dt><dd>' + r.ms + 'ms</dd>' +
+              '<dt>tokens</dt><dd>' + ((r.usage && r.usage.prompt_tokens) || 0) + ' / ' + ((r.usage && r.usage.completion_tokens) || 0) + '</dd>' +
+              '<dt>计费</dt><dd>0（管理员重放不计费）</dd>' +
+              '<dt>原始</dt><dd>' + esc((r.original && r.original.model) || '') + ' · ' + fmtDate((r.original && r.original.at) || '') + '</dd></div>' +
+              '<pre class="log-pre">' + esc(txt) + '</pre>',
+            footer: '<button class="btn" data-act="modal-close">关闭</button>',
+          });
+        } catch (e) { toast(e.message, 'err'); }
+        return;
+      }
       if (act === 'log-detail') {
         const d = await api('/logs?size=200');
         const l = (d.items || []).find(x => x.id === id);
@@ -1698,7 +1739,13 @@
       }
       if (act === 'log-query') {
         const s = vs('logs');
-        s.q = $('#logQ').value.trim(); s.status = $('#logStatus').value; s.page = 1;
+        s.q = $('#logQ').value.trim();
+        s.status = $('#logStatus').value;
+        s.from = $('#logFrom').value;
+        s.to = $('#logTo').value;
+        s.channel = $('#logChannel').value;
+        s.days = Number($('#logDays').value) || 7;
+        s.page = 1;
         return route();
       }
 

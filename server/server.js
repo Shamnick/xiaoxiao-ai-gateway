@@ -1495,7 +1495,61 @@ const api = async (req, res, url) => {
     }
   }
 
+  if (p.startsWith('/api/admin/logs/') && p.endsWith('/replay') && method === 'POST') {
+    const logId = p.slice('/api/admin/logs/'.length).replace('/replay', '');
+    const d = store.load();
+    const log = ((d.platform && d.platform.logs) || []).find(l => l.id === logId);
+    if (!log) return sendJson(res, 404, { error: '日志不存在' });
+    if (!log.request_body) return sendJson(res, 400, { error: '该日志未记录请求体，无法重放' });
+    let reqBody = null;
+    try { reqBody = JSON.parse(log.request_body.replace(/\n…（已截断.*$/, '')); } catch (e) { return sendJson(res, 400, { error: '请求体不是合法 JSON（可能被截断）' }); }
+    const owner = (d.users || []).find(u => u.id === log.user_id);
+    if (!owner) return sendJson(res, 400, { error: '原用户不存在' });
+    const key = ((d.platform && d.platform.keys) || []).find(k => k.user_id === owner.id);
+    if (!key) return sendJson(res, 400, { error: '原用户没有可用 Key，无法重放' });
+    reqBody.stream = false;
+    const t0 = Date.now();
+    const r = await platform.relayChat(key.key, reqBody, '127.0.0.1', { free: true, replayOf: logId });
+    if (!r.ok) return sendJson(res, 200, { ok: false, error: r.error, type: r.type, ms: Date.now() - t0 });
+    return sendJson(res, 200, {
+      ok: true, ms: Date.now() - t0, channel: r.channel, usage: r.usage, cost: r.cost,
+      response: r.data, original: { model: log.model, at: log.at, ms: log.ms, status: log.status },
+    });
+  }
+
   /* ---- 日志导出 CSV ---- */
+  if (p === '/api/admin/logs/stats' && method === 'GET') {
+    const days = Math.min(90, Number(url.searchParams.get('days')) || 7);
+    const since = Date.now() - days * 864e5;
+    const logs = ((db.platform && db.platform.logs) || []).filter(l => new Date(l.at).getTime() >= since);
+    const byChannel = {}, byModel = {}, byStatus = { success: 0, error: 0 }, byDay = {};
+    let cost = 0, tokens = 0, ms = 0;
+    logs.forEach(l => {
+      const ch = l.channel || 'unknown';
+      byChannel[ch] = byChannel[ch] || { channel: ch, calls: 0, cost: 0, errors: 0, ms: 0 };
+      byChannel[ch].calls++; byChannel[ch].cost += Number(l.cost) || 0; byChannel[ch].ms += Number(l.ms) || 0;
+      if (l.status !== 'success') { byChannel[ch].errors++; byStatus.error++; } else byStatus.success++;
+      byModel[l.model] = byModel[l.model] || { model: l.model, calls: 0, cost: 0 };
+      byModel[l.model].calls++; byModel[l.model].cost += Number(l.cost) || 0;
+      const day = String(l.at).slice(0, 10);
+      byDay[day] = byDay[day] || { day, calls: 0, cost: 0, errors: 0 };
+      byDay[day].calls++; byDay[day].cost += Number(l.cost) || 0;
+      if (l.status !== 'success') byDay[day].errors++;
+      cost += Number(l.cost) || 0;
+      tokens += (l.prompt_tokens || 0) + (l.completion_tokens || 0);
+      ms += Number(l.ms) || 0;
+    });
+    const chList = Object.values(byChannel).map(c => Object.assign({}, c, { avg_ms: c.calls ? Math.round(c.ms / c.calls) : 0 }));
+    return sendJson(res, 200, {
+      days, calls: logs.length, cost: Number(cost.toFixed(4)), tokens,
+      avg_ms: logs.length ? Math.round(ms / logs.length) : 0,
+      by_status: byStatus,
+      by_channel: chList.sort((a, b) => b.calls - a.calls),
+      by_model: Object.values(byModel).sort((a, b) => b.calls - a.calls).slice(0, 20),
+      by_day: Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day)),
+    });
+  }
+
   if (p === '/api/admin/logs/export' && method === 'GET') {
     const d = store.load();
     const users = {};

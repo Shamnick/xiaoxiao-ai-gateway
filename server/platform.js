@@ -529,7 +529,7 @@ function mockCompletion(model, messages, stream) {
  * 核心：鉴权 → 选渠道 → 转发/模拟 → 计费 → 记日志
  * 返回 { ok, data } 或 { ok:false, status, error }
  */
-async function relayChat(secret, body, clientIp) {
+async function relayChat(secret, body, clientIp, opts) {
   seedPlatformUsers();
   const { db } = data();
   const started = Date.now();
@@ -578,9 +578,11 @@ async function relayChat(secret, body, clientIp) {
     const ct = Number(u && u.completion_tokens) || 0;
     const baseCost = computeCost(model, { prompt_tokens: pt, completion_tokens: ct });
     const ratio = groupRatio(user);
-    const cost = Number((baseCost * (ratio || 0)).toFixed(6));
-    if (key.quota > 0) key.used += 1;
-    else {
+    const free = !!(opts && opts.free);
+    const cost = free ? 0 : Number((baseCost * (ratio || 0)).toFixed(6));
+    if (free) { /* 管理员重放不计费 */ }
+    else if (key.quota > 0) key.used += 1;
+    else if (!free) {
       user.frozen = Number(Math.max(0, (Number(user.frozen) || 0) - estCost).toFixed(6));
       user.balance = Number((Number(user.balance) - cost).toFixed(6));
     }
@@ -592,6 +594,8 @@ async function relayChat(secret, body, clientIp) {
       prompt_tokens: pt, completion_tokens: ct,
       channel: ch ? ch.name : 'unknown',
       stream: !!stream,
+      replay_of: (opts && opts.replayOf) || null,
+      kind: (opts && opts.replayOf) ? 'replay' : undefined,
     }, withBodies ? {
       request_body: capBody(redact(body)),
       response_body: capBody(respText || ''),
