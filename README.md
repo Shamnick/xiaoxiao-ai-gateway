@@ -30,11 +30,17 @@
 | 能力 | 说明 |
 |---|---|
 | OpenAI 兼容接口 | `POST /v1/chat/completions`、`POST /api/v1/chat/completions`（等价路径）、`GET /v1/models`、`GET /api/v1/models` |
-| 流式输出 | `stream: true`，SSE 逐块下发 |
+| **Anthropic 兼容入口** | `POST /v1/messages`（Messages API，支持 `x-api-key` 认证，Claude Code 等客户端可直接指向本网关），非流式/流式全量转写 |
+| **Responses 兼容入口** | `POST /v1/responses`（OpenAI Responses API，`input`/`instructions` 自动转 messages，流式输出 `response.*` 事件序列） |
+| 流式输出 | `stream: true`，SSE 逐块下发；空闲超时默认 120s（渠道 `stream_idle_timeout_ms` 可调），上游挂死也能及时收口结算 |
+| **流式计费兜底** | 自动注入 `stream_options.include_usage`；上游不回 usage 时按文本量估算 token 结算，杜绝流式 0 计费 |
 | 模型目录 | 67 个模型，含上下文长度、模态、能力标签、`pricing`（prompt/completion/request） |
 | 按 token 计费 | 固定请求费 + 输入/输出 token 单价（积分 / 1M tokens），支持按次兼容模式 |
 | 多上游路由 | 同一模型可挂多个渠道，按优先级 + 权重分流，失败自动回退下一个 |
-| 密钥管理 | 每用户多把 `sk-` Key，可设额度、可用模型、有效期、RPM/TPM 限流 |
+| 密钥管理 | 每用户多把 `sk-` Key，可设额度、可用模型、有效期、RPM/TPM 限流、**令牌分组**（Key 指定 group 覆盖用户分组）、次数额度并发预占（防超扣） |
+| **会话与注册** | 无状态 HMAC 签名会话（重启不掉线）；可选邮箱验证码注册（`settings.platform.require_email_verify`，配好 SMTP 即可） |
+| **调用熔断** | 渠道连续失败 3 次自动熔断冷却 5 分钟并告警，恢复后自动重置；重试次数可用 `settings.platform.retry_times` 限制 |
+| **日志归档** | 调用日志内存保留 2000 条，溢出**自动归档**到 `data/logs/*.jsonl`（绝不丢弃），支持归档检索 |
 | 用量统计 | 按天 / 按模型 / 按 Key 聚合，记录 token、费用、耗时、渠道 |
 | Playground | 网页直接试模型，实时显示 token 与扣费（`/playground`） |
 | 公开价格页 | 67 个模型的价格表，支持搜索/品牌筛选/四种排序（`/pricing`） |
@@ -222,6 +228,8 @@ POST /v1/images/generations      { "model": "image-gen-1", "prompt": "...", "n":
 POST /v1/audio/speech            { "model": "tts-1", "input": "你好", "voice": "alloy" }   → 返回 audio/wav
 POST /v1/audio/transcriptions    multipart: file + model                                  → { text, usage }
 POST /v1/rerank                  { "model": "rerank-v1", "query": "...", "documents": ["..."] }
+POST /v1/messages                Anthropic Messages API（Claude Code 直连，x-api-key 认证）
+POST /v1/responses               OpenAI Responses API（input/instructions 自动转 messages）
 ```
 
 音频与重排默认走本地实现（WAV 合成 / 词重叠打分），配置了上游渠道时优先转发。

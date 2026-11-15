@@ -38,7 +38,7 @@ const SEC_HEADERS = {
   'cross-origin-opener-policy': 'same-origin',
   'cross-origin-resource-policy': 'same-origin',
   'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
-  'content-security-policy': "default-src 'self'; script-src 'self' https://kefu.yutiankejiai.com; style-src 'self' https://kefu.yutiankejiai.com; frame-src https://kefu.yutiankejiai.com; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests",
+  'content-security-policy': "default-src 'self'; script-src 'self' https://kefu.yutiankejiai.com; style-src 'self' 'unsafe-inline' https://kefu.yutiankejiai.com; frame-src https://kefu.yutiankejiai.com; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests",
 };
 
 const NOT_FOUND_HTML = `<!DOCTYPE html>
@@ -227,8 +227,19 @@ async function handleUserApi(req, res, url) {
     try { body = await readBody(req); } catch (e) { return sendJson(res, 400, { ok: false, error: '请求体解析失败' }); }
   }
 
+  if (p === '/api/user/register/code' && method === 'POST') {
+    const rl = loginRateLimit('ec:' + clientIp(req), 5, 60000);
+    if (!rl.ok) {
+      res.setHeader('retry-after', String(rl.retry));
+      return sendJson(res, 429, { ok: false, error: '发送过于频繁，请 ' + rl.retry + ' 秒后再试' });
+    }
+    const r = await platform.sendEmailCode(body.email);
+    if (r.error) return sendJson(res, 400, { ok: false, error: r.error });
+    return sendJson(res, 200, { ok: true });
+  }
+
   if (p === '/api/user/register' && method === 'POST') {
-    const r = platform.register(body.username, body.password, body.email, body.invite_code);
+    const r = platform.register(body.username, body.password, body.email, body.invite_code, body.code);
     if (r.error) return sendJson(res, 400, { ok: false, error: r.error });
     const token = platform.issueSession(r.user.id);
     setUserCookie(res, token);
@@ -286,7 +297,7 @@ async function handleUserApi(req, res, url) {
     const k = platform.listKeys(me.id).find(x => x.id === keyRe[1]);
     if (!k) return sendJson(res, 404, { ok: false, error: 'Key 不存在' });
     if (method === 'PUT') {
-      ['name', 'enabled', 'quota', 'limit_rpm', 'limit_tpm'].forEach(f => { if (body[f] != null) k[f] = body[f]; });
+      ['name', 'enabled', 'quota', 'limit_rpm', 'limit_tpm', 'group'].forEach(f => { if (body[f] != null) k[f] = body[f]; });
       if (body.allowed_ips != null) k.allowed_ips = Array.isArray(body.allowed_ips) ? body.allowed_ips : String(body.allowed_ips).split(',').map(s2 => s2.trim()).filter(Boolean);
       if (Array.isArray(body.models)) k.models = body.models;
       store.save();
@@ -366,6 +377,252 @@ async function handleUserApi(req, res, url) {
   return sendJson(res, 404, { ok: false, error: '接口不存在' });
 }
 
+/* ------------------------------ 流式管线与协议转换 ------------------------------ */
+
+/** 解析一行 SSE data: 为 JSON 对象，非 data 行返回 null */
+function parseSseDataLine(t) {
+  if (!t.startsWith('data:')) return null;
+  const raw = t.slice(5).trim();
+  if (!raw || raw === '[DONE]') return null;
+  try { return JSON.parse(raw); } catch (e) { return null; }
+}
+
+/** Anthropic 流式事件发射器：把 OpenAI chunk 流实时转写为 Anthropic SSE 事件 */
+function makeAnthropicEmitter(res, r) {
+  const model = (r.ctx && r.ctx.model) || '';
+  const id = 'msg_' + crypto.randomBytes(12).toString('hex');
+  let started = false, closed = false, outTokens = 0, stopReason = 'end_turn';
+  const send = (obj) => res.write('event: ' + obj.type + '\ndata: ' + JSON.stringify(obj) + '\n\n');
+  const api = {
+    start() {
+      if (started) return;
+      started = true;
+      send({
+        type: 'message_start',
+        message: {
+          id, type: 'message', role: 'assistant', model,
+          content: [], stop_reason: null, stop_sequence: null,
+          usage: { input_tokens: (r.ctx && r.ctx.estTokens) || 0, output_tokens: 0 },
+        },
+      });
+      send({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } });
+    },
+    emit(evt) {
+      api.start();
+      const ch = evt.choices && evt.choices[0];
+      const delta = ch && ch.delta;
+      if (delta && typeof delta.content === 'string' && delta.content) {
+        outTokens += 1;
+        send({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: delta.content } });
+      }
+      if (ch && ch.finish_reason === 'length') stopReason = 'max_tokens';
+    },
+    finish(usage) {
+      api.start();
+      if (closed) return;
+      closed = true;
+      send({ type: 'content_block_stop', index: 0 });
+      send({ type: 'message_delta', delta: { stop_reason: stopReason, stop_sequence: null }, usage: { output_tokens: (usage && usage.completion_tokens) || outTokens } });
+      send({ type: 'message_stop' });
+    },
+  };
+  return api;
+}
+
+/** Responses API 流式事件发射器（简化事件序列：created → output_text.delta* → completed） */
+function makeResponsesEmitter(res, r) {
+  const model = (r.ctx && r.ctx.model) || '';
+  const id = 'resp_' + crypto.randomBytes(12).toString('hex');
+  let started = false, closed = false, text = '';
+  const send = (obj) => res.write('event: ' + obj.type + '\ndata: ' + JSON.stringify(obj) + '\n\n');
+  const base = (status, usage) => ({
+    id, object: 'response', created_at: Math.floor(Date.now() / 1000), status, model,
+    output: status === 'completed'
+      ? [{ id: 'msg_' + crypto.randomBytes(8).toString('hex'), type: 'message', status: 'completed', role: 'assistant', content: [{ type: 'output_text', text, annotations: [] }] }]
+      : [],
+    usage: usage
+      ? { input_tokens: usage.prompt_tokens || 0, output_tokens: usage.completion_tokens || 0, total_tokens: (usage.prompt_tokens || 0) + (usage.completion_tokens || 0) }
+      : null,
+  });
+  return {
+    emit(evt) {
+      if (!started) { started = true; send({ type: 'response.created', response: base('in_progress') }); }
+      const c = evt.choices && evt.choices[0] && evt.choices[0].delta;
+      if (c && typeof c.content === 'string' && c.content) {
+        text += c.content;
+        send({ type: 'response.output_text.delta', delta: c.content });
+      }
+    },
+    finish(usage) {
+      if (!started) { started = true; send({ type: 'response.created', response: base('in_progress') }); }
+      if (closed) return;
+      closed = true;
+      send({ type: 'response.completed', response: base('completed', usage) });
+    },
+  };
+}
+
+/**
+ * 统一流式转发管线：
+ * - OpenAI/Azure 上游：format=openai 时逐字节透传；
+ * - Anthropic/Gemini 等上游：经适配器转成 OpenAI chunk 再下发；
+ * - format=anthropic / responses：把 OpenAI chunk 转写为对应协议的 SSE 事件流。
+ * 全程旁路解析 usage 与文本；上游不回 usage 时按估算 token 结算（杜绝流式 0 计费漏洞），
+ * 并带空闲超时（渠道 stream_idle_timeout_ms，默认 120s），上游挂死也能及时收口结算。
+ */
+async function streamFromUpstream(res, r, format) {
+  const isOpenAIUp = !r.adapter || r.adapter === adapters.openai || r.adapter === adapters.azure;
+  const reader = r.upstreamRes.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', usage = null, accText = '';
+  const idleMs = Number(r.ctx && r.ctx.idleTimeoutMs) || 120000;
+  const emitter = format === 'anthropic' ? makeAnthropicEmitter(res, r)
+    : format === 'responses' ? makeResponsesEmitter(res, r) : null;
+  const onEvt = (evt) => {
+    if (!evt) return;
+    if (evt.usage && (evt.usage.prompt_tokens != null || evt.usage.completion_tokens != null)) usage = evt.usage;
+    const c = evt.choices && evt.choices[0] && evt.choices[0].delta;
+    if (c && typeof c.content === 'string') accText += c.content;
+    if (emitter) emitter.emit(evt);
+  };
+  try {
+    for (;;) {
+      let timer = null;
+      const read = await Promise.race([
+        reader.read(),
+        new Promise((_, rej) => {
+          timer = setTimeout(() => rej(new Error('stream idle timeout')), idleMs);
+          if (timer.unref) timer.unref();
+        }),
+      ]);
+      clearTimeout(timer);
+      if (read.done) break;
+      buf += dec.decode(read.value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        const t = line.trim();
+        if (isOpenAIUp) {
+          if (!emitter) res.write(line + '\n');  // 逐字节透传
+          onEvt(parseSseDataLine(t));
+        } else {
+          const out = r.adapter.transformStreamLine(t, r.ctx);
+          if (!out) continue;
+          if (emitter) out.split('\n').forEach(l => onEvt(parseSseDataLine(l.trim())));
+          else res.write(out);
+        }
+      }
+    }
+  } catch (e) { /* 客户端断开 / 上游异常 / 空闲超时：按已产生内容结算 */ }
+  if (emitter) emitter.finish(usage);
+  try { res.end(); } catch (e) { /* ignore */ }
+  let u = isOpenAIUp ? usage : (r.ctx && r.ctx.usage);
+  if (!u || (!Number(u.prompt_tokens) && !Number(u.completion_tokens))) {
+    u = {
+      prompt_tokens: (r.ctx && r.ctx.estTokens) || 0,
+      completion_tokens: Math.max(1, Math.ceil(accText.length / 3)),
+      __estimated: true,
+    };
+  }
+  r.settle(u, accText);
+}
+
+/** Anthropic Messages 请求 → OpenAI chat 请求 */
+function anthropicToOpenAI(ab) {
+  const messages = [];
+  if (ab.system) {
+    messages.push({ role: 'system', content: typeof ab.system === 'string' ? ab.system : (Array.isArray(ab.system) ? ab.system.map(b => (b && b.text) || '').join('') : String(ab.system)) });
+  }
+  (Array.isArray(ab.messages) ? ab.messages : []).forEach(m => {
+    let content = m.content;
+    if (Array.isArray(content)) content = content.map(b => (typeof b === 'string' ? b : (b && b.type === 'text' ? b.text : '')) || '').join('');
+    messages.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: content == null ? '' : String(content) });
+  });
+  const out = { model: String(ab.model || ''), messages, stream: !!ab.stream };
+  if (ab.max_tokens != null) out.max_tokens = ab.max_tokens;
+  if (ab.temperature != null) out.temperature = ab.temperature;
+  if (ab.top_p != null) out.top_p = ab.top_p;
+  if (Array.isArray(ab.stop_sequences) && ab.stop_sequences.length) out.stop = ab.stop_sequences;
+  return out;
+}
+
+/** OpenAI chat 响应 → Anthropic message 响应 */
+function openAIToAnthropic(data, model) {
+  const ch = (data.choices && data.choices[0]) || {};
+  const msg = ch.message || {};
+  const u = data.usage || {};
+  return {
+    id: String(data.id || 'chatcmpl-x').replace(/^chatcmpl/, 'msg'),
+    type: 'message', role: 'assistant', model,
+    content: [{ type: 'text', text: typeof msg.content === 'string' ? msg.content : '' }],
+    stop_reason: ch.finish_reason === 'length' ? 'max_tokens' : 'end_turn',
+    stop_sequence: null,
+    usage: { input_tokens: u.prompt_tokens || 0, output_tokens: u.completion_tokens || 0 },
+  };
+}
+
+/** Responses API 请求 → OpenAI chat 请求 */
+function responsesToOpenAI(rb) {
+  const messages = [];
+  if (rb.instructions) messages.push({ role: 'system', content: String(rb.instructions) });
+  const pushItem = (item) => {
+    if (typeof item === 'string') { messages.push({ role: 'user', content: item }); return; }
+    if (!item || typeof item !== 'object') return;
+    const role = item.role === 'assistant' ? 'assistant' : (item.role === 'system' || item.role === 'developer') ? 'system' : 'user';
+    let content = item.content;
+    if (Array.isArray(content)) {
+      content = content.map(c => {
+        if (typeof c === 'string') return c;
+        if (c && (c.type === 'input_text' || c.type === 'output_text' || c.type === 'text')) return c.text || '';
+        return '';
+      }).join('');
+    }
+    if (content != null) messages.push({ role, content: String(content) });
+  };
+  if (Array.isArray(rb.input)) rb.input.forEach(pushItem);
+  else if (rb.input != null) pushItem(rb.input);
+  const out = { model: String(rb.model || ''), messages, stream: !!rb.stream };
+  if (rb.max_output_tokens != null) out.max_tokens = rb.max_output_tokens;
+  if (rb.temperature != null) out.temperature = rb.temperature;
+  if (rb.top_p != null) out.top_p = rb.top_p;
+  return out;
+}
+
+/** OpenAI chat 响应 → Responses API 响应对象 */
+function openAIToResponses(data, model) {
+  const msg = (data.choices && data.choices[0] && data.choices[0].message) || {};
+  const u = data.usage || {};
+  return {
+    id: 'resp_' + crypto.randomBytes(12).toString('hex'),
+    object: 'response',
+    created_at: data.created || Math.floor(Date.now() / 1000),
+    status: 'completed', model,
+    output: [{
+      id: 'msg_' + crypto.randomBytes(8).toString('hex'), type: 'message', status: 'completed',
+      role: 'assistant', content: [{ type: 'output_text', text: typeof msg.content === 'string' ? msg.content : '', annotations: [] }],
+    }],
+    usage: { input_tokens: u.prompt_tokens || 0, output_tokens: u.completion_tokens || 0, total_tokens: (u.prompt_tokens || 0) + (u.completion_tokens || 0) },
+  };
+}
+
+const SSE_HEADERS = {
+  'content-type': 'text/event-stream; charset=utf-8',
+  'cache-control': 'no-cache, no-transform',
+  connection: 'keep-alive',
+  'x-accel-buffering': 'no',
+};
+
+/** mock 流（OpenAI chunk 字符串数组）经事件发射器输出为指定协议 */
+function emitMockStream(res, chunks, format, model, usage) {
+  res.writeHead(200, SSE_HEADERS);
+  if (format === 'openai') { chunks.forEach(c => res.write(c)); res.end(); return; }
+  const fakeCtx = { model, estTokens: (usage && usage.prompt_tokens) || 0 };
+  const em = format === 'anthropic' ? makeAnthropicEmitter(res, { ctx: fakeCtx }) : makeResponsesEmitter(res, { ctx: fakeCtx });
+  chunks.forEach(s => String(s).split('\n').forEach(l => { const evt = parseSseDataLine(l.trim()); if (evt) em.emit(evt); }));
+  em.finish(usage);
+  res.end();
+}
+
 /** OpenAI 兼容：/v1/models、/v1/chat/completions */
 async function handleV1(req, res, url) {
   const p = url.pathname.replace(/\/+$/, '').replace(/^\/api\/v1/, '/v1');
@@ -417,65 +674,62 @@ async function handleV1(req, res, url) {
     if (!r.ok) {
       return sendJson(res, r.status, { error: { message: r.error, type: r.type || 'error' } });
     }
-    // 真实上游流式：逐块转发（OpenAI 原样透传，Anthropic/Gemini 转为 OpenAI SSE）
+    // 真实上游流式：统一管线（透传/协议转换、usage 旁路解析、空闲超时、估算兜底结算）
     if (r.stream && r.upstreamRes) {
-      res.writeHead(200, {
-        'content-type': 'text/event-stream; charset=utf-8',
-        'cache-control': 'no-cache, no-transform',
-        connection: 'keep-alive',
-        'x-accel-buffering': 'no',
-      });
-      const isOpenAI = !r.adapter || r.adapter === adapters.openai;
-      const reader = r.upstreamRes.body.getReader();
-      const dec = new TextDecoder();
-      let buf = '';
-      let usage = null;
-      let accText = '';
-      try {
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const text = dec.decode(value, { stream: true });
-          if (isOpenAI) {
-            res.write(text);
-            accText += text;
-            buf += text;
-            const hits = buf.match(/"usage"\s*:\s*\{[^{}]*\}/g);
-            if (hits && hits.length) {
-              try {
-                const u = JSON.parse('{' + hits[hits.length - 1] + '}').usage;
-                if (u && (u.prompt_tokens != null || u.completion_tokens != null)) usage = u;
-              } catch (e) { /* ignore */ }
-            }
-            if (buf.length > 20000) buf = buf.slice(-8000);
-          } else {
-            buf += text;
-            const lines = buf.split('\n');
-            buf = lines.pop();
-            for (const line of lines) {
-              const out = r.adapter.transformStreamLine(line.trim(), r.ctx);
-              if (out) res.write(out);
-            }
-          }
-        }
-      } catch (e) { /* 客户端断开或上游异常，按已产生内容结算 */ }
-      finally {
-        try { res.end(); } catch (e) { /* ignore */ }
-        r.settle(isOpenAI ? (usage || { prompt_tokens: 0, completion_tokens: 0 }) : r.ctx.usage, accText);
-      }
+      res.writeHead(200, SSE_HEADERS);
+      await streamFromUpstream(res, r, 'openai');
       return;
     }
     if (r.stream && Array.isArray(r.data)) {
-      res.writeHead(200, {
-        'content-type': 'text/event-stream; charset=utf-8',
-        'cache-control': 'no-cache, no-transform',
-        connection: 'keep-alive',
-        'x-accel-buffering': 'no',
-      });
-      r.data.forEach(chunk => res.write(chunk));
-      return res.end();
+      emitMockStream(res, r.data, 'openai', body.model, r.usage);
+      return;
     }
     return sendJson(res, 200, r.data);
+  }
+
+  // Anthropic Messages 兼容入口：Claude Code 等客户端可直接指向本网关
+  if (p === '/v1/messages' && req.method === 'POST') {
+    let ab = {};
+    try { ab = await readBody(req); } catch (e) { return sendJson(res, 400, { type: 'error', error: { type: 'invalid_request_error', message: 'invalid json' } }); }
+    const secret = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim()
+      || String(req.headers['x-api-key'] || '').trim();
+    const oai = anthropicToOpenAI(ab);
+    const r = await platform.relayChat(secret, oai, clientIp(req));
+    if (!r.ok) {
+      return sendJson(res, r.status, { type: 'error', error: { type: r.type || 'api_error', message: r.error } });
+    }
+    if (r.stream && r.upstreamRes) {
+      res.writeHead(200, SSE_HEADERS);
+      await streamFromUpstream(res, r, 'anthropic');
+      return;
+    }
+    if (r.stream && Array.isArray(r.data)) {
+      emitMockStream(res, r.data, 'anthropic', oai.model, r.usage);
+      return;
+    }
+    return sendJson(res, 200, openAIToAnthropic(r.data, oai.model));
+  }
+
+  // OpenAI Responses API 兼容入口
+  if (p === '/v1/responses' && req.method === 'POST') {
+    let rb = {};
+    try { rb = await readBody(req); } catch (e) { return sendJson(res, 400, { error: { message: 'invalid json', type: 'invalid_request_error' } }); }
+    const secret = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+    const oai = responsesToOpenAI(rb);
+    const r = await platform.relayChat(secret, oai, clientIp(req));
+    if (!r.ok) {
+      return sendJson(res, r.status, { error: { message: r.error, type: r.type || 'error' } });
+    }
+    if (r.stream && r.upstreamRes) {
+      res.writeHead(200, SSE_HEADERS);
+      await streamFromUpstream(res, r, 'responses');
+      return;
+    }
+    if (r.stream && Array.isArray(r.data)) {
+      emitMockStream(res, r.data, 'responses', oai.model, r.usage);
+      return;
+    }
+    return sendJson(res, 200, openAIToResponses(r.data, oai.model));
   }
   if (p === '/v1/audio/speech' && req.method === 'POST') {
     let body = {};
@@ -1331,7 +1585,7 @@ const api = async (req, res, url) => {
     if (!ch) return sendJson(res, 404, { error: '渠道不存在' });
     if (method === 'PUT') {
       ['name', 'type', 'base_url', 'api_key', 'enabled', 'weight', 'note', 'status', 'priority', 'timeout_ms',
-        'api_version', 'project', 'location', 'region', 'api_secret', 'service_account'].forEach(f => { if (body[f] != null) ch[f] = body[f]; });
+        'stream_idle_timeout_ms', 'api_version', 'project', 'location', 'region', 'api_secret', 'service_account'].forEach(f => { if (body[f] != null) ch[f] = body[f]; });
       if (body.model_map != null && typeof body.model_map === 'object') ch.model_map = body.model_map;
       if (body.groups != null) ch.groups = Array.isArray(body.groups) ? body.groups : String(body.groups).split(',').map(s2 => s2.trim()).filter(Boolean);
       if (body.models != null) ch.models = Array.isArray(body.models) ? body.models : String(body.models).split(',').map(s2 => s2.trim()).filter(Boolean);
